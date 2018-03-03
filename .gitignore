@@ -1,0 +1,8 @@
+/.project
+/bin/
+/DISTRIBUTION/
+/JDBC_BUILD/
+/.externalToolBuilders
+/.settings
+/*.*~
+/.classpath
