@@ -19,17 +19,24 @@
  */
 package com.jdbwc.util;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.httpclient.NameValuePair;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 
 import com.ozdevworx.dtype.DataHandler;
-import com.ozdevworx.dtype.impl.KeyedList;
+import com.ozdevworx.dtype.impl.ObjectList;
 
 
 /**
@@ -39,35 +46,27 @@ import com.ozdevworx.dtype.impl.KeyedList;
  * @version 2008-05-29
  * @version 2010-04-10
  * @version 2010-04-17
+ * @version 2010-04-28 changed the DataHandler implementation
  */
 public final class Util {
+
 	/** systems line break property */
 	public static final String WC_NL = System.getProperty("line.separator");
 	//post method keys
-	public static final String OUR_SQL = "sql";
-	public static final String OUR_ACTION = "jdbwcAction";
-	public static final String OUR_AUTH = "auth";
-	public static final String OUR_SEC_USER = "su";
-	public static final String OUR_SEC_PASS = "sp";
-	public static final String OUR_DBTYPE = "dbType";
-	public static final String OUR_DEBUG_TAG = "debug";
+	public static final String TAG_SQL = "sql";
+	public static final String TAG_ACTION = "jdbwcAction";
+	public static final String TAG_AUTH = "auth";
+	public static final String TAG_USER = "su";
+	public static final String TAG_PASS = "sp";
+	public static final String TAG_DBTYPE = "dbType";
+	public static final String TAG_DEBUG = "debug";
 
-	/** users debug trigger for JDBC and server-side (WC) */
-	public static boolean OUR_DEBUG_MODE = false;
 
 	/** DataHandler implementation used by this driver */
-	public static final String DT_IMPL_VER = KeyedList.class + " " + KeyedList.VERSION;
+	public static final String DT_IMPL_VER = ObjectList.class + " " + ObjectList.VERSION;
 
-	/**
-	 * Workaround to enable the use of a dummy User-Agent
-	 * if you think the HttpClient agent is being blocked by your host.
-	 */
-	public static boolean OUR_UA_FIX = false;
-	/**
-	 * Dummy User-Agent<br />
-	 * This is only used if OUR_UA_FIX = true
-	 */
-	public static final String OUR_USER_AGENT = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3 (.NET CLR 3.5.30729)";
+	/** Dummy User-Agent. Rarely needed */
+	public static final String CUSTOM_AGENT = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3 (.NET CLR 3.5.30729)";
 
 	/* database server connection types */
 	public static final int ID_DEFAULT = 0;
@@ -78,7 +77,7 @@ public final class Util {
 	public static final int CASE_UPPER = 1;
 	public static final int CASE_MIXED = 0;
 
-	/** Indetifier for errors being sent from the server API */
+	/** Indetifier for caught errors being sent from the server API */
 	public static final String WC_ERROR_TAG = "ERROR# ";
 
 	//specific error idetifiers so we can throw specific exceptions
@@ -90,6 +89,18 @@ public final class Util {
 	private static final String WC_PHP_STR = "PHP ";
 	private static final String WC_ERROR_DB_CON_STR = "ERROR-DB-CONNECTION: ";
 	private static final String WC_ERROR_DB_QRY_STR = "ERROR-DB-QUERY: ";
+	/** For detecting non-recoverable-Fatal-Errors on the serverside. */
+	public static final String[] WC_ERROR_SCRIPT =
+		{"Catchable Fatal Error",
+	    "Fatal error",
+	    "Parsing Error",
+	    "Parse error",
+	    "Error",
+	    "Core Error",
+	    "Core Warning",
+	    "Compile Error",
+	    "Compile Warning",
+	    "Runtime Notice"};
 
 
 	public static String stripTags(final String input){
@@ -119,13 +130,37 @@ public final class Util {
 		return plainText;
 	}
 
-	public static String parseResponse(final InputStream ins) throws SQLException, IOException{
-		String responseBody = getFromStream(ins);
+	/**
+	 * Parse the servers http response into a string if no errors are encountered.<br />
+	 * The http reponse is checked for error headers, then checked for exception triggers delivered from the web server.<br />
+	 * Http response errors would only be thrown from here if the files were moved, deleted or made not readable
+	 * while actively in use.
+	 *
+	 * @param response The http response from the web server
+	 * @return The response from the web server as a String if no errors are encountered.
+	 * @throws SQLException if the results include an error trigger from the web server
+	 * @throws IOException if errors are encountered converting the http entity to a string
+	 */
+	public static String parseResponse(final HttpResponse response) throws SQLException, IOException{
+		String responseBody = "";
 
-//		System.out.println("responseBody = " + responseBody);
-
-		if(checkForExceptions(responseBody)){
-			responseBody = "";
+		synchronized (responseBody) {
+			if (response.getStatusLine().getStatusCode() == 200) {
+				HttpEntity entity = response.getEntity();
+				if (entity != null) {
+					responseBody = EntityUtils.toString(entity);
+				}
+			} else {
+				//failsafe incase the server-side files are tampered with while in use (deleted, moved, etc.)
+				throw new com.jdbwc.exceptions.ServerSideException(
+						"Error accessing the server. Server Error code: "
+						+ response.getStatusLine().getStatusCode()
+						+ "Reason: "
+						+ response.getStatusLine().getReasonPhrase()
+						+ ", HTTP Protocol: "
+						+ response.getStatusLine().getProtocolVersion());
+			}
+			checkForExceptions(responseBody);
 		}
 		return responseBody;
 	}
@@ -138,16 +173,18 @@ public final class Util {
 	 * NOTE: This release will only throw one exception for the first found
 	 * (instead of java's usual exception trail) but will include details for all in the message.
 	 *
-	 * @param response The Server response String.
+	 * @param responseBody The Server response String.
 	 * @return false if no errors are found.
 	 * @throws SQLException if any errors are detected.
 	 */
-	public static boolean checkForExceptions(final String response) throws SQLException{
+	public static boolean checkForExceptions(final String responseBody) throws SQLException{
 		boolean hasExceptions = false;
 
-		if(response!=null && response.startsWith(WC_ERROR_TAG)){
+		if(responseBody.startsWith(WC_ERROR_TAG)){
 			hasExceptions = true;
-			String message = response.substring(WC_ERROR_TAG.length());
+			String message = stripTags(responseBody.substring(WC_ERROR_TAG.length()));
+
+//			System.err.println("checkForExceptions message = " + responseBody + "\n\n");
 
 			//SQL exceptions
 			if(message.startsWith(WC_ERROR_DB_QRY_STR) || message.startsWith(WC_ERROR_DB_CON_STR)){
@@ -182,26 +219,50 @@ public final class Util {
 			//PHP exceptions
 			}else if(message.startsWith(WC_PHP_STR)){
 				throw new com.jdbwc.exceptions.PHPException(message);
+
+			//unknown errors
+			}else{
+				if(message.contains(WC_ERROR_TAG)){
+					//recurse for nested messages
+					message = message.substring(message.indexOf(WC_ERROR_TAG));
+					return checkForExceptions(message);
+				}else{
+					throw new SQLException("Unknown error: " + message, "S1000");//general error state
+				}
 			}
 		}
 		return hasExceptions;
 	}
 
 	/**
-	 * @param input LabeledArray
-	 * @return A single NameValuePair[] of NameValuePair's representing the input param
+	 * @param input DataHandler
+	 * @return A UrlEncodedFormEntity of NameValuePair's representing the input param
 	 */
-	public static NameValuePair[] prepareForWeb(final DataHandler input){
+	public static HttpEntity prepareForWeb(final DataHandler input){
+
+		List <NameValuePair> nvpData = new ArrayList <NameValuePair>();
+
 		final int inputSize = input.length();
-		final NameValuePair[] nvpData = new NameValuePair[inputSize];
 		for(int i = 0; i < inputSize; i++){
-			if(input.getKey(i).equals(OUR_SQL)){
-				nvpData[i] = new NameValuePair(input.getKey(i), input.getString(i).trim());
+			if(TAG_SQL.equals(input.getKey(i))){
+				nvpData.add(new BasicNameValuePair(input.getKey(i), input.getString(i).trim()));
 			}else{
-				nvpData[i] = new NameValuePair(input.getKey(i), csvFormat(input.getString(i).trim()));
+				nvpData.add(new BasicNameValuePair(input.getKey(i), csvFormat(input.getString(i).trim())));
 			}
 		}
-		return nvpData;
+		HttpEntity entity;
+		try {
+			entity = new UrlEncodedFormEntity(nvpData, HTTP.UTF_8);
+		} catch (UnsupportedEncodingException e) {
+			try {
+				entity = new UrlEncodedFormEntity(nvpData);
+			} catch (UnsupportedEncodingException e1) {
+				//we should never arrive here
+				entity = null;
+			}
+		}
+
+		return entity;
 	}
 
 	/**
@@ -220,14 +281,14 @@ public final class Util {
 		DataHandler output;
 		switch(caseType){
 		case CASE_LOWER:
-			output = new KeyedList(true);
+			output = new ObjectList(true);
 			break;
 		case CASE_UPPER:
-			output = new KeyedList(false);
+			output = new ObjectList(false);
 			break;
 		case CASE_MIXED:
 		default:
-			output = new KeyedList();
+			output = new ObjectList();
 		}
 
 		return output;
@@ -277,25 +338,25 @@ public final class Util {
 	 */
 	private Util(){}
 
-	private static String getFromStream(final InputStream ins) throws IOException{
-		final int BLEN = 8192; // byte length
-		final StringBuilder contents = new StringBuilder();
-
-		final BufferedInputStream bis = new BufferedInputStream(ins);
-		final byte[] bytes = new byte[BLEN];
-		int count = bis.read(bytes);
-		while(count != -1 && count <= BLEN) {
-			contents.append(new String(bytes, 0, count));
-			count = bis.read(bytes);
-		}
-		if(count != -1) {
-			contents.append(new String(bytes, 0, count));
-		}
-		bis.close();
-		ins.close();
-
-//		System.err.println(contents.toString());
-
-		return contents.toString();
-	}
+//	private static String getFromStream(final InputStream ins) throws IOException{
+//		final int BLEN = 8192; // byte length
+//		final StringBuilder contents = new StringBuilder();
+//
+//		final BufferedInputStream bis = new BufferedInputStream(ins);
+//		final byte[] bytes = new byte[BLEN];
+//		int count = bis.read(bytes);
+//		while(count != -1 && count <= BLEN) {
+//			contents.append(new String(bytes, 0, count));
+//			count = bis.read(bytes);
+//		}
+//		if(count != -1) {
+//			contents.append(new String(bytes, 0, count));
+//		}
+//		bis.close();
+//		ins.close();
+//
+////		System.err.println(contents.toString());
+//
+//		return contents.toString();
+//	}
 }

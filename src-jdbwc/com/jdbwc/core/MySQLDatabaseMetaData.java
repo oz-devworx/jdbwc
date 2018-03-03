@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 
+import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.util.Util;
 import com.ozdevworx.dtype.DataHandler;
 
@@ -36,11 +37,12 @@ import com.ozdevworx.dtype.DataHandler;
  * This implementation has had its query logic migrated to a separate class
  * MySQLDbMetaDataFromInfoSchema.<br />
  * <br />
- * <b>NOTE:</b> Portions of this class were originally derived from MySql-Connector/J. 
+ * <b>NOTE:</b> Portions of this class were originally derived from MySql-Connector/J.
  * Namely the (Strings) function names, (Strings) keywords.
  *
- * @author Tim Gall (Oz-DevWorX)
+ * @author Tim Gall
  * @version 2008-05-29
+ * @version 2010-04-30
  */
 public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema implements java.sql.DatabaseMetaData {
 
@@ -81,10 +83,10 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		+ "SUBSTRING_INDEX,TRIM,UCASE,UPPER";
 
 	/** SQL Keywords specific to this Driver */
-	private static String mysqlKeywordsThatArentSQL92;
+	private static final String mysqlKeywordsThatArentSQL92;
 	static {
 		// Current as-of MySQL-5.1.16
-		String[] allMySQLKeywords = new String[] { "ACCESSIBLE", "ADD", "ALL",
+		final String[] allMySQLKeywords = new String[] { "ACCESSIBLE", "ADD", "ALL",
 				"ALTER", "ANALYZE", "AND", "AS", "ASC", "ASENSITIVE", "BEFORE",
 				"BETWEEN", "BIGINT", "BINARY", "BLOB", "BOTH", "BY", "CALL",
 				"CASCADE", "CASE", "CHANGE", "CHAR", "CHARACTER", "CHECK",
@@ -127,7 +129,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 				"VARCHARACTER", "VARYING", "WHEN", "WHERE", "WHILE", "WITH",
 				"WRITE", "X509", "XOR", "YEAR_MONTH", "ZEROFILL" };
 
-		String[] sql92Keywords = new String[] { "ABSOLUTE", "EXEC", "OVERLAPS",
+		final String[] sql92Keywords = new String[] { "ABSOLUTE", "EXEC", "OVERLAPS",
 				"ACTION", "EXECUTE", "PAD", "ADA", "EXISTS", "PARTIAL", "ADD",
 				"EXTERNAL", "PASCAL", "ALL", "EXTRACT", "POSITION", "ALLOCATE",
 				"FALSE", "PRECISION", "ALTER", "FETCH", "PREPARE", "AND",
@@ -169,16 +171,16 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 				"END", "OR", "WORK", "END-EXEC", "ORDER", "WRITE", "ESCAPE",
 				"OUTER", "YEAR", "EXCEPT", "OUTPUT", "ZONE", "EXCEPTION" };
 
-		TreeMap<String, Object> mySQLKeywordMap = new TreeMap<String, Object>();
+		final TreeMap<String, Object> mySQLKeywordMap = new TreeMap<String, Object>();
 
-		for (int i = 0; i < allMySQLKeywords.length; i++) {
-			mySQLKeywordMap.put(allMySQLKeywords[i], null);
+		for (final String allMySQLKeyword : allMySQLKeywords) {
+			mySQLKeywordMap.put(allMySQLKeyword, null);
 		}
 
-		HashMap<String, Object> sql92KeywordMap = new HashMap<String, Object>(sql92Keywords.length);
+		final HashMap<String, Object> sql92KeywordMap = new HashMap<String, Object>(sql92Keywords.length);
 
-		for (int i = 0; i < sql92Keywords.length; i++) {
-			sql92KeywordMap.put(sql92Keywords[i], null);
+		for (final String sql92Keyword : sql92Keywords) {
+			sql92KeywordMap.put(sql92Keyword, null);
 		}
 
 		Iterator<String> it = sql92KeywordMap.keySet().iterator();
@@ -187,7 +189,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 			mySQLKeywordMap.remove(it.next());
 		}
 
-		StringBuffer keywordBuf = new StringBuffer();
+		final StringBuffer keywordBuf = new StringBuffer();
 
 		it = mySQLKeywordMap.keySet().iterator();
 
@@ -204,7 +206,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 	}
 
 
-	protected MySQLDatabaseMetaData(WCConnection connection) throws SQLException {
+	protected MySQLDatabaseMetaData(final WCConnection connection) throws SQLException {
 		super(connection);
 	}
 
@@ -228,7 +230,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return false;
 	}
 
-	public boolean deletesAreDetected(int type) throws SQLException {
+	public boolean deletesAreDetected(final int type) throws SQLException {
 		return true;
 	}
 
@@ -284,13 +286,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return "#@";
 	}
 
-	public String getIdentifierQuoteString() throws SQLException {
-		return "`";
-		//return "\"";
-		//return " ";
-	}
-
-	/** 
+	/**
 	 * JDBC 3 is the conformance level we have aimed/aiming for
 	 * with this Driver but some of the major areas
 	 * (PreparedStatement, CallableStatement and ParameterMetaData)
@@ -403,8 +399,18 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 	}
 
 	public RowIdLifetime getRowIdLifetime() throws SQLException {
-		// TODO implement me!?
-		return null;
+		return RowIdLifetime.ROWID_UNSUPPORTED;
+	}
+
+	public String getSchemaTerm() throws SQLException {
+		return "";
+	}
+
+	/**
+	 * @see java.sql.DatabaseMetaData#getSearchStringEscape()
+	 */
+	public String getSearchStringEscape() throws SQLException {
+		return "\\";
 	}
 
 	public String getSQLKeywords() throws SQLException {
@@ -422,44 +428,45 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return retVal;
 	}
 
-	public String getSchemaTerm() throws SQLException {
-		return "";
-	}
-
-	/**
-	 * @see java.sql.DatabaseMetaData#getSearchStringEscape()
-	 */
-	public String getSearchStringEscape() throws SQLException {
-		return "\\";
-	}
-
 	public String getStringFunctions() throws SQLException {
 		return myStringFuncs;
 	}
 
-	public ResultSet getSuperTables(String catalog, String schemaPattern,
-			String tableNamePattern) throws SQLException {
-		// TODO implement me!?
-		return null;
+	/**
+	 * @see java.sql.DatabaseMetaData#getSuperTables(java.lang.String, java.lang.String, java.lang.String)
+	 */
+	public ResultSet getSuperTables(final String catalog, final String schemaPattern,
+			final String tableNamePattern) throws SQLException {
+
+		return new WCResultSet(myConnection, WCStaticMetaData.getSuperTables());
 	}
 
-	public ResultSet getSuperTypes(String catalog, String schemaPattern,
-			String typeNamePattern) throws SQLException {
-		// TODO implement me!?
-		return null;
+	/**
+	 * @see java.sql.DatabaseMetaData#getSuperTypes(java.lang.String, java.lang.String, java.lang.String)
+	 */
+	public ResultSet getSuperTypes(final String catalog, final String schemaPattern,
+			final String typeNamePattern) throws SQLException {
+
+		return new WCResultSet(myConnection, WCStaticMetaData.getSuperTypes());
 	}
 
+	/**
+	 * @see java.sql.DatabaseMetaData#getSystemFunctions()
+	 */
 	public String getSystemFunctions() throws SQLException {
 		return mySystemFuncs;
 	}
 
+	/**
+	 * @see java.sql.DatabaseMetaData#getTableTypes()
+	 */
 	public ResultSet getTableTypes() throws SQLException {
-		WCResultSet res = new WCResultSet(myConnection);
-		String[] typesSplit = myTabletypes.split(",");
 
-		for(int i = 0; i < typesSplit.length; i++){
-			DataHandler aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
-			aRow.addData("TABLE_TYPE", typesSplit[i]);
+		final WCResultSet res = new WCResultSet(myConnection, WCStaticMetaData.getTableTypes());
+
+		for (final String myTabletype : myTabletypes) {
+			final DataHandler aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+			aRow.addData("TABLE_TYPE", myTabletype);
 			res.addRow(aRow);
 		}
 
@@ -470,13 +477,70 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return myTimeDateFuncs;
 	}
 
-	/**
-	 * The data content and inline comments for this method was
-	 * derived from the MySQL-Connector/J Driver.<br />
-	 * However the structure and concepts vary significantly from Connector/J.
-	 *
-	 * @see java.sql.DatabaseMetaData#getTypeInfo()
-	 */
+    /**
+     * Retrieves a description of all the data types supported by
+     * this database. They are ordered by DATA_TYPE and then by how
+     * closely the data type maps to the corresponding JDBC SQL type.
+     *
+     * <P>If the database supports SQL distinct types, then getTypeInfo() will return
+     * a single row with a TYPE_NAME of DISTINCT and a DATA_TYPE of Types.DISTINCT.
+     * If the database supports SQL structured types, then getTypeInfo() will return
+     * a single row with a TYPE_NAME of STRUCT and a DATA_TYPE of Types.STRUCT.
+     *
+     * <P>If SQL distinct or structured types are supported, then information on the
+     * individual types may be obtained from the getUDTs() method.
+     *
+
+     *
+     * <P>Each type description has the following columns:
+     *  <OL>
+     *	<LI><B>TYPE_NAME</B> String => Type name
+     *	<LI><B>DATA_TYPE</B> int => SQL data type from java.sql.Types
+     *	<LI><B>PRECISION</B> int => maximum precision
+     *	<LI><B>LITERAL_PREFIX</B> String => prefix used to quote a literal
+     *      (may be <code>null</code>)
+     *	<LI><B>LITERAL_SUFFIX</B> String => suffix used to quote a literal
+     (may be <code>null</code>)
+     *	<LI><B>CREATE_PARAMS</B> String => parameters used in creating
+     *      the type (may be <code>null</code>)
+     *	<LI><B>NULLABLE</B> short => can you use NULL for this type.
+     *      <UL>
+     *      <LI> typeNoNulls - does not allow NULL values
+     *      <LI> typeNullable - allows NULL values
+     *      <LI> typeNullableUnknown - nullability unknown
+     *      </UL>
+     *	<LI><B>CASE_SENSITIVE</B> boolean=> is it case sensitive.
+     *	<LI><B>SEARCHABLE</B> short => can you use "WHERE" based on this type:
+     *      <UL>
+     *      <LI> typePredNone - No support
+     *      <LI> typePredChar - Only supported with WHERE .. LIKE
+     *      <LI> typePredBasic - Supported except for WHERE .. LIKE
+     *      <LI> typeSearchable - Supported for all WHERE ..
+     *      </UL>
+     *	<LI><B>UNSIGNED_ATTRIBUTE</B> boolean => is it unsigned.
+     *	<LI><B>FIXED_PREC_SCALE</B> boolean => can it be a money value.
+     *	<LI><B>AUTO_INCREMENT</B> boolean => can it be used for an
+     *      auto-increment value.
+     *	<LI><B>LOCAL_TYPE_NAME</B> String => localized version of type name
+     *      (may be <code>null</code>)
+     *	<LI><B>MINIMUM_SCALE</B> short => minimum scale supported
+     *	<LI><B>MAXIMUM_SCALE</B> short => maximum scale supported
+     *	<LI><B>SQL_DATA_TYPE</B> int => unused
+     *	<LI><B>SQL_DATETIME_SUB</B> int => unused
+     *	<LI><B>NUM_PREC_RADIX</B> int => usually 2 or 10
+     *  </OL>
+     *
+     * <p>The PRECISION column represents the maximum column size that the server supports for the given datatype.
+     * For numeric data, this is the maximum precision.  For character data, this is the length in characters.
+     * For datetime datatypes, this is the length in characters of the String representation (assuming the
+     * maximum allowed precision of the fractional seconds component). For binary data, this is the length in bytes.  For the ROWID datatype,
+     * this is the length in bytes. Null is returned for data types where the
+     * column size is not applicable.
+     *
+     * @return a <code>ResultSet</code> object in which each row is an SQL
+     *         type description
+     * @exception SQLException if a database access error occurs
+     */
 	public ResultSet getTypeInfo() throws SQLException {
 
 		final String NAME = "TYPE_NAME";
@@ -502,30 +566,33 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 * The following are ordered by java.sql.Types, and then by how closely
 		 * the MySQL type matches the JDBC Type (per spec)
 		 */
-		WCResultSet res = new WCResultSet(myConnection);
+
+		final WCResultSet res = new WCResultSet(myConnection, WCStaticMetaData.getTypeInfo());
+
+
 
 		/*
 		 * MySQL Type: BIT (silently converted to TINYINT(1)) JDBC Type: BIT
 		 */
 		DataHandler aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "BIT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIT));
-		aRow.addData(PRECISION, "1");
+		aRow.addData(TYPE, java.sql.Types.TINYINT);
+		aRow.addData(PRECISION, 1);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, true);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "BIT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -534,243 +601,234 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "BOOL");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIT));
-		aRow.addData(PRECISION, "1");
+		aRow.addData(TYPE, java.sql.Types.TINYINT);
+		aRow.addData(PRECISION, 1);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, true);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "BOOL");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
-		/*
-		 * MySQL Type: TINYINT JDBC Type: TINYINT
-		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "TINYINT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.TINYINT));
-		aRow.addData(PRECISION, "3");
+		aRow.addData(TYPE, java.sql.Types.TINYINT);
+		aRow.addData(PRECISION, 3);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [UNSIGNED] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "TINYINT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "TINYINT UNSIGNED");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.TINYINT));
-		aRow.addData(PRECISION, "3");
+		aRow.addData(TYPE, java.sql.Types.TINYINT);
+		aRow.addData(PRECISION, 3);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [UNSIGNED] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "TINYINT UNSIGNED");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
-		/*
-		 * MySQL Type: BIGINT JDBC Type: BIGINT
-		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "BIGINT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIGINT));
-		aRow.addData(PRECISION, "19");
+		aRow.addData(TYPE, java.sql.Types.BIGINT);
+		aRow.addData(PRECISION, 19);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [UNSIGNED] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "BIGINT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "BIGINT UNSIGNED");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIGINT));
-		aRow.addData(PRECISION, "20");
+		aRow.addData(TYPE, java.sql.Types.BIGINT);
+		aRow.addData(PRECISION, 20);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "BIGINT UNSIGNED");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
-		/*
-		 * MySQL Type: LONG VARBINARY JDBC Type: LONGVARBINARY
-		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "LONG VARBINARY");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARBINARY));
-		aRow.addData(PRECISION, "16777215");
+		aRow.addData(TYPE, java.sql.Types.LONGVARBINARY);
+		aRow.addData(PRECISION, 16777215);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, true);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "LONG VARBINARY");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
-		/*
-		 * MySQL Type: MEDIUMBLOB JDBC Type: LONGVARBINARY
-		 */
-		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
-		aRow.addData(NAME, "MEDIUMBLOB");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARBINARY));
-		aRow.addData(PRECISION, "16777215");
-		aRow.addData(PREFIX, "'");
-		aRow.addData(SUFFIX, "'");
-		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
-		aRow.addData(L_TYPE_NAME, "MEDIUMBLOB");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
-		res.addRow(aRow);
-
-
-		/*
-		 * MySQL Type: LONGBLOB JDBC Type: LONGVARBINARY
-		 */
-		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
-		aRow.addData(NAME, "LONGBLOB");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARBINARY));
-		aRow.addData(PRECISION, Integer.toString(Integer.MAX_VALUE));
-		aRow.addData(PREFIX, "'");
-		aRow.addData(SUFFIX, "'");
-		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
-		aRow.addData(L_TYPE_NAME, "LONGBLOB");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
-		res.addRow(aRow);
-
-
-		/*
-		 * MySQL Type: BLOB JDBC Type: LONGVARBINARY
-		 */
-		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
-		aRow.addData(NAME, "BLOB");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARBINARY));
-		aRow.addData(PRECISION, "65535");
-		aRow.addData(PREFIX, "'");
-		aRow.addData(SUFFIX, "'");
-		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
-		aRow.addData(L_TYPE_NAME, "BLOB");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
-		res.addRow(aRow);
-
-
-		/*
-		 * MySQL Type: TINYBLOB JDBC Type: LONGVARBINARY
-		 */
-		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
-		aRow.addData(NAME, "TINYBLOB");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARBINARY));
-		aRow.addData(PRECISION, "255");
-		aRow.addData(PREFIX, "'");
-		aRow.addData(SUFFIX, "'");
-		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
-		aRow.addData(L_TYPE_NAME, "TINYBLOB");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
-		res.addRow(aRow);
+//		/*
+//		 * MySQL Type: MEDIUMBLOB JDBC Type: LONGVARBINARY
+//		 */
+//		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+//		aRow.addData(NAME, "MEDIUMBLOB");
+//		aRow.addData(TYPE, java.sql.Types.LONGVARBINARY);
+//		aRow.addData(PRECISION, 16777215);
+//		aRow.addData(PREFIX, "'");
+//		aRow.addData(SUFFIX, "'");
+//		aRow.addData(CREATE, "");
+//		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+//		aRow.addData(SENSITIVE, true);
+//		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+//		aRow.addData(ATTRIBUTE, false);
+//		aRow.addData(PREC_SCALE, false);
+//		aRow.addData(INCREMENT, false);
+//		aRow.addData(L_TYPE_NAME, "MEDIUMBLOB");
+//		aRow.addData(MIN_SCALE, 0);
+//		aRow.addData(MAX_SCALE, 0);
+//		aRow.addData(SQL_DATATYPE, 0);
+//		aRow.addData(SQL_DT_SUB, 0);
+//		aRow.addData(RADIX, 10);
+//		res.addRow(aRow);
+//
+//
+//		/*
+//		 * MySQL Type: LONGBLOB JDBC Type: LONGVARBINARY
+//		 */
+//		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+//		aRow.addData(NAME, "LONGBLOB");
+//		aRow.addData(TYPE, java.sql.Types.LONGVARBINARY);
+//		aRow.addData(PRECISION, Integer.MAX_VALUE);
+//		aRow.addData(PREFIX, "'");
+//		aRow.addData(SUFFIX, "'");
+//		aRow.addData(CREATE, "");
+//		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+//		aRow.addData(SENSITIVE, true);
+//		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+//		aRow.addData(ATTRIBUTE, false);
+//		aRow.addData(PREC_SCALE, false);
+//		aRow.addData(INCREMENT, false);
+//		aRow.addData(L_TYPE_NAME, "LONGBLOB");
+//		aRow.addData(MIN_SCALE, 0);
+//		aRow.addData(MAX_SCALE, 0);
+//		aRow.addData(SQL_DATATYPE, 0);
+//		aRow.addData(SQL_DT_SUB, 0);
+//		aRow.addData(RADIX, 10);
+//		res.addRow(aRow);
+//
+//
+//		/*
+//		 * MySQL Type: BLOB JDBC Type: LONGVARBINARY
+//		 */
+//		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+//		aRow.addData(NAME, "BLOB");
+//		aRow.addData(TYPE, java.sql.Types.LONGVARBINARY);
+//		aRow.addData(PRECISION, 65535);
+//		aRow.addData(PREFIX, "'");
+//		aRow.addData(SUFFIX, "'");
+//		aRow.addData(CREATE, "");
+//		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+//		aRow.addData(SENSITIVE, true);
+//		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+//		aRow.addData(ATTRIBUTE, false);
+//		aRow.addData(PREC_SCALE, false);
+//		aRow.addData(INCREMENT, false);
+//		aRow.addData(L_TYPE_NAME, "BLOB");
+//		aRow.addData(MIN_SCALE, 0);
+//		aRow.addData(MAX_SCALE, 0);
+//		aRow.addData(SQL_DATATYPE, 0);
+//		aRow.addData(SQL_DT_SUB, 0);
+//		aRow.addData(RADIX, 10);
+//		res.addRow(aRow);
+//
+//
+//		/*
+//		 * MySQL Type: TINYBLOB JDBC Type: LONGVARBINARY
+//		 */
+//		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+//		aRow.addData(NAME, "TINYBLOB");
+//		aRow.addData(TYPE, java.sql.Types.LONGVARBINARY);
+//		aRow.addData(PRECISION, 255);
+//		aRow.addData(PREFIX, "'");
+//		aRow.addData(SUFFIX, "'");
+//		aRow.addData(CREATE, "");
+//		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+//		aRow.addData(SENSITIVE, true);
+//		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+//		aRow.addData(ATTRIBUTE, false);
+//		aRow.addData(PREC_SCALE, false);
+//		aRow.addData(INCREMENT, false);
+//		aRow.addData(L_TYPE_NAME, "TINYBLOB");
+//		aRow.addData(MIN_SCALE, 0);
+//		aRow.addData(MAX_SCALE, 0);
+//		aRow.addData(SQL_DATATYPE, 0);
+//		aRow.addData(SQL_DT_SUB, 0);
+//		aRow.addData(RADIX, 10);
+//		res.addRow(aRow);
 
 
 		/*
@@ -779,23 +837,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "VARBINARY");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARBINARY));
-		aRow.addData(PRECISION, "255");
+		aRow.addData(TYPE, java.sql.Types.VARCHAR);
+		aRow.addData(PRECISION, 255);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "(M)");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, true);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "VARBINARY");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -805,23 +863,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "BINARY");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.BINARY));
-		aRow.addData(PRECISION, "255");
+		aRow.addData(TYPE, java.sql.Types.CHAR);
+		aRow.addData(PRECISION, 255);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "(M)");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "true");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, true);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "BINARY");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -830,23 +888,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "LONG VARCHAR");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARCHAR));
-		aRow.addData(PRECISION, "16777215");
+		aRow.addData(TYPE, java.sql.Types.LONGVARCHAR);
+		aRow.addData(PRECISION, 16777215);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "LONG VARCHAR");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -855,23 +913,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "MEDIUMTEXT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARCHAR));
-		aRow.addData(PRECISION, "16777215");
+		aRow.addData(TYPE, java.sql.Types.LONGVARCHAR);
+		aRow.addData(PRECISION, 16777215);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "MEDIUMTEXT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -880,23 +938,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "LONGTEXT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARCHAR));
-		aRow.addData(PRECISION, Integer.toString(Integer.MAX_VALUE));
+		aRow.addData(TYPE, java.sql.Types.LONGVARCHAR);
+		aRow.addData(PRECISION, Integer.MAX_VALUE);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "LONGTEXT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -905,23 +963,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "TEXT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARCHAR));
-		aRow.addData(PRECISION, "65535");
+		aRow.addData(TYPE, java.sql.Types.LONGVARCHAR);
+		aRow.addData(PRECISION, 65535);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "TEXT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -930,23 +988,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "TINYTEXT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.LONGVARCHAR));
-		aRow.addData(PRECISION, "255");
+		aRow.addData(TYPE, java.sql.Types.LONGVARCHAR);
+		aRow.addData(PRECISION, 255);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "TINYTEXT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -955,23 +1013,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "CHAR");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.CHAR));
-		aRow.addData(PRECISION, "255");
+		aRow.addData(TYPE, java.sql.Types.CHAR);
+		aRow.addData(PRECISION, 255);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "(M)");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "CHAR");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -991,23 +1049,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "NUMERIC");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.NUMERIC));
-		aRow.addData(PRECISION, String.valueOf(decimalPrecision));
+		aRow.addData(TYPE, java.sql.Types.DECIMAL);
+		aRow.addData(PRECISION, decimalPrecision);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M[,D])] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "NUMERIC");
-		aRow.addData(MIN_SCALE, "-308");
-		aRow.addData(MAX_SCALE, "308");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, -308);
+		aRow.addData(MAX_SCALE, 308);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1016,23 +1074,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "DECIMAL");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.DECIMAL));
-		aRow.addData(PRECISION, String.valueOf(decimalPrecision));
+		aRow.addData(TYPE, java.sql.Types.DECIMAL);
+		aRow.addData(PRECISION, decimalPrecision);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M[,D])] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "DECIMAL");
-		aRow.addData(MIN_SCALE, "-308");
-		aRow.addData(MAX_SCALE, "308");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, -308);
+		aRow.addData(MAX_SCALE, 308);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1041,45 +1099,45 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "INTEGER");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
-		aRow.addData(PRECISION, "10");
+		aRow.addData(TYPE, java.sql.Types.INTEGER);
+		aRow.addData(PRECISION, 10);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [UNSIGNED] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "INTEGER");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "INTEGER UNSIGNED");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
-		aRow.addData(PRECISION, "10");
+		aRow.addData(TYPE, java.sql.Types.INTEGER);
+		aRow.addData(PRECISION, 10);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "INTEGER UNSIGNED");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1088,45 +1146,45 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "INT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
-		aRow.addData(PRECISION, "10");
+		aRow.addData(TYPE, java.sql.Types.INTEGER);
+		aRow.addData(PRECISION, 10);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [UNSIGNED] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "INT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "INT UNSIGNED");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
-		aRow.addData(PRECISION, "10");
+		aRow.addData(TYPE, java.sql.Types.INTEGER);
+		aRow.addData(PRECISION, 10);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "INT UNSIGNED");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1135,45 +1193,45 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "MEDIUMINT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
-		aRow.addData(PRECISION, "7");
+		aRow.addData(TYPE, java.sql.Types.INTEGER);
+		aRow.addData(PRECISION, 7);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [UNSIGNED] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "MEDIUMINT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "MEDIUMINT UNSIGNED");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
-		aRow.addData(PRECISION, "8");
+		aRow.addData(TYPE, java.sql.Types.INTEGER);
+		aRow.addData(PRECISION, 8);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "MEDIUMINT UNSIGNED");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1182,45 +1240,45 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "SMALLINT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.SMALLINT));
-		aRow.addData(PRECISION, "5");
+		aRow.addData(TYPE, java.sql.Types.SMALLINT);
+		aRow.addData(PRECISION, 5);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [UNSIGNED] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
 		aRow.addData(INCREMENT, "true");
 		aRow.addData(L_TYPE_NAME, "SMALLINT");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "SMALLINT UNSIGNED");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.SMALLINT));
-		aRow.addData(PRECISION, "5");
+		aRow.addData(TYPE, java.sql.Types.SMALLINT);
+		aRow.addData(PRECISION, 5);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "true");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, true);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "SMALLINT UNSIGNED");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1230,23 +1288,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "FLOAT");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.REAL));
-		aRow.addData(PRECISION, "10");
+		aRow.addData(TYPE, java.sql.Types.REAL);
+		aRow.addData(PRECISION, 10);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M,D)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "FLOAT");
-		aRow.addData(MIN_SCALE, "-38");
-		aRow.addData(MAX_SCALE, "38");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, -38);
+		aRow.addData(MAX_SCALE, 38);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1255,23 +1313,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "DOUBLE");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
-		aRow.addData(PRECISION, "17");
+		aRow.addData(TYPE, java.sql.Types.DOUBLE);
+		aRow.addData(PRECISION, 17);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M,D)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "DOUBLE");
-		aRow.addData(MIN_SCALE, "-308");
-		aRow.addData(MAX_SCALE, "308");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, -308);
+		aRow.addData(MAX_SCALE, 308);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1280,23 +1338,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "DOUBLE PRECISION");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
-		aRow.addData(PRECISION, "17");
+		aRow.addData(TYPE, java.sql.Types.DOUBLE);
+		aRow.addData(PRECISION, 17);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M,D)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "DOUBLE PRECISION");
-		aRow.addData(MIN_SCALE, "-308");
-		aRow.addData(MAX_SCALE, "308");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, -308);
+		aRow.addData(MAX_SCALE, 308);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1305,23 +1363,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "REAL");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
-		aRow.addData(PRECISION, "17");
+		aRow.addData(TYPE, java.sql.Types.DOUBLE);
+		aRow.addData(PRECISION, 17);
 		aRow.addData(PREFIX, "");
 		aRow.addData(SUFFIX, "");
 		aRow.addData(CREATE, "[(M,D)] [ZEROFILL]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "true");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, true);
 		aRow.addData(L_TYPE_NAME, "REAL");
-		aRow.addData(MIN_SCALE, "-308");
-		aRow.addData(MAX_SCALE, "308");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, -308);
+		aRow.addData(MAX_SCALE, 308);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1330,23 +1388,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "VARCHAR");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
-		aRow.addData(PRECISION, "255");
+		aRow.addData(TYPE, java.sql.Types.VARCHAR);
+		aRow.addData(PRECISION, 255);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "(M)");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "VARCHAR");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1355,23 +1413,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "ENUM");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
-		aRow.addData(PRECISION, "65535");
+		aRow.addData(TYPE, java.sql.Types.VARCHAR);
+		aRow.addData(PRECISION, 65535);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "ENUM");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1380,23 +1438,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "SET");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
-		aRow.addData(PRECISION, "64");
+		aRow.addData(TYPE, java.sql.Types.VARCHAR);
+		aRow.addData(PRECISION, 64);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "SET");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1405,23 +1463,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "DATE");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.DATE));
-		aRow.addData(PRECISION, "0");
+		aRow.addData(TYPE, java.sql.Types.DATE);
+		aRow.addData(PRECISION, 0);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
 		aRow.addData(INCREMENT, "false");
 		aRow.addData(L_TYPE_NAME, "DATE");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1430,23 +1488,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "TIME");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIME));
-		aRow.addData(PRECISION, "0");
+		aRow.addData(TYPE, java.sql.Types.TIME);
+		aRow.addData(PRECISION, 0);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "TIME");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1455,23 +1513,23 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "DATETIME");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIMESTAMP));
-		aRow.addData(PRECISION, "0");
+		aRow.addData(TYPE, java.sql.Types.TIMESTAMP);
+		aRow.addData(PRECISION, 0);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "DATETIME");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
@@ -1480,28 +1538,30 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		 */
 		aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "TIMESTAMP");
-		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIMESTAMP));
-		aRow.addData(PRECISION, "0");
+		aRow.addData(TYPE, java.sql.Types.TIMESTAMP);
+		aRow.addData(PRECISION, 0);
 		aRow.addData(PREFIX, "'");
 		aRow.addData(SUFFIX, "'");
 		aRow.addData(CREATE, "[(M)]");
-		aRow.addData(NULLABLE, Integer.toString(java.sql.DatabaseMetaData.typeNullable));
-		aRow.addData(SENSITIVE, "false");
-		aRow.addData(SEARCHABLE, Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-		aRow.addData(ATTRIBUTE, "false");
-		aRow.addData(PREC_SCALE, "false");
-		aRow.addData(INCREMENT, "false");
+		aRow.addData(NULLABLE, java.sql.DatabaseMetaData.typeNullable);
+		aRow.addData(SENSITIVE, false);
+		aRow.addData(SEARCHABLE, java.sql.DatabaseMetaData.typeSearchable);
+		aRow.addData(ATTRIBUTE, false);
+		aRow.addData(PREC_SCALE, false);
+		aRow.addData(INCREMENT, false);
 		aRow.addData(L_TYPE_NAME, "TIMESTAMP");
-		aRow.addData(MIN_SCALE, "0");
-		aRow.addData(MAX_SCALE, "0");
-		aRow.addData(SQL_DATATYPE, "0");
-		aRow.addData(SQL_DT_SUB, "0");
-		aRow.addData(RADIX, "10");
+		aRow.addData(MIN_SCALE, 0);
+		aRow.addData(MAX_SCALE, 0);
+		aRow.addData(SQL_DATATYPE, 0);
+		aRow.addData(SQL_DT_SUB, 0);
+		aRow.addData(RADIX, 10);
 		res.addRow(aRow);
 
 
 		return res;
 	}
+
+
 
 	public String getURL() throws SQLException {
 		return myConnection.getUrl();
@@ -1511,7 +1571,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return myConnection.getUser();
 	}
 
-	public boolean insertsAreDetected(int type) throws SQLException {
+	public boolean insertsAreDetected(final int type) throws SQLException {
 		return false;
 	}
 
@@ -1521,6 +1581,10 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 
 	public boolean isReadOnly() throws SQLException {
 		return false;
+	}
+
+	public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+		return iface.isInstance(this);
 	}
 
 	public boolean locatorsUpdateCopy() throws SQLException {
@@ -1547,27 +1611,27 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return !nullsAreSortedHigh();
 	}
 
-	public boolean othersDeletesAreVisible(int type) throws SQLException {
+	public boolean othersDeletesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean othersInsertsAreVisible(int type) throws SQLException {
+	public boolean othersInsertsAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean othersUpdatesAreVisible(int type) throws SQLException {
+	public boolean othersUpdatesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean ownDeletesAreVisible(int type) throws SQLException {
+	public boolean ownDeletesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean ownInsertsAreVisible(int type) throws SQLException {
+	public boolean ownInsertsAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean ownUpdatesAreVisible(int type) throws SQLException {
+	public boolean ownUpdatesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
@@ -1598,6 +1662,14 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return true;
 	}
 
+	public boolean supportsAlterTableWithAddColumn() throws SQLException {
+		return true;
+	}
+
+	public boolean supportsAlterTableWithDropColumn() throws SQLException {
+		return true;
+	}
+
 	public boolean supportsANSI92EntryLevelSQL() throws SQLException {
 		return true;
 	}
@@ -1608,14 +1680,6 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 
 	public boolean supportsANSI92IntermediateSQL() throws SQLException {
 		return false;
-	}
-
-	public boolean supportsAlterTableWithAddColumn() throws SQLException {
-		return true;
-	}
-
-	public boolean supportsAlterTableWithDropColumn() throws SQLException {
-		return true;
 	}
 
 	public boolean supportsBatchUpdates() throws SQLException {
@@ -1654,7 +1718,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 	 *
 	 * @see java.sql.DatabaseMetaData#supportsConvert(int, int)
 	 */
-	public boolean supportsConvert(int fromType, int toType) throws SQLException {
+	public boolean supportsConvert(final int fromType, final int toType) throws SQLException {
 		switch (fromType) {
 		/*
 		 * The char/binary types can be converted to pretty much anything.
@@ -1865,10 +1929,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 	}
 
 	public boolean supportsIntegrityEnhancementFacility() throws SQLException {
-		// XXX: Off-hand I dont think IntegrityEnhancementFacility will be implemented.
-		// Need to find out more about what it does and
-		// what MySQL engines it applies to at some point.
-		// Could well be an InnoDB thing.
+		// TODO: look into implementing this method
 		return false;
 	}
 
@@ -1947,7 +2008,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 	/**
 	 * @see java.sql.DatabaseMetaData#supportsResultSetConcurrency(int, int)
 	 */
-	public boolean supportsResultSetConcurrency(int type, int concurrency)
+	public boolean supportsResultSetConcurrency(final int type, final int concurrency)
 	throws SQLException {
 		switch (type) {
 		case ResultSet.TYPE_SCROLL_INSENSITIVE:
@@ -1978,11 +2039,11 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 
 	}
 
-	public boolean supportsResultSetHoldability(int holdability) throws SQLException {
+	public boolean supportsResultSetHoldability(final int holdability) throws SQLException {
 		return (holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
-	public boolean supportsResultSetType(int type) throws SQLException {
+	public boolean supportsResultSetType(final int type) throws SQLException {
 		return (type == ResultSet.TYPE_SCROLL_INSENSITIVE);
 	}
 
@@ -1998,7 +2059,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		// MySQL-Connector/J seem to set this according the the MySQL server version.
 		// Oddly enough they check for two version numbers >= 4.0.14 & >= 4.1.1
 		// Not sure why they do that. I would assume the lower of the numbers would be enough.
-		// We may as well do the same although technically the result
+		// May as well do the same here, although technically the result
 		// isnt necessarily always correct unless all table engines fully support transactions.
 		// MyISAM only provides partial transaction support,
 		// although this can be increased slightly through using stored procedures
@@ -2085,9 +2146,9 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return true;
 	}
 
-	public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
+	public boolean supportsTransactionIsolationLevel(final int level) throws SQLException {
 		// TODO implement me!
-		return false;
+		throw new NotImplemented("supportsTransactionIsolationLevel(int level)");
 	}
 
 	public boolean supportsTransactions() throws SQLException {
@@ -2102,7 +2163,11 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		return false;
 	}
 
-	public boolean updatesAreDetected(int type) throws SQLException {
+	public <T> T unwrap(final Class<T> iface) throws SQLException {
+		return iface.cast(this);
+	}
+
+	public boolean updatesAreDetected(final int type) throws SQLException {
 		// TODO: make sure the return value is correct for this Driver.
 		return true;
 	}
@@ -2113,18 +2178,6 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 
 	public boolean usesLocalFiles() throws SQLException {
 		return false;
-	}
-
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		// TODO do something with the wrappers.
-		// this applies to all clasees that have wrapper methods.
-		return false;
-	}
-
-	public <T> T unwrap(Class<T> iface) throws SQLException {
-		// TODO do something with the wrappers.
-		// this applies to all clasees that have wrapper methods.
-		return null;
 	}
 
 }

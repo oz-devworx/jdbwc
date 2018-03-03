@@ -34,6 +34,6 @@ package com.jdbwc.iface;
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
  */
-public abstract interface Statement extends java.sql.Statement {
+public interface Statement extends java.sql.Statement {
 
 }

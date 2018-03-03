@@ -2,17 +2,17 @@
  * Copyright (C) 2008 Oz-DevWorX (Tim Gall)
  * ********************************************************************
  * This file is part of JDBWC.
- * 
+ *
  * JDBWC is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JDBWC is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
@@ -28,8 +28,8 @@ import com.jdbwc.exceptions.NotImplemented;
 import com.ozdevworx.dtype.DataHandler;
 
 /**
- * 
- * 
+ * Looks after getting ParameterMetaData for prepared statements.
+ *
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
  * @version 2010-04-11
@@ -37,7 +37,7 @@ import com.ozdevworx.dtype.DataHandler;
 public class WCParameterMetaData implements ParameterMetaData {
 
 	private transient SQLField[] myFields = null;
-	
+
 	/**
 	 * Constructs a new instance of this.<br />
 	 */
@@ -52,7 +52,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public String getParameterClassName(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
 		return myFields[param-1].getClassName();
@@ -64,7 +64,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public int getParameterCount() throws SQLException {
 		if(myFields==null){
 			throw new SQLException(
-					"ParameterResultSet is closed or has not been properly constructed Exception!", 
+					"ParameterResultSet is closed or has not been properly constructed Exception!",
 					"S0022");
 		}
 		return myFields.length;
@@ -76,18 +76,18 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public int getParameterMode(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
-		
+
 		int paramMode = -1;
-		
+
 		String mode = myFields[param-1].getMode();
-		if(mode.equals(SQLParamParser.MY_MODE_IN)){
+		if(SQLParamParser.MY_MODE_IN.equals(mode)){
 			paramMode = ParameterMetaData.parameterModeIn;
-		}else if(mode.equals(SQLParamParser.MY_MODE_OUT)){
+		}else if(SQLParamParser.MY_MODE_OUT.equals(mode)){
 			paramMode = ParameterMetaData.parameterModeOut;
-		}else if(mode.equals(SQLParamParser.MY_MODE_INOUT)){
+		}else if(SQLParamParser.MY_MODE_INOUT.equals(mode)){
 			paramMode = ParameterMetaData.parameterModeInOut;
 		}else{
 			paramMode = ParameterMetaData.parameterModeUnknown;
@@ -102,7 +102,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public int getParameterType(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
 		return myFields[param-1].getJdbcSqlType();
@@ -114,7 +114,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public String getParameterTypeName(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
 		return myFields[param-1].getGenericSqlTypeName();
@@ -126,7 +126,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public int getPrecision(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
 		return myFields[param-1].getPrecision();
@@ -138,7 +138,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public int getScale(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
 		return myFields[param-1].getScale();
@@ -150,7 +150,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public int isNullable(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
 		return myFields[param-1].isNullable() ? ParameterMetaData.parameterNullable : ParameterMetaData.parameterNoNulls;
@@ -162,7 +162,7 @@ public class WCParameterMetaData implements ParameterMetaData {
 	public boolean isSigned(int param) throws SQLException {
 		if(param-1 >= myFields.length){
 			throw new SQLException(
-					"Paramater Index Out Of Bounds Exception!", 
+					"Paramater Index Out Of Bounds Exception!",
 					"S0022");
 		}
 		return myFields[param-1].isSigned();

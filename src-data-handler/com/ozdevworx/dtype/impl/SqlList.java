@@ -20,7 +20,6 @@
 package com.ozdevworx.dtype.impl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -30,27 +29,30 @@ import com.ozdevworx.dtype.util.ParseNumber;
 
 /**
  * A List based array. Access LabelledArrays Data via a String label or a numeric index.<br />
- * A LabelledArray is an Object itself so support for multidimensional LabelledArray Objects is generic to this implementation.<br /><br />
- * <i>This LabelledArray implementation uses synchronisation as specified by the LabelledArray interface.</i><br /><br />
- * The core abstract implementation for this LabelledArray implementation is ArrayList.<br />
- * We are using dual synchronised ArrayList's that work in strict unison to maintain data integrity
- * and maximise the flexibility and dynamics in this Data Type.<br />
- * ArrayList is one of the better performing List implementations.
- * The synchronisation abilities of the ArrayList is
- * handled by this class as ArrayList is not a synchronised Object by default.
+ * A LabelledArray is an Object itself so support for multidimensional
+ * LabelledArray Objects is generic to this implementation.<br /><br />
+ * <i>This implementation uses synchronization as specified by the LabelledArray interface.</i><br /><br />
+ * The synchronization abilities for ArrayList is
+ * handled by this class as ArrayList is not a synchronized Object by default.<br />
+ * <br />
+ * Handles sql NULL and java null better than previous LabelledArray implementations.
  *
- * @author Tim Gall (Oz-DevWorX)
- * @version 1.0.0.7
+ * @author Tim Gall
+ * @version 2010-04-26 added sql NULL to java null conversions
+ * @version 2010-04-28 added numeric conversion for values of Java null to 0.
+ * @version 2010-05-07 improved synchronization.
  */
-public class KeyedList implements LabelledArray {
+public class SqlList implements LabelledArray {
+
+	// ---------------------------------------------------- fields
 
 	/** static version number of this class */
-	public static final String VERSION = "1.0.0-7";
+	public static final String VERSION = "1.0.0";
 	/**
 	 * int myInc default List increment size.<br />
 	 * This value can be over-ridden when constructing a new LabelledArray.
 	 */
-	private transient int myInc = 10;
+	private transient int myInc = 100;
 
 	/**
 	 * Synchronised List that contains the data Objects.<br />
@@ -65,6 +67,10 @@ public class KeyedList implements LabelledArray {
 	private transient boolean myCaseSensitive = false;
 	private transient boolean myLowerCaseKeys = false;
 
+	private transient final Object mutex;//synchronization mutex
+
+	// ---------------------------------------------------- constructors
+
 	/**
 	 * Create a <b>case sensitive</b> LabelledArray of initial capacity 10.<br />
 	 * <b>Initial capacity is 10
@@ -75,9 +81,10 @@ public class KeyedList implements LabelledArray {
 	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the LabelledArray.<br />
 	 * etc.</i>
 	 */
-	public KeyedList() {
+	public SqlList() {
 		super();
 		init();
+		mutex = this;
 	}
 
 	/**
@@ -93,11 +100,12 @@ public class KeyedList implements LabelledArray {
 	 * @param lowerCaseKeys boolean. If true, keys all use lower case,
 	 * if false keys all use upper case.
 	 */
-	public KeyedList(final boolean lowerCaseKeys) {
+	public SqlList(final boolean lowerCaseKeys) {
 		super();
 		myCaseSensitive = true;
 		myLowerCaseKeys = lowerCaseKeys;
 		init();
+		mutex = this;
 	}
 
 	/**
@@ -113,10 +121,11 @@ public class KeyedList implements LabelledArray {
 	 * @param incSize int. This value affects the initial size
 	 * and the expansion rate when the LabelledArray is growing.
 	 */
-	public KeyedList(final int incSize) {
+	public SqlList(final int incSize) {
 		super();
 		myInc = incSize;
 		init();
+		mutex = this;
 	}
 
 	/**
@@ -134,13 +143,16 @@ public class KeyedList implements LabelledArray {
 	 * @param lowerCaseKeys boolean. If true, keys all use lower case,
 	 * if false keys all use upper case.
 	 */
-	public KeyedList(final int incSize, final boolean lowerCaseKeys) {
+	public SqlList(final int incSize, final boolean lowerCaseKeys) {
 		super();
 		myCaseSensitive = true;
 		myLowerCaseKeys = lowerCaseKeys;
 		myInc = incSize;
 		init();
+		mutex = this;
 	}
+
+	// ---------------------------------------------------- public methods
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#addData(java.lang.String, java.lang.Object)
@@ -148,7 +160,7 @@ public class KeyedList implements LabelledArray {
 	public void addData(final String n, final Object d) {
 		try{
 			if(n!=null){
-				synchronized(myKey) {
+				synchronized(mutex) {
 					myKey.add(fixCase(n));
 					myData.add(d);
 				}
@@ -163,7 +175,7 @@ public class KeyedList implements LabelledArray {
 	 * @see com.ozdevworx.dtype.LabelledArray#clearData()
 	 */
 	public void clearData(){
-		synchronized(myKey) {
+		synchronized(mutex) {
 			myKey.clear();
 			myData.clear();
 		}
@@ -175,9 +187,8 @@ public class KeyedList implements LabelledArray {
 	public int countMatches(final String n) {
 		int m = 0;
 		for (int i = 0; i < length(); i++){
-			if (getKey(i).equals(fixCase(n)))
+			if (fixCase(n).equals(getKey(i)))
 				m++;
-
 		}
 		return m;
 	}
@@ -197,38 +208,12 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getDouble(int)
-	 */
-	public double getDouble(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getDouble(getDouble(getString(i)));
-	}
-
-	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getDouble(java.lang.String)
-	 */
-	public double getDouble(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getDouble(getString(n));
-	}
-
-	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getFloat(int)
-	 */
-	public float getFloat(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getFloat(getString(i));
-	}
-
-	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getFloat(java.lang.String)
-	 */
-	public float getFloat(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getFloat(getString(n));
-	}
-
-	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#getIndex(java.lang.String)
 	 */
 	public int getIndex(final String n) {
-		return myKey.indexOf(fixCase(n));
+		synchronized (mutex) {
+			return myKey.indexOf(fixCase(n));
+		}
 	}
 
 	/**
@@ -236,10 +221,12 @@ public class KeyedList implements LabelledArray {
 	 */
 	public int getIndexByElement(final String key, final String data){
 		int found = -1;
-		for(int i = 0; i < myKey.size(); i++){
-			if(myKey.get(i).equalsIgnoreCase(key) && myData.get(i).equals(data)){
-				found = i;
-				break;
+		synchronized (mutex) {
+			for (int i = 0; i < myKey.size(); i++) {
+				if (myKey.get(i).equalsIgnoreCase(key) && myData.get(i).equals(data)) {
+					found = i;
+					break;
+				}
 			}
 		}
 		return found;
@@ -261,47 +248,22 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getInt(int)
-	 */
-	public int getInt(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getInt(getString(i));
-	}
-
-	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getInt(java.lang.String)
-	 */
-	public int getInt(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getInt(getString(n));
-	}
-
-	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#getKey(int)
 	 */
 	public String getKey(final int i) {
 		String key = "";
 		try {
-			if(i < length())
-				key = myKey.get(i);
+			if(i < length()) {
+				synchronized (mutex) {
+					key = myKey.get(i);
+				}
+			}
 
 		} catch (final IndexOutOfBoundsException e){
 		} catch(final NullPointerException e){
 		}
 
 		return key;
-	}
-
-	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getLong(int)
-	 */
-	public long getLong(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getLong(getString(i));
-	}
-
-	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getLong(java.lang.String)
-	 */
-	public long getLong(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getLong(getString(n));
 	}
 
 	/**
@@ -315,7 +277,9 @@ public class KeyedList implements LabelledArray {
 	 * @see com.ozdevworx.dtype.LabelledArray#getObject(java.lang.String)
 	 */
 	public Object getObject(final String n) {
-		return getItem(myKey.indexOf(fixCase(n)), false);
+		synchronized (mutex) {
+			return getItem(myKey.indexOf(fixCase(n)), false);
+		}
 	}
 
 	/**
@@ -323,59 +287,164 @@ public class KeyedList implements LabelledArray {
 	 */
 	public Object getObjectByElement(final String key, final String data){
 		Object found = null;
-		for(int i = 0; i < myKey.size(); i++){
-			if(myKey.get(i).equalsIgnoreCase(key) && myData.get(i).equals(data)){
-				found = myData.get(i);
-				break;
+		synchronized (mutex) {
+			for (int i = 0; i < myKey.size(); i++) {
+				if (myKey.get(i).equalsIgnoreCase(key) && myData.get(i).equals(data)) {
+					found = myData.get(i);
+					break;
+				}
 			}
 		}
 		return found;
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getShort(int)
-	 */
-	public Short getShort(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getShort(getString(i));
-	}
-
-	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getShort(java.lang.String)
-	 */
-	public Short getShort(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getShort(getString(n));
-	}
-
-	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#getString(int)
 	 */
 	public String getString(final int i) {
-		return String.valueOf(getItem(i, true));
+		final String o = String.valueOf(getItem(i, true));
+		return "null".equalsIgnoreCase(o) ? null : o;
 	}
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#getString(java.lang.String)
 	 */
 	public String getString(final String n) {
-		return String.valueOf(getItem(myKey.indexOf(fixCase(n)), true));
+		String o;
+		synchronized (mutex) {
+			o = String.valueOf(getItem(myKey.indexOf(fixCase(n)), true));
+		}
+		return "null".equalsIgnoreCase(o) ? null : o;
 	}
 
-//	/**
-//	 * @see com.ozdevworx.dtype.LabelledArray#hasData(java.lang.String)
-//	 */
-//	public boolean hasData(final String value){
-//		return myData.contains(value);
-//	}
+
+
+	/* ***********************************
+	 * numeric functions
+	 *********************************** */
+
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getDouble(int)
+	 */
+	@Override
+	public double getDouble(final int i) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(i));
+		if(r==null || r.isEmpty())
+			return 0;
+		return ParseNumber.getDouble(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getDouble(java.lang.String)
+	 */
+	@Override
+	public double getDouble(final String n) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(n));
+		if(r==null || r.isEmpty())
+			return 0D;
+		return ParseNumber.getDouble(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getFloat(int)
+	 */
+	@Override
+	public float getFloat(final int i) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(i));
+		if(r==null || r.isEmpty())
+			return 0F;
+		return ParseNumber.getFloat(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getFloat(java.lang.String)
+	 */
+	@Override
+	public float getFloat(final String n) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(n));
+		if(r==null || r.isEmpty())
+			return 0F;
+		return ParseNumber.getFloat(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getInt(int)
+	 */
+	public int getInt(final int i) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(i));
+		if(r==null || r.isEmpty())
+			return 0;
+		return ParseNumber.getInt(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getInt(java.lang.String)
+	 */
+	public int getInt(final String n) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(n));
+		if(r==null || r.isEmpty())
+			return 0;
+		return ParseNumber.getInt(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getLong(int)
+	 */
+	public long getLong(final int i) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(i));
+		if(r==null || r.isEmpty())
+			return 0L;
+		return ParseNumber.getLong(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getLong(java.lang.String)
+	 */
+	public long getLong(final String n) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(n));
+		if(r==null || r.isEmpty())
+			return 0L;
+		return ParseNumber.getLong(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getShort(int)
+	 */
+	public Short getShort(final int i) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(i));
+		if(r==null || r.isEmpty())
+			return 0;
+		return ParseNumber.getShort(r);
+	}
+
+	/**
+	 * @see com.ozdevworx.dtype.LabelledArray#getShort(java.lang.String)
+	 */
+	public Short getShort(final String n) throws IlegalNumberTypeException {
+		final String r = String.valueOf(getObject(n));
+		if(r==null || r.isEmpty())
+			return 0;
+		return ParseNumber.getShort(r);
+	}
+
+
+	/* ***********************************
+	 * end numeric functions
+	 *********************************** */
+
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#hasElement(java.lang.String, java.lang.String)
 	 */
 	public boolean hasElement(final String key, final String data){
 		boolean found = false;
-		for(int i = 0; i < myKey.size(); i++){
-			if(myKey.get(i).equalsIgnoreCase(key) && myData.get(i).equals(data)){
-				found = true;
-				break;
+		synchronized (mutex) {
+			for (int i = 0; i < myKey.size(); i++) {
+				if (myKey.get(i).equalsIgnoreCase(key) && myData.get(i).equals(data)) {
+					found = true;
+					break;
+				}
 			}
 		}
 		return found;
@@ -385,35 +454,43 @@ public class KeyedList implements LabelledArray {
 	 * @see com.ozdevworx.dtype.LabelledArray#hasKey(int)
 	 */
 	public boolean hasKey(final int index){
-		return myKey.size() > index;
+		synchronized (mutex) {
+			return index >= 0 && myKey.size() > index;
+		}
 	}
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#hasKey(java.lang.String)
 	 */
 	public boolean hasKey(final String value){
-		return myKey.contains(fixCase(value));
+		synchronized (mutex) {
+			return myKey.contains(fixCase(value));
+		}
 	}
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#isEmpty()
 	 */
 	public boolean isEmpty() {
-		return myKey.isEmpty();
+		synchronized (mutex) {
+			return myKey.isEmpty();
+		}
 	}
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#length()
 	 */
 	public int length() {
-		return myKey.size();
+		synchronized (mutex) {
+			return myKey.size();
+		}
 	}
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#removeByIndex(int)
 	 */
 	public void removeByIndex(final int i){
-		synchronized(myKey) {
+		synchronized(mutex) {
 			myKey.remove(i);
 			myData.remove(i);
 		}
@@ -424,7 +501,10 @@ public class KeyedList implements LabelledArray {
 	 * @see com.ozdevworx.dtype.LabelledArray#removeByKey(java.lang.String)
 	 */
 	public void removeByKey(final String n){
-		final int index = myKey.indexOf(fixCase(n));
+		final int index;
+		synchronized (mutex) {
+			index = myKey.indexOf(fixCase(n));
+		}
 		if(index > -1)
 			removeByIndex(index);
 	}
@@ -433,8 +513,11 @@ public class KeyedList implements LabelledArray {
 	 * @see com.ozdevworx.dtype.LabelledArray#setData(int, java.lang.Object)
 	 */
 	public void setData(final int i, final Object d) {
-		if(length() >= i)
-			myData.set(i, d);
+		if(length() >= i) {
+			synchronized (mutex) {
+				myData.set(i, d);
+			}
+		}
 	}
 
 	/**
@@ -442,7 +525,7 @@ public class KeyedList implements LabelledArray {
 	 */
 	public void setData(final int index, final String newKey, final Object newObj){
 		if(length() >= index){
-			synchronized(myKey){
+			synchronized(mutex){
 				myData.set(index, newObj);
 				myKey.set(index, newKey);
 			}
@@ -453,27 +536,31 @@ public class KeyedList implements LabelledArray {
 	 * @see com.ozdevworx.dtype.LabelledArray#setData(java.lang.String, java.lang.Object)
 	 */
 	public void setData(final String n, final Object d) {
-		final int i = myKey.indexOf(fixCase(n));
-		if (i > -1)
-			myData.set(i, d);
-		else
-			addData(n, d);
+		synchronized (mutex) {
+			final int i = myKey.indexOf(fixCase(n));
+			if (i > -1)
+				myData.set(i, d);
+			else
+				addData(n, d);
+		}
 	}
 
 	/**
 	 * @see com.ozdevworx.dtype.LabelledArray#setData(java.lang.String, java.lang.String, java.lang.Object)
 	 */
 	public void setData(final String key, final String newKey, final Object newObj){
-		final int i = myKey.indexOf(fixCase(key));
-		if (i > -1){
-			synchronized(myKey){
-				myData.set(i, newObj);
-				myKey.set(i, newKey);
-			}
-		}else
-			addData(key, newObj);
+		synchronized(mutex){
+			final int i = myKey.indexOf(fixCase(key));
+			if (i > -1){
+					myData.set(i, newObj);
+					myKey.set(i, newKey);
+			}else
+				addData(key, newObj);
+		}
 	}
 
+
+	// ---------------------------------------------------- private methods
 
 	/**
 	 * Correct the CaSe for LabelledArray keys.<br />
@@ -485,7 +572,7 @@ public class KeyedList implements LabelledArray {
 	 * @param n A LabelledArray key of unknown character CaSe.
 	 * @return A key matching our Database case restrictions (if any).
 	 */
-	protected String fixCase(final String n){
+	private String fixCase(final String n){
 		String output = n;
 		if(myCaseSensitive){
 			if(myLowerCaseKeys)
@@ -504,14 +591,17 @@ public class KeyedList implements LabelledArray {
 	 * @param notNull - boolean
 	 * @return Object or empty-string if no index in list
 	 */
-	protected Object getItem(final int i, final boolean notNull) {
+	private Object getItem(final int i, final boolean notNull) {
 		Object o = null;
 		if(notNull){
 			o = "";
 		}
 		try {
-			if(i < length())
-				o = myData.get(i);
+			if(i < length()) {
+				synchronized (mutex) {
+					o = ("NULL".equalsIgnoreCase(String.valueOf(myData.get(i)))) ? null : myData.get(i);
+				}
+			}
 
 		} catch (final IndexOutOfBoundsException e){
 		} catch(final NullPointerException e){
@@ -520,13 +610,13 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * Initialises 2 synchronised ArrayList's,
+	 * Initialises 2 ArrayList's,
 	 * one for Key-Strings and one for Data-Objects.<br />
-	 * The methods that maintain the synchronised ArrayList's
+	 * The methods that maintain the ArrayList's
 	 * ensure the key and data locations are always valid.
 	 */
 	private void init() {
-		myKey = Collections.synchronizedList(new ArrayList<String>(myInc));
-		myData = Collections.synchronizedList(new ArrayList<Object>(myInc));
+		myKey = new ArrayList<String>(myInc);
+		myData = new ArrayList<Object>(myInc);
 	}
 }

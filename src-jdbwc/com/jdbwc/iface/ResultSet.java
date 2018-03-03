@@ -35,12 +35,12 @@ import com.ozdevworx.dtype.DataHandler;
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
  */
-public abstract interface ResultSet extends java.sql.ResultSet {
+public interface ResultSet extends java.sql.ResultSet {
 
 	/**
 	 * Adds a new data row to this ResultSet Object.
 	 *
 	 * @param row The new row to add to this ResultSet.
 	 */
-	public abstract void addRow(DataHandler row);
+	public void addRow(DataHandler row);
 }

@@ -19,7 +19,7 @@
  */
 package com.jdbwc.iface;
 
-import org.apache.commons.httpclient.HttpClient;
+import org.apache.http.client.HttpClient;
 
 
 /**
@@ -36,7 +36,7 @@ import org.apache.commons.httpclient.HttpClient;
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
  */
-public abstract interface Connection extends java.sql.Connection {
+public interface Connection extends java.sql.Connection {
 
 	/**
 	 * Get the database credentials required to gain access to the remote database server.
@@ -44,7 +44,7 @@ public abstract interface Connection extends java.sql.Connection {
 	 * @return A one way hash that includes this Connections database login details
 	 * as supplied when this Connection was created.
 	 */
-	public abstract String getCredentials();
+	public String getCredentials();
 
 	/**
 	 * Returns the database's numeric type as defined in this Connections Driver class.<br />
@@ -52,49 +52,49 @@ public abstract interface Connection extends java.sql.Connection {
 	 *
 	 * @return The numeric typeName for this Connection.
 	 */
-	public abstract int getDbType();
+	public int getDbType();
 
 	/**
 	 * Gets the remote URL this Connection is connected to.
 	 *
 	 * @return The URL this Connection instance is using.
 	 */
-	public abstract String getUrl();
+	public String getUrl();
 
 	/**
 	 *
 	 * @return this HttpClient
 	 */
-	public abstract HttpClient getClient();
+	public HttpClient getClient();
 
 	/**
 	 *
 	 * @return get the current timeout in ms
 	 */
-	public abstract int getTimeOut();
+	public int getTimeOut();
 
 	/**
 	 *
 	 * @param timeOut the timeout period in ms
 	 */
-	public abstract void setTimeOut(int timeOut);
+	public void setTimeOut(int timeOut);
 
 	/**
 	 *
 	 * @return current Session limit
 	 */
-	public abstract boolean getSessLimit();
+	public boolean getSessLimit();
 
 	/**
 	 *
 	 * @param sessLimit
 	 */
-	public abstract void setSessLimit(boolean sessLimit);
+	public void setSessLimit(boolean sessLimit);
 
 	/**
 	 * Returns the name of the requested database that was used when this Connection was created.
 	 *
 	 * @return the active database's name that this Connection Object is using.
 	 */
-	public abstract String getDatabase();
+	public String getDatabase();
 }

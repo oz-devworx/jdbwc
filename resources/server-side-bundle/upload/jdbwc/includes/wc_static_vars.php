@@ -18,7 +18,7 @@ if(!defined('WC_INDEX')){
   exit();
 }
 
-define('WC_VERSION', '1.0.0-3 RC2');
+define('WC_VERSION', '1.0.0-4rc1');
 define('WC_ERROR', 'ERROR# ');
 define('WC_AUTH', 'jdbwcAuth');
 define('WC_ACTION', 'jdbwcAction');
@@ -66,4 +66,10 @@ define('WC_SQ', '#_0027');
 define('WC_EOL', "_EOL__");
 /** end of file */
 define('WC_EOF', "_EOF__");
+
+/** metadata flag */
+define('WC_META', '__JDBWC-METADATA__');
+
+/** data flag */
+define('WC_DATA', '__JDBWC-DATA__');
 ?>

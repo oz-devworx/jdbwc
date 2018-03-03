@@ -48,7 +48,9 @@ import com.jdbwc.util.Util;
 import com.ozdevworx.dtype.DataHandler;
 
 /**
- * @author Tim Gall (Oz-DevWorX)
+ * Handles PreparedStatement's for this driver.
+ *
+ * @author Tim Gall
  * @version 2008-05-29
  */
 public class WCPreparedStatement extends WCStatement implements PreparedStatement {
@@ -58,7 +60,7 @@ public class WCPreparedStatement extends WCStatement implements PreparedStatemen
 	/** stores sql added via addBatch */
 	private transient StringBuilder myBatchStatement = null;
 
-	/** stores parepared statements that are being built */
+	/** stores prepared statements that are being built */
 	private transient DataHandler myPrepStatement = null;
 
 	/**
@@ -68,8 +70,8 @@ public class WCPreparedStatement extends WCStatement implements PreparedStatemen
 	 * @param connection An active WCConnection Object.
 	 * @param stmntSkeleton A PreparedStatements initialising SQL. Can contain ? param markers.
 	 */
-	protected WCPreparedStatement(WCConnection connection, String stmntSkeleton){
-		super(connection);
+	protected WCPreparedStatement(WCConnection connection, String stmntSkeleton) throws SQLException{
+		super(connection, connection.getCatalog());
 		initialiseInstance(stmntSkeleton);
 	}
 
@@ -79,8 +81,8 @@ public class WCPreparedStatement extends WCStatement implements PreparedStatemen
 	 *
 	 * @param connection An active WCConnection Object.
 	 */
-	protected WCPreparedStatement(WCConnection connection){
-		super(connection);
+	protected WCPreparedStatement(WCConnection connection) throws SQLException{
+		super(connection, connection.getCatalog());
 	}
 
 	/**
@@ -132,9 +134,11 @@ public class WCPreparedStatement extends WCStatement implements PreparedStatemen
 	 * @see java.sql.PreparedStatement#clearParameters()
 	 */
 	public void clearParameters() throws SQLException {
-		String sql = myPrepStatement.getString(0);
-		myPrepStatement = Util.getCaseSafeHandler(Util.CASE_MIXED);
-		myPrepStatement.addData("sql", sql);
+		synchronized (myPrepStatement) {
+			String sql = myPrepStatement.getString("sql");
+			myPrepStatement.clearData();
+			myPrepStatement.addData("sql", sql);
+		}
 	}
 
 	/**

@@ -20,9 +20,6 @@
 package com.jdbwc.core;
 
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.DriverPropertyInfo;
@@ -30,7 +27,6 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import com.jdbwc.iface.Connection;
 import com.jdbwc.util.Util;
 
 /**
@@ -44,213 +40,101 @@ import com.jdbwc.util.Util;
  *
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
- * @version 2010-04-09
+ * @version 2010-04-09 version 1.0.0-4beta
+ * @version 2010-05-21 removed implements keyword from class declaration
  */
-public class WCDriver implements java.sql.Driver {
+public class WCDriver {
 
+	//--------------------------------------------------------- fields
+
+	/* driver version info */
 	private static final int WC_MAJOR_VER = 1;
 	private static final int WC_MINOR_VER = 0;
-	private static final String WC_MINOR_BUILD = "0-3 beta";
+	private static final int WC_SUBMINOR_VER = 0;
+	private static final String WC_STATUS_VER = "-4";
+	private static final String WC_STATUS_NAME = "beta";
 	private static final String WC_VER_NAME = "JDBWC";
+
+	private static final String WC_SERVER = "jdbwc/index.php";
 
 	private static final boolean JDBC_COMPLIANT = false;
 
-	/* Acceptible URL prefixes */
-	private static final String KEY_VID_DEFAULT = "jdbc:jdbwc://";
-	private static final String KEY_VID_MYSQL = "jdbc:jdbwc:mysql//";
-	private static final String KEY_VID_POSTGRESQL = "jdbc:jdbwc:postgresql//";
+//	/* Acceptible URL prefixes */
+//	private static final String KEY_VID_DEFAULT = "jdbc:jdbwc://";
+//	private static final String KEY_VID_MYSQL = "jdbc:jdbwc:mysql//";
+//	private static final String KEY_VID_POSTGRESQL = "jdbc:jdbwc:postgresql//";
+
+	/* URL prefix parts */
+	private static final String KEY_VID_DEFAULT = "jdbc:jdbwc:";
+	/* databases. name must match package folder name */
+	protected static final String KEY_VID_MYSQL = "mysql";
+	protected static final String KEY_VID_POSTGRESQL = "postgresql";
 
 	/* Acceptible URL keys */
-	private static final String KEY_URL = "url";
-	private static final String KEY_PORT = "port";
-	private static final String KEY_USER = "user";
-	private static final String KEY_PASS = "password";
+	protected static final String KEY_URL = "url";
+	protected static final String KEY_USER = "user";
+	protected static final String KEY_PASS = "password";
 
-	private static final String KEY_DB_NAME = "databaseName";
-	private static final String KEY_DB_USER = "databaseUser";
-	private static final String KEY_DB_PASS = "databasePassword";
+	public static final String KEY_DB_VID = "dbType";
+	protected static final String KEY_DB_NAME = "databaseName";
+	protected static final String KEY_DB_USER = "databaseUser";
+	protected static final String KEY_DB_PASS = "databasePassword";
 
+	protected static final String KEY_PROXY_URL = "proxyUrl";
 
-	private transient int myConnectionType = -1;
+	protected static final String KEY_NV_SSL = "nonVerifiedSSL";
+	protected static final String KEY_TIMEOUT = "timeout";
+	protected static final String KEY_USE_UA = "useDummyAgent";
 
+	protected static final String KEY_DEBUG = Util.TAG_DEBUG;
+	protected static final String KEY_DEBUG_LOG = "debugLogger";
+	protected static final String KEY_DEBUG_LEVEL = "debugLevel";
 
+	//--------------------------------------------------------- constructors
 
 	/**
 	 * Required constructor for Class.forName().newInstance()
 	 */
 	public WCDriver(){}
 
+	//--------------------------------------------------------- public methods
+
 	/**
-	 * Check if this driver supports the given url.
+	 * Check if this driver supports the given url.<br />
+	 * This method is usually called by DriverManager before calling connect.
 	 *
 	 * @see java.sql.Driver#acceptsURL(java.lang.String)
 	 */
 	public boolean acceptsURL(String url) throws SQLException {
 		boolean accept = false;
 
-		if(url.regionMatches(true, 0, KEY_VID_DEFAULT, 0, KEY_VID_DEFAULT.length())){
-			myConnectionType = Util.ID_DEFAULT;
+		if(url.startsWith(KEY_VID_DEFAULT.concat("//"))){
 			accept = true;
-		}else if(url.regionMatches(true, 0, KEY_VID_MYSQL, 0, KEY_VID_MYSQL.length())){
-			myConnectionType = Util.ID_MYSQL;
+		}else if(url.startsWith(KEY_VID_DEFAULT.concat(KEY_VID_MYSQL).concat("//"))){
 			accept = true;
-		}else if(url.regionMatches(true, 0, KEY_VID_POSTGRESQL, 0, KEY_VID_POSTGRESQL.length())){
-			myConnectionType = Util.ID_POSTGRESQL;
+		}else if(url.startsWith(KEY_VID_DEFAULT.concat(KEY_VID_POSTGRESQL).concat("//"))){
 			accept = true;
 		}
 		return accept;
 	}
 
 	/**
-	 *
-	 *
 	 * @see java.sql.Driver#connect(java.lang.String, java.util.Properties)
 	 */
 	public java.sql.Connection connect(String url, Properties info) throws SQLException {
-		Connection connection = null;
+		WCConnection connection = null;
 
 		if(url != null && acceptsURL(url)){
 
-
-			String fullJdbcUrl = url;
-			synchronized(fullJdbcUrl){
-				// if the props are part of the url, we convert them to a Properties object
-				Properties urlProps = getPropsFromUrl(url, info);
-
-				/* get the servers absolute url */
-				String scriptUrl = urlProps.getProperty(KEY_URL);
-				/* get the servers domain */
-				String domainName = getDomainString(urlProps.getProperty(KEY_URL));
-
-				String serverUser = urlProps.getProperty(KEY_USER);
-				String serverPass = urlProps.getProperty(KEY_PASS);
-
-				String wcDataBase = urlProps.getProperty(KEY_DB_NAME);
-				String wcUser = urlProps.getProperty(KEY_DB_USER);
-				String wcPass = urlProps.getProperty(KEY_DB_PASS);
-				String wcCreds = (wcDataBase + wcUser + wcPass);
-
-				int portNumber = 443;// fallback value for standard SSL connections
-				try {
-					portNumber = Integer.parseInt(urlProps.getProperty(KEY_PORT));
-				} catch (NumberFormatException e) {
-					System.err.println("Using fallback port " + portNumber + " for this Connection.");
-					System.err.println("Please check the \"port\" is a whole number (EG: 80 or 443 or whateverPortYourServerUses)");
-				}
-
-				/* OPTIONAL PARAMETERS */
-				Util.OUR_UA_FIX = "true".equals(urlProps.getProperty("useDummyAgent"));
-				Util.OUR_DEBUG_MODE = "true".equals(urlProps.getProperty("debug"));
-
-				if(Util.OUR_DEBUG_MODE){
-					String debugLogger = urlProps.getProperty("debugLogger");
-					int debugLevel;
-					try {
-						debugLevel = Integer.parseInt(urlProps.getProperty("debugLevel"));
-					} catch (NumberFormatException e) {
-						debugLevel = 0;//default if not specified
-					}
-
-					if("SimpleLog".equals(debugLogger)){
-						//general setup
-						System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
-						System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
-
-						//informative debugging
-						if(debugLevel >= 0){
-							System.setProperty("org.apache.commons.logging.simplelog.log.jdbwc.core", "debug");
-						}
-						//basic debugging
-						if(debugLevel >= 1){
-							System.setProperty("org.apache.commons.logging.simplelog.log.jdbwc.util", "debug");
-						}
-						//good for connection debugging
-						if(debugLevel == 2){
-							System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-							System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
-						}
-						//overkill. Lots of output
-						if(debugLevel == 3){
-							System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-							System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire", "debug");
-						}
-
-					}else if("Jdk14Logger".equals(debugLogger)){
-
-						System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-
-						Properties loggerProps = new Properties();
-						loggerProps.put(".level", "INFO");
-						loggerProps.put("handlers", "java.util.logging.ConsoleHandler");
-						loggerProps.put("java.util.logging.ConsoleHandler.formatter", "java.util.logging.SimpleFormatter");
-
-						//informative debugging
-						if(debugLevel >= 0){
-							loggerProps.put("com.jdbwc.core.level", "FINEST");
-						}
-
-						//basic debugging
-						if(debugLevel >= 1){
-							loggerProps.put("org.apache.commons.httpclient.level", "FINEST");
-						}
-
-						//good for connection debugging
-						if(debugLevel == 2){
-							loggerProps.put("httpclient.wire.header.level", "FINEST");
-							loggerProps.put("org.apache.commons.httpclient.level", "FINEST");
-						}
-
-						//overkill. Lots of output
-						if(debugLevel == 3){
-							loggerProps.put("httpclient.wire.level", "FINEST");
-							loggerProps.put("org.apache.commons.httpclient.level", "FINEST");
-						}
-
-//						System.err.println(loggerProps.toString());
-//						java.util.logging.Logger log = java.util.logging.Logger.getLogger("Driver");
-						java.util.logging.LogManager logger = java.util.logging.LogManager.getLogManager();
-
-						String loggerStr = loggerProps.toString().replace(", ", "\n");
-
-						loggerStr = loggerStr.substring(1, loggerStr.length()-1);
-//						System.err.println(loggerStr);
-
-						try {
-							InputStream ins = new ByteArrayInputStream(loggerStr.getBytes("UTF-8"));
-							logger.readConfiguration(ins);
-
-//							log.
-						} catch (UnsupportedEncodingException e) {
-							throw new SQLException("Could not configure java.util.logging.", e);
-						} catch (SecurityException e) {
-							throw new SQLException("Could not configure java.util.logging.", e);
-						} catch (IOException e) {
-							throw new SQLException("Could not configure java.util.logging.", e);
-						}
-
-
-
-
-					}else if("Log4JLogger".equals(debugLogger)){
-						System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Log4JLogger");
-
-
-					}
-				}
-
-
-				/* Fire-up a database connection with a database-server. */
-				connection = new WCConnection(
-						fullJdbcUrl,
-						domainName,
-						portNumber,
-						scriptUrl,
-						serverUser,
-						serverPass,
-						wcCreds,
-						myConnectionType,
-						wcDataBase);
+			//get the dbType
+			int dbType = Util.ID_DEFAULT;
+			if(url.startsWith(KEY_VID_DEFAULT.concat(KEY_VID_MYSQL))){
+				dbType = Util.ID_MYSQL;
+			}else if(url.startsWith(KEY_VID_DEFAULT.concat(KEY_VID_POSTGRESQL))){
+				dbType = Util.ID_POSTGRESQL;
 			}
+
+			connection = getConnection(dbType, url, info);
 		}
 
 		return connection;
@@ -271,6 +155,8 @@ public class WCDriver implements java.sql.Driver {
 	}
 
 	/**
+	 * All info related to this Driver comes from WCDriverPropertiesInfo
+	 *
 	 * @see java.sql.Driver#getPropertyInfo(java.lang.String, java.util.Properties)
 	 */
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
@@ -280,46 +166,7 @@ public class WCDriver implements java.sql.Driver {
 		}
 		info = getPropsFromUrl(url, info);
 
-
-		DriverPropertyInfo urlProp = new DriverPropertyInfo(KEY_URL, info.getProperty(KEY_URL));
-		urlProp.required = true;
-		urlProp.description = "The absolute URL of the remote server (including http:// or https:// parts).";
-
-		DriverPropertyInfo portProp = new DriverPropertyInfo(KEY_PORT, info.getProperty(KEY_PORT, "443"));
-		portProp.required = true;
-		portProp.description = "Server port number to connect to. Should be either the servers http or https port; Standard values are 80 and 443 respectively.";
-
-		DriverPropertyInfo userProp = new DriverPropertyInfo(KEY_USER, info.getProperty(KEY_USER));
-		userProp.required = true;
-		userProp.description = "Server username";
-
-		DriverPropertyInfo passProp = new DriverPropertyInfo(KEY_PASS, info.getProperty(KEY_PASS));
-		passProp.required = true;
-		passProp.description = "Server password";
-
-		DriverPropertyInfo dbNameProp = new DriverPropertyInfo(KEY_DB_NAME, info.getProperty(KEY_DB_NAME));
-		dbNameProp.required = true;
-		dbNameProp.description = "Database name";
-
-		DriverPropertyInfo dbUserProp = new DriverPropertyInfo(KEY_DB_USER, info.getProperty(KEY_DB_USER));
-		dbUserProp.required = true;
-		dbUserProp.description = "Database user name";
-
-		DriverPropertyInfo dbPassProp = new DriverPropertyInfo(KEY_DB_PASS, info.getProperty(KEY_DB_PASS));
-		dbPassProp.required = true;
-		dbPassProp.description = "Database password";
-
-		DriverPropertyInfo[] dpiProps = new DriverPropertyInfo[7];
-
-		dpiProps[0] = urlProp;
-		dpiProps[1] = portProp;
-		dpiProps[2] = userProp;
-		dpiProps[3] = passProp;
-		dpiProps[4] = dbNameProp;
-		dpiProps[5] = dbUserProp;
-		dpiProps[6] = dbPassProp;
-
-		return dpiProps;
+		return (new WCDriverPropertiesInfo(null)).getDriverInfoProps(info);
 	}
 
 	/**
@@ -334,7 +181,7 @@ public class WCDriver implements java.sql.Driver {
 	 * Extensions we need over the java.sql.Driver interface.
 	 ***************************************************** */
 	public final String getMinorBuild() {
-		return WC_MINOR_BUILD;
+		return WC_SUBMINOR_VER + WC_STATUS_VER + WC_STATUS_NAME;
 	}
 
 	public final String getVersionName() {
@@ -345,15 +192,158 @@ public class WCDriver implements java.sql.Driver {
 		return getStaticVersion();
 	}
 
+	//--------------------------------------------------------- private methods
 
-	/* *****************************************************
-	 * Private methods used by this class
-	 ***************************************************** */
+	private int getDbType(String typeName){
+		//get the dbType
+		int dbType = Util.ID_DEFAULT;
+		if(typeName.compareToIgnoreCase(KEY_VID_MYSQL) == 0){
+			dbType = Util.ID_MYSQL;
+		}else if(typeName.compareToIgnoreCase(KEY_VID_POSTGRESQL) == 0){
+			dbType = Util.ID_POSTGRESQL;
+		}
+
+		return dbType;
+	}
+
+	private WCConnection getConnection(int dbType, String url, Properties info) throws SQLException{
+		WCConnection connection = null;
+
+		// get required and optional parameters
+		synchronized(url){
+			// if the props are part of the url, we convert them to a Properties object
+			Properties urlProps = getPropsFromUrl(url, info);
+
+			/* get the servers absolute url */
+			String hostUrl = urlProps.getProperty(KEY_URL);
+
+			if(hostUrl==null || hostUrl.isEmpty()){
+				throw new SQLException(
+						KEY_URL + " must contain a value. Subfolders are optional. EG: https://myserver.ext:443/[myfolder/myotherfolder/]"
+						, "42000");
+			}
+
+			/* get the servers domain */
+			String hostDomain = getDomainString(hostUrl);
+
+			String hostUser = urlProps.getProperty(KEY_USER);
+			String hostPass = urlProps.getProperty(KEY_PASS);
+
+			/* support for getPropertyInfo */
+			String dbVid = urlProps.getProperty(KEY_DB_VID);
+			if(dbVid!=null && !dbVid.isEmpty())
+				dbType = getDbType(dbVid);
+
+			String dbName = urlProps.getProperty(KEY_DB_NAME);
+			String dbUser = urlProps.getProperty(KEY_DB_USER);
+			String dbPass = urlProps.getProperty(KEY_DB_PASS);
+
+
+			String hostScheme;
+			hostUrl = hostUrl + WC_SERVER; // remote jdbwc-handler script EG: http://localhost/admin/
+			if(hostUrl.startsWith("https"))
+				hostScheme = "https";
+			else
+				hostScheme = "http";
+			// path part of URL
+			String hostPath = hostUrl.replace(hostScheme + "://" + hostDomain, "");
+
+
+			int hostPort;
+			try {
+				hostPort = Integer.parseInt(hostDomain.substring(hostDomain.indexOf(":")+1));
+			} catch (NumberFormatException e) {
+				//makes the port portion of the host url optional
+				if(hostUrl.startsWith("https"))
+					hostPort = 443;
+				else
+					hostPort = 80;
+			}
+
+			// remove any port references from the domain name. If needed WCConnection will add them later
+			if(hostDomain.contains(":")) hostDomain = hostDomain.substring(0, hostDomain.indexOf(":"));
+
+
+			/* OPTIONAL PARAMETERS */
+			int proxyPort = 0;
+			String proxyUrl = urlProps.getProperty(KEY_PROXY_URL);
+			String proxyScheme = null;
+			String proxyDomain = null;
+
+			if(proxyUrl!=null && !proxyUrl.isEmpty()){
+				proxyDomain = getDomainString(proxyUrl);
+
+				if(proxyUrl.startsWith("https"))
+					proxyScheme = "https";
+				else
+					proxyScheme = "http";
+
+				try {
+					proxyPort = Integer.parseInt(proxyDomain.substring(proxyDomain.indexOf(":")+1));
+				} catch (NumberFormatException e1) {
+					//proxy's are rarely on standard ports so we can't safely recover from this one
+					throw new SQLException("The proxy server port must be included in the proxyUrl using standard port notation. EG: http://myproxy.ext:800", "08S01", e1);
+				}
+
+				if(proxyDomain.contains(":")) proxyDomain = proxyDomain.substring(0, proxyDomain.indexOf(":"));
+			}
+
+
+			int timeout;
+			try {
+				timeout = Integer.parseInt(urlProps.getProperty(KEY_TIMEOUT));
+			} catch (NumberFormatException e1) {
+				timeout=0;
+			}
+
+			boolean nonVerifiedSSL = "true".equals(urlProps.getProperty(KEY_NV_SSL));
+			boolean dummyUA = "true".equals(urlProps.getProperty(KEY_USE_UA));
+			boolean debug = "true".equals(urlProps.getProperty(KEY_DEBUG));
+
+			// logging. Mainly for debugging
+			if(debug){
+				setupLogging(
+						urlProps.getProperty(KEY_DEBUG_LOG)
+						, urlProps.getProperty(KEY_DEBUG_LEVEL));
+			}
+
+			/* Fire-up a database connection with a database-server. */
+			connection = new WCConnection(
+					url,
+
+					hostScheme,
+					hostDomain,
+					hostPort,
+					hostPath,
+
+					hostUser,
+					hostPass,
+
+					dbType,
+					dbName,
+					dbUser,
+					dbPass,
+
+					nonVerifiedSSL,
+					timeout,
+					debug,
+					dummyUA,
+
+					proxyScheme,
+					proxyDomain,
+					proxyPort
+					);
+		}
+		return connection;
+	}
+
 	private final static String getStaticVersion(){
 		return new StringBuilder()
 			.append(WC_MAJOR_VER)
 			.append('.').append(WC_MINOR_VER)
-			.append('.').append(WC_MINOR_BUILD)
+			.append('.').append(WC_SUBMINOR_VER)
+			.append(WC_STATUS_VER)
+			.append(WC_STATUS_NAME)
 			.toString();
 	}
 
@@ -374,10 +364,13 @@ public class WCDriver implements java.sql.Driver {
 		 * EG: stuff.domain.ext */
 		domainString = domainString.toLowerCase();
 		domainString = domainString.replaceFirst("www.", "");
-		/* get start of folder part */
-		int domainEnd = domainString.indexOf('/');
-		/* remove folder portion from domain */
-		domainString = domainString.substring(0, domainEnd);
+
+		if(domainString.contains("/")){
+			/* get start of folder part */
+			int domainEnd = domainString.indexOf('/');
+			/* remove folder portion from domain */
+			domainString = domainString.substring(0, domainEnd);
+		}
 
 		return domainString;
 	}
@@ -418,6 +411,111 @@ public class WCDriver implements java.sql.Driver {
 			}
 		}
 		return urlProps;
+	}
+
+	private void setupLogging(String debugLogger, String debugLevel){
+
+			int requestedLevel;
+			try {
+				requestedLevel = Integer.parseInt(debugLevel);
+			} catch (NumberFormatException e) {
+				requestedLevel = 0;//default if not specified
+			}
+
+			if("SimpleLog".equals(debugLogger)){
+				//general setup
+				System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
+				System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
+
+				//JDBWC informative/debugging
+				if(requestedLevel >= 0){
+					System.setProperty("org.apache.commons.logging.simplelog.log.jdbwc.core", "DEBUG");
+				}
+				//JDBWC debugging
+				if(requestedLevel >= 1){
+					System.setProperty("org.apache.commons.logging.simplelog.log.jdbwc.util", "DEBUG");
+				}
+				//Enable header wire + context logging - Best for Debugging
+				if(requestedLevel == 2){
+					System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http", "DEBUG");
+					System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.wire", "DEBUG");
+				}
+				//Enable full wire + context logging
+				if(requestedLevel == 3){
+					System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http", "DEBUG");
+				}
+				//Enable context logging for connection management
+				if(requestedLevel == 4){
+					System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.impl.conn", "DEBUG");
+				}
+				//Enable context logging for connection management / request execution
+				if(requestedLevel == 5){
+					System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.impl.conn", "DEBUG");
+					System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.impl.client", "DEBUG");
+					System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.client", "DEBUG");
+				}
+
+			}else if("Jdk14Logger".equals(debugLogger)){
+
+//				System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+//
+//				Properties loggerProps = new Properties();
+//				loggerProps.put(".level", "INFO");
+//				loggerProps.put("handlers", "java.util.logging.ConsoleHandler");
+//				loggerProps.put("java.util.logging.ConsoleHandler.formatter", "java.util.logging.SimpleFormatter");
+//
+//				//informative debugging
+//				if(requestedLevel >= 0){
+//					loggerProps.put("com.jdbwc.core.level", "FINEST");
+//				}
+//
+//				//basic debugging
+//				if(requestedLevel >= 1){
+//					loggerProps.put("org.apache.commons.httpclient.level", "FINEST");
+//				}
+//
+//				//good for connection debugging
+//				if(requestedLevel == 2){
+//					loggerProps.put("httpclient.wire.header.level", "FINEST");
+//					loggerProps.put("org.apache.commons.httpclient.level", "FINEST");
+//				}
+//
+//				//overkill. Lots of output
+//				if(requestedLevel == 3){
+//					loggerProps.put("httpclient.wire.level", "FINEST");
+//					loggerProps.put("org.apache.commons.httpclient.level", "FINEST");
+//				}
+//
+////				System.err.println(loggerProps.toString());
+////				java.util.logging.Logger log = java.util.logging.Logger.getLogger("Driver");
+//				java.util.logging.LogManager logger = java.util.logging.LogManager.getLogManager();
+//
+//				String loggerStr = loggerProps.toString().replace(", ", "\n");
+//
+//				loggerStr = loggerStr.substring(1, loggerStr.length()-1);
+////				System.err.println(loggerStr);
+//
+//				try {
+//					InputStream ins = new ByteArrayInputStream(loggerStr.getBytes("UTF-8"));
+//					logger.readConfiguration(ins);
+//
+////					log.
+//				} catch (UnsupportedEncodingException e) {
+//					throw new SQLException("Could not configure java.util.logging.", e);
+//				} catch (SecurityException e) {
+//					throw new SQLException("Could not configure java.util.logging.", e);
+//				} catch (IOException e) {
+//					throw new SQLException("Could not configure java.util.logging.", e);
+//				}
+
+
+
+
+			}else if("Log4JLogger".equals(debugLogger)){
+//				System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Log4JLogger");
+
+
+			}
 	}
 
 	private Properties getPropsFromUrl(String url, Properties info){

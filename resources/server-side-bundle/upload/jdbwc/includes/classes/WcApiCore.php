@@ -151,9 +151,9 @@ final class WcApiCore{
       $_SESSION['user']['wcUserName'] = self::secureHash(WC_USER, $userName);
       $_SESSION['user']['wcPassword'] = self::secureHash(WC_PASS, $password);
     }
-//        LogWriter::write('JDBCUser:'.$_SESSION['user']['jdbcUserName'].' | JDBCPass:'.$_SESSION['user']['jdbcPassword'], 'DEBUG-INFO');
-//        LogWriter::write('WCUser  :'.$_SESSION['user']['wcUserName'].' | WCPass  :'.$_SESSION['user']['wcPassword'], 'DEBUG-INFO');
-//        LogWriter::write(var_export($_POST, true), 'DEBUG-INFO');
+    //LogWriter::write('JDBCUser:'.$_SESSION['user']['jdbcUserName'].' | JDBCPass:'.$_SESSION['user']['jdbcPassword'], 'DEBUG-INFO');
+    //LogWriter::write('WCUser  :'.$_SESSION['user']['wcUserName'].' | WCPass  :'.$_SESSION['user']['wcPassword'], 'DEBUG-INFO');
+    //LogWriter::write(var_export($_POST, true), 'DEBUG-INFO');
 
     return self::verifyUser();
   }
@@ -178,7 +178,7 @@ final class WcApiCore{
    */
   static function verifyDBCreds($jdbcCreds, $wcCreds){
 
-    if(!isset($_SESSION['dbCreds'])){
+    if(isset($_POST['auth']) || !isset($_SESSION['dbCreds'])){
       $_SESSION['dbCreds']['jdbcCreds'] = $jdbcCreds;
       $_SESSION['dbCreds']['wcCreds'] = self::secureHash($wcCreds, $jdbcCreds);
     }
@@ -268,55 +268,91 @@ final class WcApiCore{
    * for what we need to return to the requesting interface
    * as plaintext echo'd on the output page.
    *
-   *    "," seperates entries
-   *    "\n" seperates rows
-   *    "\n\n" seperates files
+   *  "," seperates entries
+   *  "\n"   (WC_EOL) seperates rows
+   *  "\n\n" (WC_EOF) seperates files
    *
-   *      EXISTING TEXT SHOULD BE HANDLED LIKE SO:
-   *    "\n" should be replaced with "__NL_"
-   *      "," should be replaced with "__CA_"
+   *  EXISTING TEXT SHOULD BE HANDLED LIKE SO:
+   *  "\n" should be replaced with "__NL_"
+   *  "," should be replaced with "__CA_"
    *
    * @param mixed $sqlQuery
    * @param mixed $cvsRowCnt
    * @return An SQL query as a .csv String
    */
   static function wcBuildCSV($sqlQuery, $cvsRowCnt) {
-    global $dbHandler;
+    global $dbHandler, $dbType;
 
     $csvString = "";
     $headersSet = false;
     $headerRow = "";
     $dataRows = "";
-
-    $cvsRow = 0;
     $colCnt = 0;
 
-    if ($cvsRowCnt > 0) {
-      while ($sqlResults = $dbHandler->fetch_array($sqlQuery)) {
-        $colIdx = 0;
-        if (!$headersSet) {
-          $colCnt = sizeof($sqlResults);
-          foreach ($sqlResults as $key => $val) {
-            $headerRow .= $key . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
-            $dataRows .= self::wcFinaliseVal($val) . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
-            $colIdx++;
-          }
-          $headersSet = true;
-        } else {
-          foreach ($sqlResults as $key => $val) {
-            $dataRows .= self::wcFinaliseVal($val) . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
-            $colIdx++;
-          }
+    /* data */
+    $headerRow = WC_DATA . WC_EOL;
+    while ($sqlResults = $dbHandler->fetch_array($sqlQuery)) {
+      $colIdx = 0;
+      if ($headersSet===false) {
+        $colCnt = count($sqlResults);
+        foreach ($sqlResults as $key => $val) {
+          $headerRow .= $key . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
+          $dataRows .= self::wcFinaliseVal($val) . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
+          $colIdx++;
         }
-        $cvsRow++;
+        $headersSet = true;
+      } else {
+        foreach ($sqlResults as $key => $val) {
+          $dataRows .= self::wcFinaliseVal($val) . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
+          $colIdx++;
+        }
       }
-      $csvString = $headerRow . $dataRows . WC_EOF;
     }
+    $csvString = $headerRow . $dataRows . WC_EOF;
+
+  	/* metadata */
+    $headerRow = WC_META . WC_EOL;
+    $dataRows = "";
+    $colCnt = ($dbType <= 1 && !class_exists('mysqli')) ? 13 : 11;
+    $headersSet = false;
+    while ($metaInfo = $dbHandler->fetch_fields($sqlQuery)) {
+      $colIdx = 0;
+      if ($headersSet===false) {
+        foreach ($metaInfo as $key => $val) {
+          $headerRow .= $key . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
+          $dataRows .= self::wcFinaliseVal($val) . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
+          $colIdx++;
+        }
+        $headersSet = true;
+      } else {
+        foreach ($metaInfo as $key => $val) {
+          $dataRows .= self::wcFinaliseVal($val) . ($colIdx < $colCnt - 1 ? "," : WC_EOL);
+          $colIdx++;
+        }
+      }
+      /*
+       returns
+       ==========================================
+       name       = The name of the column
+       orgname    = Original column name if an alias was specified
+       table      = The name of the table this field belongs to (if not calculated)
+       orgtable   = Original table name if an alias was specified
+       def        = The default value for this field, represented as a string
+       max_length = The maximum width of the field for the result set.
+       length     = The width of the field, as specified in the table definition.
+       charsetnr  = The character set number for the field.
+       flags      = An integer representing the bit-flags for the field.
+       type       = The data type used for this field
+       decimals   = The number of decimals used (for integer fields)
+       ==========================================
+       */
+    }
+    $csvString .= $headerRow . $dataRows . WC_EOF;
+
     $dbHandler->free_result($sqlQuery);
 
     return $csvString;
   }
-
 
   /**
    * == evaluates spaces and null's as true.<br />

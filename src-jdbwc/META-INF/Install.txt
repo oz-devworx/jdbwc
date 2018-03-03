@@ -1,11 +1,12 @@
-﻿
+
   JDBWC - Installation
 
 Document Revision: 1
 
 Release Information
-Project 	JDBWC
-Version 	1.0.0-3beta
+Project Name 	JDBWC
+Project Type 	Type 3 Java JDBC Driver
+Version 	1.0.0-4beta
 License 	GNU GPLv3 http://www.gnu.org/licenses/
 Web 	http://sourceforge.net/projects/jdbwc
 Support 	https://sourceforge.net/projects/jdbwc/support
@@ -16,8 +17,8 @@ Contents
     * Requirements <#require>
     * Installation <#install>
     * Basic Use <#use>
-    * Connection Parameters in detail <#params>
-    * Whats new? <#new>
+    * Connection URL in detail <#params>
+    * What's new? <#new>
     * Limitations <#limits>
     * TODO <#todo>
     * Known issues <#issues>
@@ -70,21 +71,25 @@ If your using MySQL you should enable the PHP mysqli extension for full
 metadata functionality.
 The existence of the mysqli extension is determined on the server-side.
 
-*Supplied dependencies (licensed under the Apache-2 license)*
-Commons-HttpClient 3.1 <http://hc.apache.org/httpclient-3.x/index.html>
+*Supplied dependencies (licensed under an extended Apache-2 license)*
+HttpClient 4.0.1 (GA) <http://hc.apache.org/index.html> + dependencies
 
+    * apache-mime4j-0.6.jar
     * commons-codec-1.3.jar
-    * commons-httpclient-3.1.jar
     * commons-logging-1.1.1.jar
+    * httpclient-4.0.1.jar
+    * httpcore-4.0.1.jar
+    * httpmime-4.0.1.jar
 
 Installation
 
 
     Client-side (JDBC)
 
-   1. Unpack the compressed download if you got it from the releases area.
+   1. Unpack the compressed download if you got it from the releases
+      area <https://sourceforge.net/projects/jdbwc/files/>.
       The latest version should also be on the SourceForge SVN server
-      (/as of 2010-04-15/); Always check the branches first.
+      <https://sourceforge.net/projects/jdbwc/develop> (/as of 2010-04-18/).
    2. Copy the "|jdbwc-lib|" folder containing "|jdbwc.jar|" and
       dependencies to a location relative to your Java application files.
           * add "jdbwc.jar" to your applications classpath. If your app
@@ -101,7 +106,8 @@ Installation
 
       Notes:
 
-IDE's usually require all of the jars in the build path.
+IDE's usually require all of the jars in the build path as do SQL
+Clients (like SQuirreL, SQLWorkBench, DBVisualizer, etc.).
 For apps, the required jdbwc dependencies will be added to your
 classpath by jdbwc.jar
 
@@ -139,19 +145,21 @@ README inside the zip.
           To setup the server-side part of this driver.
 
 *NOTE:* The folder: "|jdbwc/includes/config/local|" is for testing
-servers and is not needed for servers with a registered domain name. Its
-supplied for convenience when developing.
+servers. Its supplied for convenience when developing. If it is present
+on your server, its configs will be used in preference to the production
+ones in: |jdbwc/includes/config|.
 The "|jdbwc/includes/config/local|" folder should __NOT__ be uploaded to
 production machines.
 
    1. Upload the contents of the upload folder to your webserver.
-          * They can be uploaded to the public root dir or any subfolder.
+          * The |upload/jdbwc| folder can be uploaded to the public root
+            dir or any subfolder.
           * EG: |http://yourserver.ext/*jdbwc*|,
-            |http://yourserver.ext/subfolder/anotherfolder/*jdbwc*|
-   2. Edit the file: "|jdbwc/includes/config/configure.php|"
+            |http://yourserver.ext/subfolder/anotherfolder/*jdbwc*|, etc.
+   2. Edit the file: "|jdbwc/includes/config/_*configure.php*_|"
           * Put in a username and password (create new ones).
           * Edit the paths and settings to suit your preferences and server.
-   3. Edit the file: "|jdbwc/includes/config/databases.php|"
+   3. Edit the file: "|jdbwc/includes/config/_*databases.php*_|"
           * Put in the details for the databases you want access to.
           * If there's more than one, follow the directions in the
             comment to add multiple databases.
@@ -179,14 +187,14 @@ There are a number of optional connection parameters you can use to fine
 tune the connection.
 The list of optional params may change between different releases
 depending on additional functionality supported by the driver.
-See the section on Connection Parameters in detail <#params> for more info.
+See the section on Connection URL in detail <#params> for more info.
 
 JDBWC is a JDBC Driver, so the standard JDBC syntax applies for general use.
 
 To start a JDBC connection using JDBWC you need to register the driver
-with the JRE's DriverManager and then start a new JDBC connection using
-a JDBWC specific URL.
-The required url syntax and parameters are demonstrated in the example.
+with the Java DriverManager and then start a new JDBC connection using a
+JDBWC specific URL.
+The url syntax and required parameters are demonstrated in the example.
 
 Parameters (/everything after the ?/) can be in any order.
 Registering the driver requires a |ClassNotFoundException| handler,
@@ -195,6 +203,9 @@ starting a new Connection requires an |SQLException| handler.
 See the example below.
 *NOTE:* SSL is highly recommended over sending sql in plaintext.
 v1.0.0.3 will only work with validated certs.
+v1.0.0.4 will work with validated and unvalidated/self-signed certs.
+Un-validated/self-signed certs require the optional param:
+|nonVerifiedSSL = true|
 
 EXAMPLE
 
@@ -205,54 +216,43 @@ private java.sql.Connection connect() {
 		*/* register the JDBWC Driver with the Java DriverManager */*
 		*Class.forName("com.jdbwc.core.Driver");*
 
-		final String wcDataBase = "uname_jdbwctest";
-		final String wcUser = "xxxxxxxxxxxxxxx";
-		final String wcPass = "xxxxxxxxxxxxxxx";
+		final String hostUrl = "http://localhost:8080/";
+		final String hostUser = "xxxxxxxxxxxxxxx";
+		final String hostPass = "xxxxxxxxxxxxxxx";
 
-		final int port = 80;
-		final String httUrlStr = "http://localhost/";
-		final String user = "xxxxxxxxxxxxxxx";
-		final String pass = "xxxxxxxxxxxxxxx";
+		final String databaseName = "uname_jdbwctest";
+		final String databaseUser = "xxxxxxxxxxxxxxx";
+		final String databasePass = "xxxxxxxxxxxxxxx";
 
 		/* *********************************
 		 * Starting a connection via a url *
 		 * *********************************/
-//		final String jdbwcUrlStr = "jdbc:jdbwc:mysql//"
-//			+ httUrlStr
-//			+ "?port=" + port
-//			+ "&databaseName=" + wcDataBase
-//			+ "&databaseUser=" + wcUser
-//			+ "&databasePassword=" + wcPass;
+//		final String jdbwcUrlString = "jdbc:jdbwc:mysql//"
+//			+ hostUrl
+//			+ "?databaseName=" + databaseName
+//			+ "&databaseUser=" + databaseUser
+//			+ "&databasePassword=" + databasePass;
 //
 //		/* initialise a new JDBC Connection using the JDBWC Driver package */
-//		*connection = DriverManager.getConnection(jdbwcUrlStr, user, pass);*
+//		*connection = DriverManager.getConnection(jdbwcUrlString, hostUser, hostPass);*
 
 		/* ****************************************
 		 * Using a Propeties object (recommended) *
 		 * ****************************************/
-		//final String jdbwcUrlStr = "jdbc:jdbwc:postgresql//";
-		final String jdbwcUrlStr = "jdbc:jdbwc:mysql//";
+		//final String jdbwcUrl = "jdbc:jdbwc:postgresql//";
+		final String jdbwcUrl = "jdbc:jdbwc:mysql//";
 
 		Properties props = new Properties();
-		props.put("url", httUrlStr);
-		props.put("port", String.valueOf(port));
+		
+		props.put("url", hostUrl);
+		props.put("user", hostUser);
+		props.put("password", hostPass);
+		
+		props.put("databaseName", databaseName);
+		props.put("databaseUser", databaseUser);
+		props.put("databasePassword", databasePass);
 
-		props.put("user", user);
-		props.put("password", pass);
-		props.put("databaseName", wcDataBase);
-		props.put("databaseUser", wcUser);
-		props.put("databasePassword", wcPass);
-
-		/* *****************************
-		 * OPTIONAL PARAMETERS:
-		 * *****************************/
-
-		props.put("debug", "true");//OPTIONS: true, false (or not used. defaults to false)
-		props.put("debugLogger", "SimpleLog");//OPTIONS: SimpleLog, Jdk14Logger, Log4JLogger
-		props.put("debugLevel", "0");//OPTIONS: [0-3] 0=informative,2=good for connection debugging/* Dummy User-Agent (only required in rare situations where hosts block the default Apache HttpClient User-Agent). */
-		props.put("useDummyAgent", "false");//OPTIONS: true, false (or not used. defaults to false)
-
-		*connection = DriverManager.getConnection(jdbwcUrlStr, props);*
+		*connection = DriverManager.getConnection(jdbwcUrl, props);*
 
 	} catch (ClassNotFoundException e) {
 		e.printStackTrace();
@@ -264,10 +264,56 @@ private java.sql.Connection connect() {
 	*return connection;*
 }
 
-Connection Parameters in detail
+Connection URL in detail
 
 
-    Driver URLs
+    The connection URL
+
+The connection URL consists of 3 main parts. Optional parameters can be
+added to the connection to customise the connection object. Parameters
+can be in any order.
+
+   1. JDBC URL <#jdbcurl>
+   2. Server-Side URL <#url>
+   3. Parameters <#reqprops>
+
+Example:*|
+jdbc:jdbwc:mysql//||https://example.org:445/exampledirectory/|*
+
+Theres 2 ways to pass the information into the driver in order to start
+a new connection.
+
+*The parameters can be appended to the end of the URL:*
+
+|String fullUrl =
+|"*|jdbc:jdbwc:mysql//https://example.org:445/exampledirectory/||?databaseName=uname_mydatabase&databaseUser=uname_myuser&databasePassword=mysecretpassword|*";
+|connection = DriverManager.getConnection(*fullUrl*, "myhostusername",
+"mysecrethostpassword");|
+
+The parameters are seperated from the URL parts with a question symbol:
+"*?*" then each /key=>//parameter/ pair is seperated with the ampersand
+symbol: "*&*"
+There should be no spaces.
+
+OR
+
+* The parameters are stored in a |java.util.Properties| object:* |String
+jdbcUrl = "*jdbc:jdbwc:mysql//*";
+
+Properties props = new Properties();
+props.put("*url*", "https://example.org:445/exampledirectory/");
+props.put("*user*", "myhostusername");
+props.put("*password*", "mysecrethostpassword");
+props.put("*databaseName*", "uname_mydatabase");
+props.put("*databaseUser*", "uname_myuser");
+props.put("*databasePassword*", "mysecretpassword");
+
+connection = DriverManager.getConnection(*jdbcUrl*, *props*);|
+
+------------------------------------------------------------------------
+
+
+    JDBC Driver URL's
 
 
           Use only one of:
@@ -297,7 +343,7 @@ Requests a PostgreSql connection from JDBWC.
           Use all of:
 
     * url
-    * port
+    * port (has been removed since v1.0.0.4. See: url <#url>)
     * user
     * password
     * databaseName
@@ -309,34 +355,46 @@ Requests a PostgreSql connection from JDBWC.
 
 |url|
 The website URL containing the JDBWC server-side PHP bundle.
-The url must start with a protocol (http or https) and have a trialing /
-EG: |https://mydomain.ext/myfolder/myotherfolder/|
-The JDBWC driver will append |jdbwc/index.php| to the end of this URL
-before requesting a connection from the server.
+The url must start with a protocol (http or https) and have a trailing /
+Examples:
 
-|port|
-The port number the web-server responds to. In this release, only
-standard ports can be used.
-80 is standard for http requests
-443 is standard for https
+    * |https://mydomain.ext:445/myfolder/myotherfolder/| (will use port 445)
+    * |http://mydomain.ext:8080/myfolder/myotherfolder/| (will use port
+      8080)
+    * |https://mydomain.ext/myfolder/myotherfolder/| (will default to
+      port 443)
+    * |http://mydomain.ext/myfolder/myotherfolder/| (will default to
+      port 80)
+
+/The port number is only required for non standard ports in the range
+[1-0xfffe] (anything other than 80 or 443)/.
+Custom port usage may incur up to 7ms overhead per query (100 queries =
++0.7 of a second).
+
+The JDBWC driver will append |jdbwc/index.php| to the end of the URL
+before requesting a connection from the server.
+/If the domain name is unknown or not in DNS an IP can be used.
+/
 
 |user|
-The user name you specified in the server-side |configure.php| file.
+The user name you specified in the server-side |configure.php
+<#configure>| file.
 
 |password|
-The password you specified in the server-side |configure.php| file.
+The password you specified in the server-side |configure.php
+<#configure>| file.
 
 |databaseName|
 One of the database names you specified in the server-side
-|databases.php| file.
+|databases.php <#databases>| file.
 
 |databaseUser|
 One of the database user-names you specified in the server-side
-|databases.php| file.
+|databases.php <#databases>| file.
 
 |databasePassword|
 One of the database passwords you specified in the server-side
-|databases.php| file.
+|databases.php <#databases>| file.
 
 ------------------------------------------------------------------------
 
@@ -346,6 +404,9 @@ One of the database passwords you specified in the server-side
 
           Use or omit any of:
 
+    * proxyUrl
+    * timeout
+    * nonVerifiedSSL
     * debug
     * debugLogger
     * debugLevel
@@ -354,6 +415,34 @@ One of the database passwords you specified in the server-side
 
           What they do:
 
+|proxyUrl|
+The proxy server URL to communicate through.
+The url must start with a protocol (http or https). NO trailing /
+Examples:
+
+    * |http://myproxy.ext:8120|
+    * |http://myproxy.myserver.ext:8000|
+
+/The port number is ALWAYS required for proxy servers/. If this
+parameter is used and there is no proxy, the connection will fail.
+
+|timeout|
+Connection timeout. The maximum amount of time before a connection will
+timeout if it hasn't received a response from the server. If the server
+is offline, the driver will throw an exception as soon as it determines
+there's no one home.
+OPTIONS: a time in milliseconds. 1 second = 1000 milliseconds
+
+|nonVerifiedSSL|
+Allows the driver to use different qualities of SSL. By default its set
+to false and the driver will perform full SSL verification including
+strict hostname checking (similar to a web browser). If this option is
+set to true the driver will attempt to ignore the usual checks. If the
+driver is unable to ignore the SSL verification the driver will throw an
+exception from the |java.security| package or/and the |javax.net.ssl|
+package.
+OPTIONS: true, false (or not used. defaults to false)
+
 |debug|
 Turns debugging on or off. Its off by default. The other |debugXX|
 options will only take effect if this option is set to |true|.
@@ -361,18 +450,23 @@ OPTIONS: true, false (or not used. defaults to false)
 
 |debugLogger|
 The type of logger to use for logging. Although there are 3 options,
-_only SimpleLog will work with this release_. To find out more about the
-logger see: http://hc.apache.org/httpclient-3.x/logging.html
-OPTIONS: SimpleLog, Jdk14Logger, Log4JLogger
+_only SimpleLog support is built in to this release_.
+/|java.util.logging| and |Log4J| both require external property files./
+To find out more about the logger see:
+http://hc.apache.org/httpcomponents-client-4.0.1/logging.html
+OPTIONS: SimpleLog, /Jdk14Logger, Log4JLogger/
 
 |debugLevel|
-Debugging level:
+Debugging levels:
 0 JDBWC informative/debugging,
 1 JDBWC debugging,
 2 JDBWC debugging and Enable header wire + context logging - Best for
 Debugging,
-3 JDBWC debugging and Enable full wire + context logging.
-OPTIONS: [0-3]
+3 JDBWC debugging and Enable full wire + context logging,
+4 JDBWC debugging and Enable context logging for connection management,
+5 JDBWC debugging and Enable context logging for connection management /
+request execution.
+OPTIONS: [0-5]
 
 |useDummyAgent|
 This is rarely required. Its for situations where the host server blocks
@@ -380,52 +474,87 @@ the default HttpClient |User-Agent|. The server would need to have been
 configured to deliberately block the HttpClient user agent.
 OPTIONS: true, false (or not used. defaults to false)
 
-Whats new?
+What's new?
 
 
-          Since v1.0.0.2_2beta
+          Since v1.0.0.3beta
 
-    * Replaced the server-side with a new OOP based PHP5 system.
-    * Removed reliance on Apache authentication and replaced it with a
-      driver based authentication system. Makes installation and
-      management easier. Authentication encryption is based on a
-      randomised SHA256 hash (+ 16 MD5 chars). 1 for the username, 1 for
-      the password and one for the db-credentials.
-    * Improved session handling. Server-side session can be stored as
-      files or sqlite.
-    * Added server-side logging.
-    * Improved server-side error handling.
+    * Communication layer changed from being powered by
+      Apache-HttpClient 3.1 (legacy) to Apache-HttpClient 4.0.1.
+    * Host connection can use _any valid port_ in the range [1-0xfffe].
+      Non standard port use may incur up to 7ms delay per query (100
+      queries = +0.7 of a second).
+    * Added _support for 1 proxy_ server.
     * Added optional connection parameters:
-          o debugLogger
-          o debugLevel
-          o useDummyAgent
-    * Implemented debugging in JDBC side.
-    * Added 4 debug levels.
-    * Replaced the old cumbersome exception handler with a lightweight
-      system tailored to suit this driver.
-    * Updated drivers javadocs.
-    * Fixed the Postgres |ParameterMetaData| functionality for
-      |PreparedStatement|.
-    * Fixed a bug in |Driver.getPropertyInfo()|
-    * Minor fixes to DatabaseMetadata (query) classes for MySql and
-      PostgreSql 8.x.x.
+          o timeout
+          o nonVerifiedSSL
+          o proxyUrl
+    * Added 2 more debug levels.
+    * Trimmed down the exception classes to only those currently
+      required by the driver.
+    * Added support for un-validated server-side SSL.
+    * Added transparent gzip support for incoming data (from server-side
+      going to JDBC side).
+    * Added JDBC Fatal Server-Side Error handling.
+    * Lots of work on MySql DatabaseMetaData and ResultSetMetaData.
+    * New ResultSetMetaData backend v3. Uses a connection
+      resource-economic approach, is faster and suitably accurate. Works
+      with any SQL that produces a MySQL resultset including SHOW and
+      EXPLAIN.
+    * Rewrote and fine tuned the MySQL Types class (handles most of the
+      type juggling between MySQL and Java.sql).
+    * Added a static metadata feed class for the java.sql metadata classes.
+    * Better handling of null and empty values by the drivers underlying
+      data type. This versions uses a new implementation better suited
+      to SQL data.
+    * Completed numerous (previously un-implemented methods) in the core
+      implementation classes.
+    * Simplified connection parameters (reduced amount of params by
+      including more information in the remote url's.
+          o Combined required port param with server url. (EG:
+            |https://myserver.ext:8081/mysubfolder/|)
+          o Combined use proxy, proxy protocol, domain and port into 1
+            url. (EG: |http://myproxyserver.ext:8085|)
+    * The Driver is now compatible and very functional in the following
+      SQL clients.
+          o SQL Workbench - build 108
+          o DB Visualizer - Free 7.0.6
+          o SQuirreL SQL Client 3.1
+    * Changed main server file to look for the |config/local| folder
+      rather than a host named |localhost| (this is usually for testing
+      setups).
+    * Updated valid parameter key strings for com.jdbwc.Driver
+    * Migrated connection param verification and setup to the Driver
+      class (from the connection class).
+    * Updated javadocs.
     * Improved JDBWC test class.
-          o Replaced hardcoded database names with a class variable.
-          o Increased use of |ResultsetMetaData|.
-          o Implemented |ParameterMetaData| testing.
-          o Implemented the new optional parameters in |connect()| method.
-    * Added deprecated annotations to deprecated methods in the
-      implementation (/for methods deprecated from the JDBC specs/).
+          o Implemented the new optional parameters in connect() method.
+          o Implemented a test code block for demonstrating the use of
+            Driver.getPropertyInfo() (un comment to use it).
+          o Improved the main() method with time taken display and the
+            ability to run the test in loops for reliability and stress
+            testing.
+          o Test main() can accept one external parameter to trigger
+            multiple passes.
+    * Added NotImplemented exceptions to all methods that are not yet
+      full implemented. Added an additional message to make finding the
+      cause of these exceptions easier.
+    * Minor improvements to the Ant build file.
 
 Limitations
 
     * JDBWC is aimed at JDBC 3 specifications with a few limitations
-      (/see the other limitations and TODO <#todo>'s/).
-    * No support for newer JDBC 3 or 4 data-types.
+      (/also see the other limitations and TODO <#todo>'s/).
+    * No support for some of the newer JDBC 3 and 4 data-types.
     * Shared IP's don't agree with the driver. Dedicated IP's are fine.
-    * Non-transparent proxy servers _may_ cause the remote-host to
-      become unreachable by the driver.
-    * Only standard http ports can be used. They are 80 and 443.
+    * Single connections? My advice would be no, multiple connections
+      are OK, but be carefull. If latency isn't an issue It should be
+      fine. If latency is an issue, you may find things happening out of
+      order. EG: a delete query sent after a select query, could end up
+      getting to the server first, in which case your select query would
+      probably not be correct based on the order it was sent. I would
+      recommend using single connections when communicating across large
+      unknown networks like the internet.
     * Also see Known Issues <#issues>.
 
 TODO
@@ -433,28 +562,26 @@ TODO
     * Finish PreparedStatement (/almost done/), CallableStatement,
       ParameterMetaData (/almost done/) and anything else not
       implemented yet.
-    * Implement support for some of the newer JDBC 3 and 4 data types.
-    * Implement support for the streamable data types (/Its do 'able but
-      isn't an immediate priority/).
+    * Implement support for more of the newer JDBC 3 and 4 data types.
+    * Implement support for the N data types.
     * JUnit tests (/not the highest priority at this point/).
+    * Implement support for more databases. This will occur with or
+      after the next release.
 
 Known issues
 
     * Shared IP's don't agree with the driver (or previous versions).
-      Localhost testing servers or production servers on the same
-      machine as the driver aren't usually a problem.
-    * Fatal errors on the JDBWC server-side (like fatal PHP errors,
-      fatal Apache errors, etc) aren't relayed back to the driver
-      because PHP will cause an immediate halt with no chance to
-      recover. The only way to currently find these errors is by
-      checking your web-servers error log (/not the JDBWC error log/).
-      This subject is explained in detail in the PHP manual. Needless to
-      say the WC side of the driver is thoroughly tested before official
-      releases are made available to ensure this doesn't happen; however
-      given the amount of different os/apache/php setups its not
-      possible to test on all platforms. At least 3 variations
-      (os/apache/php - version, build, cofiguration) are used during WC
-      testing.
+      Dedicated IP's, localhost testing servers or production servers on
+      the same machine as the driver aren't usually a problem.
+    * Not really an issue but worth mentioning. Server-Side testing in
+      relation to Fatal Errors: Given the amount of different
+      os/apache/php setups its not possible to test on all platforms. At
+      least 3 variations (os/apache/php - version, build, configuration)
+      are used during WC testing.
+      The only reason I can see for any Fatal-Errors with WC would be if
+      the web/php server didn't have a required PHP package installed.
+      Care has been taken to avoid packages that are commonly not
+      installed on many shared hosts.
 
 *NOTE:* Its _strongly_ advised to use an SSL connection when
 communicating across a network or the internet as you will be sending
@@ -483,4 +610,10 @@ If you would like to see a particular feature implemented, please make a
 feature request at:
 http://sourceforge.net/tracker/?group_id=233279&atid=1089230
 
-Copyright ©2008 Tim Gall, All rights reserved
+Copyright ©2008 Tim Gall, All rights reserved.
+
+*LEGAL FOOTNOTES:*
+Java is a trademark of Sun Microsystems Inc. (Also see: Oracle Corporation)
+MySql is a trademark of MySql AB. (Also see: Oracle Corporation)
+PostgreSql is copyright of: PostgreSQL Global Development Group
+

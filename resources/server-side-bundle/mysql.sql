@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `test01` (
   PRIMARY KEY (`myidx`),
   UNIQUE KEY `valkey` (`valkey`),
   KEY `expiry` (`expiry`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -30,4 +30,4 @@ CREATE TABLE IF NOT EXISTS `test02` (
   `valkey` varchar(32) NOT NULL,
   `accessed` datetime NOT NULL,
   PRIMARY KEY (`test02_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;

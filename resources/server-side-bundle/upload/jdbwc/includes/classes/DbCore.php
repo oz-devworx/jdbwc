@@ -79,12 +79,12 @@ abstract class DbCore{
         }
 
         if ((strlen($cline)==4) &&
-        strcasecmp($cline, 'show') == 0 ||
-        strcasecmp($cline, 'exec') == 0 ||
-        strcasecmp($cline, 'sele') == 0 || // select
-        strcasecmp($cline, 'expl') == 0 || // explain
-        strcasecmp($cline, 'desc') == 0 || // describe
-        strcasecmp($cline, 'data') == 0) // database()
+          strcasecmp($cline, 'show') == 0 ||
+          strcasecmp($cline, 'exec') == 0 ||
+          strcasecmp($cline, 'sele') == 0 || // select
+          strcasecmp($cline, 'expl') == 0 || // explain
+          strcasecmp($cline, 'desc') == 0 || // describe
+          strcasecmp($cline, 'data') == 0) // database()
         {
           $rowsAffected = $this->num_rows($sqlQuery);
           $batchResults .= WcApiCore::wcBuildCSV($sqlQuery, $rowsAffected);

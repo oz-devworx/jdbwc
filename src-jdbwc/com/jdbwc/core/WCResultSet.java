@@ -19,8 +19,11 @@
  */
 package com.jdbwc.core;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -43,11 +46,11 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.jdbwc.core.util.SQLField;
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.iface.ResultSet;
 import com.jdbwc.util.Util;
 import com.ozdevworx.dtype.DataHandler;
-import com.ozdevworx.dtype.impl.IlegalNumberTypeException;
 
 /**
  * Extended JDBC-API implementation for java.sql.ResultSet.<br />
@@ -55,70 +58,85 @@ import com.ozdevworx.dtype.impl.IlegalNumberTypeException;
  *
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
+ * @version 2010-05-22
  */
 public class WCResultSet extends WCResultSetUpdates implements ResultSet {
+
+	//--------------------------------------------------------------- fields
 
 //	/** Log object for this class. */
 //    private static final Log LOG = LogFactory.getLog("jdbwc.core.ResultSet");
 
 	private transient final boolean useJdbcTzShift = true;// best left set to true for now
 
+	private transient WCResultSetMetaData internalMetaData = null;
+
+	protected transient String querySQL = null;
+
+	protected transient SQLWarning warnings = null;
+
+	private transient boolean wasLastNull;
+
+	//--------------------------------------------------------------- constructors
+
 	protected WCResultSet(WCConnection connection) throws SQLException{
 		super();
-		myRows = Util.getCaseSafeHandler(connection.getCaseSensitivity());
-		myRow = Util.getCaseSafeHandler(connection.getCaseSensitivity());
-		myPointer = -1;
-		mySQL = "";
-		myDbType = connection.getDbType();
-
 		myConnection = connection;
-		myStatement = new WCStatement(connection);
+		myStatement = new WCStatement(myConnection, myConnection.getCatalog());
+		myRows = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+
+		init(myConnection.getCaseSensitivity(), myConnection.getDbType(), "");
+	}
+
+	protected WCResultSet(WCConnection connection, WCResultSetMetaData metaData) throws SQLException{
+		super();
+		myConnection = connection;
+		myStatement = new WCStatement(myConnection, myConnection.getCatalog());
+		myRows = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		internalMetaData = metaData;
+
+		init(myConnection.getCaseSensitivity(), myConnection.getDbType(), "");
 	}
 
 	protected WCResultSet(WCConnection connection, WCStatement statement) throws SQLException{
 		super();
-		myRows = Util.getCaseSafeHandler(connection.getCaseSensitivity());
-		myRow = Util.getCaseSafeHandler(connection.getCaseSensitivity());
-		myPointer = -1;
-		mySQL = "";
-		myDbType = connection.getDbType();
-
 		myConnection = connection;
 		myStatement = statement;
+		myRows = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+
+		init(myConnection.getCaseSensitivity(), myConnection.getDbType(), "");
 	}
 
 	protected WCResultSet(WCConnection connection, WCStatement statement, String sql) throws SQLException{
 		super();
-		myRows = Util.getCaseSafeHandler(connection.getCaseSensitivity());
-		myRow = Util.getCaseSafeHandler(connection.getCaseSensitivity());
-		myPointer = -1;
-		mySQL = sql;
-		myDbType = connection.getDbType();
-
 		myConnection = connection;
 		myStatement = statement;
+		myRows = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+
+		init(myConnection.getCaseSensitivity(), myConnection.getDbType(), sql);
 	}
 
 	protected WCResultSet(WCConnection connection, WCStatement statement, String sql, DataHandler results) throws SQLException{
 		super();
-		myRows = results;
-		myRow = Util.getCaseSafeHandler(connection.getCaseSensitivity());
-		myPointer = -1;
-		mySQL = sql;
-		myDbType = connection.getDbType();
-
 		myConnection = connection;
 		myStatement = statement;
+		myRows = results;
+
+		init(myConnection.getCaseSensitivity(), myConnection.getDbType(), sql);
 	}
 
+	//--------------------------------------------------------------- public methods
+
 	public void addRow(DataHandler row){
-		myRows.addData(myRows.length()+"", row);
+		synchronized (myRows) {
+			myRows.addData(myRows.length() + "", row);
+		}
 	}
 
 	public boolean next() throws SQLException{
 		isResultSetOpen();
 		boolean hasNext = false;
-		if(myRows.getData(myPointer+1) instanceof DataHandler){
+		if(myRows.getObject(myPointer+1) instanceof DataHandler){
 			movePointerForward();
 			hasNext = true;
 		}
@@ -129,7 +147,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	public boolean previous() throws SQLException{
 		isResultSetOpen();
 		boolean hasPrevious = false;
-		if(myRows.getData(myPointer-1) instanceof DataHandler){
+		if(myRows.getObject(myPointer-1) instanceof DataHandler){
 			movePointerBackward();
 			hasPrevious = true;
 		}
@@ -141,7 +159,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		isResultSetOpen();
 		boolean hasFirst = false;
 		movePointerToStart();
-		if(myRows.getData(myPointer) instanceof DataHandler){
+		if(myRows.getObject(myPointer) instanceof DataHandler){
 			hasFirst = true;
 		}else{
 			throw new SQLException(
@@ -155,7 +173,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		isResultSetOpen();
 		boolean hasLast = false;
 		movePointerToEnd();
-		if(myRows.getData(myPointer) instanceof DataHandler){
+		if(myRows.getObject(myPointer) instanceof DataHandler){
 			hasLast = true;
 		}else{
 			throw new SQLException(
@@ -167,39 +185,36 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	}
 
 	public boolean isClosed() throws SQLException {
-		boolean closed = false;
 		if(myRows.length()==0){
-			closed = true;
+			return true;
 		}
 
-		return closed;
+		return false;
 	}
 
 	public boolean isFirst() throws SQLException {
 		isResultSetOpen();
-		boolean first = false;
 		if(myPointer==0){
-			first = true;
+			return true;
 		}
 
-		return first;
+		return false;
 	}
 
 	public boolean isLast() throws SQLException {
 		isResultSetOpen();
-		boolean last = false;
 		if(myPointer==myRows.length()-1){
-			last = true;
+			return true;
 		}
 
-		return last;
+		return false;
 	}
 
 	public void close() throws SQLException {
 		myRows.clearData();
 		myRow.clearData();
 		myPointer = -1;
-		mySQL = "";
+		querySQL = "";
 	}
 
 	public int getFetchDirection() throws SQLException {
@@ -210,7 +225,9 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getFetchSize()
 	 */
 	public int getFetchSize() throws SQLException {
-		return myRows.length();
+		synchronized (myRows) {
+			return myRows.length();
+		}
 	}
 
 	public void setFetchDirection(int direction) throws SQLException {
@@ -241,155 +258,185 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 
 
 	public int getInt(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
+		Object obj = isIndexValid(columnIndex);
 		int val = 0;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getInt(columnIndex-1);
-		} catch (IlegalNumberTypeException e) {
+			val = Integer.parseInt(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Integer cast Exception. The value at column index " + (columnIndex-1) + " is not an Integer.",
-					"22003");
+					"Integer cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not an Integer.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public int getInt(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
+		Object obj = isIndexValid(columnLabel);
 		int val = 0;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getInt(columnLabel);
-		} catch (IlegalNumberTypeException e) {
+			val = Integer.parseInt(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Integer cast Exception. The value at column '" + columnLabel + "' is not an Integer.",
-					"22003");
+					"Integer cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not an Integer.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public double getDouble(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-		double val = 0;
+		Object obj = isIndexValid(columnIndex);
+		double val = 0D;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getDouble(columnIndex-1);
-		} catch (IlegalNumberTypeException e) {
+			val = Double.parseDouble(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Double cast Exception. The value at column index " + (columnIndex-1) + " is not a Double.",
-					"22003");
+					"Double cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Double.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public double getDouble(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-		double val = 0;
+		Object obj = isIndexValid(columnLabel);
+		double val = 0D;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getDouble(columnLabel);
-		} catch (IlegalNumberTypeException e) {
+			val = Double.parseDouble(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Double cast Exception. The value at column '" + columnLabel + "' is not a Double.",
-					"22003");
+					"Double cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Double.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public float getFloat(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-		float val = 0;
+		Object obj = isIndexValid(columnIndex);
+		float val = 0F;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getFloat(columnIndex-1);
-		} catch (IlegalNumberTypeException e) {
+			val = Float.parseFloat(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Float cast Exception. The value at column index " + (columnIndex-1) + " is not a Float.",
-					"22003");
+					"Float cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Float.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public float getFloat(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-		float val = 0;
+		Object obj = isIndexValid(columnLabel);
+		float val = 0F;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getFloat(columnLabel);
-		} catch (IlegalNumberTypeException e) {
+			val = Float.parseFloat(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Float cast Exception. The value at column '" + columnLabel + "' is not a Float.",
-					"22003");
+					"Float cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Float.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public Object getObject(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-		Object val = myRow.getObject(columnIndex-1);
-		return val;
+		return isIndexValid(columnIndex);
 	}
 
 	public Object getObject(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-		Object val = myRow.getObject(columnLabel);
-		return val;
+		return isIndexValid(columnLabel);
 	}
 
 	public String getString(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-		String val = myRow.getString(columnIndex-1);
-		return val;
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
+		return String.valueOf(obj);
 	}
 
 	public String getString(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-		String val = myRow.getString(columnLabel);
-		return val;
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
+		return String.valueOf(obj);
 	}
 
 	public long getLong(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
+		Object obj = isIndexValid(columnIndex);
 		long val = 0L;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getLong(columnIndex-1);
-		} catch (IlegalNumberTypeException e) {
+			val = Long.parseLong(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Long cast Exception. The value at column index " + (columnIndex-1) + " is not a Long.",
-					"22003");
+					"Long cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Long.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public long getLong(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
+		Object obj = isIndexValid(columnLabel);
 		long val = 0L;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getLong(columnLabel);
-		} catch (IlegalNumberTypeException e) {
+			val = Long.parseLong(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Long cast Exception. The value at column '" + columnLabel + "' is not a Long.",
-					"22003");
+					"Long cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Long.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public short getShort(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
+		Object obj = isIndexValid(columnIndex);
 		short val = 0;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getShort(columnIndex-1);
-		} catch (IlegalNumberTypeException e) {
+			val = Short.parseShort(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Short cast Exception. The value at column index " + (columnIndex-1) + " is not a Short.",
-					"22003");
+					"Short cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Short.",
+					"22003", e);
 		}
 		return val;
 	}
 
 	public short getShort(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
+		Object obj = isIndexValid(columnLabel);
 		short val = 0;
+		if(obj==null)
+			return val;
+
 		try {
-			val = myRow.getShort(columnLabel);
-		} catch (IlegalNumberTypeException e) {
+			val = Short.parseShort(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Short cast Exception. The value at column '" + columnLabel + "' is not a Short.",
-					"22003");
+					"Short cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Short.",
+					"22003", e);
 		}
 		return val;
 	}
@@ -429,7 +476,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 				myPointer = 0;
 			}
 
-			if(myRows.getData(myPointer) instanceof DataHandler){
+			if(myRows.getObject(myPointer) instanceof DataHandler){
 				getCurrentRow();
 				isAbsolute = true;
 			}
@@ -454,26 +501,10 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	}
 
 	/**
-	 * @see java.sql.ResultSet#cancelRowUpdates()
-	 */
-	public void cancelRowUpdates() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
 	 * @see java.sql.ResultSet#clearWarnings()
 	 */
 	public void clearWarnings() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @see java.sql.ResultSet#deleteRow()
-	 */
-	public void deleteRow() throws SQLException {
-		myRows.removeByIndex(myPointer);
+		this.warnings = null;
 	}
 
 	/**
@@ -496,7 +527,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Array getArray(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getArray(int columnIndex)");
 	}
 
 	/**
@@ -504,38 +535,69 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Array getArray(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getArray(String columnLabel)");
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getAsciiStream(int)
 	 */
 	public InputStream getAsciiStream(int columnIndex) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
+		InputStream stream = null;
+		try {
+			stream = new ByteArrayInputStream(String.valueOf(obj).getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// ignored.
+			// value should always be utf-8
+			// falls back to null
+			//e.printStackTrace();
+		}
+
+		return stream;
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getAsciiStream(java.lang.String)
 	 */
 	public InputStream getAsciiStream(String columnLabel) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
+		InputStream stream = null;
+		try {
+			stream = new ByteArrayInputStream(String.valueOf(obj).getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// ignored.
+			// value should always be utf-8
+			// falls back to null
+			//e.printStackTrace();
+		}
+
+		return stream;
 	}
 
 	/**
+	 * TODO: fix precision
+	 *
 	 * @see java.sql.ResultSet#getBigDecimal(int)
 	 */
 	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
 		BigDecimal val = null;
 		try {
-			double dVal = Double.parseDouble(myRow.getString(columnIndex-1));
+			double dVal = Double.parseDouble(String.valueOf(obj));
 			val = BigDecimal.valueOf(dVal);
-		} catch (ClassCastException e) {
+		} catch (NumberFormatException e) {
 			throw new SQLException(
 					"BigDecimal cast Exception. The value at column index " + (columnIndex-1) + " is not a BigDecimal.",
-					"22003");
+					"22003", e);
 		}
 		return val;
 	}
@@ -544,15 +606,18 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getBigDecimal(java.lang.String)
 	 */
 	public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
 		BigDecimal val = null;
 		try {
-			double dVal = Double.parseDouble(myRow.getString(columnLabel));
+			double dVal = Double.parseDouble(String.valueOf(obj));
 			val = BigDecimal.valueOf(dVal);
-		} catch (ClassCastException e) {
+		} catch (NumberFormatException e) {
 			throw new SQLException(
 					"BigDecimal cast Exception. The value at column '" + columnLabel + "' is not a BigDecimal.",
-					"22003");
+					"22003", e);
 		}
 		return val;
 	}
@@ -563,16 +628,19 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	@Deprecated
 	public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-		isIndexValid(columnIndex);
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
 		BigDecimal val = null;
 		try {
-			double dVal = Double.parseDouble(myRow.getString(columnIndex-1));
+			double dVal = Double.parseDouble(String.valueOf(obj));
 			val = BigDecimal.valueOf(dVal);
 			val.setScale(scale);
-		} catch (ClassCastException e) {
+		} catch (NumberFormatException e) {
 			throw new SQLException(
 					"BigDecimal cast Exception. The value at column index " + (columnIndex-1) + " is not a BigDecimal.",
-					"22003");
+					"22003", e);
 		}
 		return val;
 	}
@@ -583,16 +651,19 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	@Deprecated
 	public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-		isIndexValid(columnLabel);
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
 		BigDecimal val = null;
 		try {
-			double dVal = Double.parseDouble(myRow.getString(columnLabel));
+			double dVal = Double.parseDouble(String.valueOf(obj));
 			val = BigDecimal.valueOf(dVal);
 			val.setScale(scale);
-		} catch (ClassCastException e) {
+		} catch (NumberFormatException e) {
 			throw new SQLException(
 					"BigDecimal cast Exception. The value at column '" + columnLabel + "' is not a BigDecimal.",
-					"22003");
+					"22003", e);
 		}
 		return val;
 	}
@@ -601,16 +672,40 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getBinaryStream(int)
 	 */
 	public InputStream getBinaryStream(int columnIndex) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
+		InputStream stream = null;
+		try {
+			stream = new ByteArrayInputStream(String.valueOf(obj).getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// ignored. falls back to null
+			//e.printStackTrace();
+		}
+		return stream;
+
+//		throw new NotImplemented("getBinaryStream(int columnIndex)");
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getBinaryStream(java.lang.String)
 	 */
 	public InputStream getBinaryStream(String columnLabel) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
+		InputStream stream = null;
+		try {
+			stream = new ByteArrayInputStream(String.valueOf(obj).getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// ignored. falls back to null
+			//e.printStackTrace();
+		}
+		return stream;
+
+//		throw new NotImplemented("getBinaryStream(String columnLabel)");
 	}
 
 	/**
@@ -618,7 +713,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Blob getBlob(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getBlob(int columnIndex)");
 	}
 
 	/**
@@ -626,7 +721,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Blob getBlob(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getBlob(String columnLabel)");
 	}
 
 	/**
@@ -641,35 +736,29 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getBoolean(int)
 	 */
 	public boolean getBoolean(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-		boolean val = false;
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return false;
 
-		String boolStr = myRow.getString(columnIndex-1);
+		String boolStr = String.valueOf(obj);
+
 		/* look for common true booleans */
-		if(boolStr.equalsIgnoreCase("yes")
-		|| boolStr.equalsIgnoreCase("on")
-		|| boolStr.equalsIgnoreCase("1"))
+		if("yes".equalsIgnoreCase(boolStr)
+			|| "on".equalsIgnoreCase(boolStr)
+			|| "1".equals(boolStr))
 		{
-			val = true;
+			return true;
 
 		/* look for common false booleans */
-		}else if(boolStr.equalsIgnoreCase("no")
-				|| boolStr.equalsIgnoreCase("off")
-				|| boolStr.equalsIgnoreCase("0"))
+		}else if("no".equalsIgnoreCase(boolStr)
+			|| "off".equalsIgnoreCase(boolStr)
+			|| "0".equals(boolStr))
 		{
-			val = false;
+			return false;
 
 		}else{
-			/* look for java boolean or throw an exception if none found */
-			try {
-				val = Boolean.parseBoolean(myRow.getString(columnIndex-1));
-			} catch (ClassCastException e) {
-				throw new SQLException(
-						"Boolean cast Exception. The value at column index " + (columnIndex-1) + " is not equal to true, yes or 1",
-						"S1000");
-			}
+			return Boolean.parseBoolean(boolStr);
 		}
-		return val;
 	}
 
 	/**
@@ -684,48 +773,45 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getBoolean(java.lang.String)
 	 */
 	public boolean getBoolean(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-		boolean val = false;
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return false;
 
-		String boolStr = myRow.getString(columnLabel);
+		String boolStr = String.valueOf(obj);
+
 		/* look for common true booleans */
-		if(boolStr.equalsIgnoreCase("yes")
-		|| boolStr.equalsIgnoreCase("on")
-		|| boolStr.equalsIgnoreCase("1"))
+		if("yes".equalsIgnoreCase(boolStr)
+			|| "on".equalsIgnoreCase(boolStr)
+			|| "1".equals(boolStr))
 		{
-			val = true;
+			return true;
 
 		/* look for common false booleans */
-		}else if(boolStr.equalsIgnoreCase("no")
-				|| boolStr.equalsIgnoreCase("off")
-				|| boolStr.equalsIgnoreCase("0"))
+		}else if("no".equalsIgnoreCase(boolStr)
+			|| "off".equalsIgnoreCase(boolStr)
+			|| "0".equals(boolStr))
 		{
-			val = false;
+			return false;
 
 		}else{
-			/* look for java booleans or throw an exception if none found */
-			try {
-				val = Boolean.parseBoolean(boolStr);
-			} catch (ClassCastException e) {
-				throw new SQLException(
-						"Boolean cast Exception. The value at column '" + columnLabel + "' is not equal to true, yes or 1",
-						"S1000");
-			}
+			return Boolean.parseBoolean(boolStr);
 		}
-		return val;
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getByte(int)
 	 */
 	public byte getByte(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return 0;
+
 		byte val = 0;
 		try {
-			val = Byte.parseByte(myRow.getString(columnIndex-1));
-		} catch (ClassCastException e) {
+			val = Byte.parseByte(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Byte cast Exception. The value at column index " + (columnIndex-1) + " is not a Byte.",
+					"Byte cast Exception. The value at column index " + (columnIndex-1) + " is not a byte.",
 					"S1000");
 		}
 		return val;
@@ -735,13 +821,16 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getByte(java.lang.String)
 	 */
 	public byte getByte(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return 0;
+
 		byte val = 0;
 		try {
-			val = Byte.parseByte(myRow.getString(columnLabel));
-		} catch (ClassCastException e) {
+			val = Byte.parseByte(String.valueOf(obj));
+		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Byte cast Exception. The value at column index " + columnLabel + " is not a Byte.",
+					"Byte cast Exception. The value at column " + columnLabel + " is not a byte.",
 					"S1000");
 		}
 		return val;
@@ -751,32 +840,44 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getBytes(int)
 	 */
 	public byte[] getBytes(int columnIndex) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
+		return String.valueOf(obj).getBytes();
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getBytes(java.lang.String)
 	 */
 	public byte[] getBytes(String columnLabel) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
+		return String.valueOf(obj).getBytes();
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getCharacterStream(int)
 	 */
 	public Reader getCharacterStream(int columnIndex) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
+		return new StringReader(String.valueOf(obj));
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getCharacterStream(java.lang.String)
 	 */
 	public Reader getCharacterStream(String columnLabel) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
+		return new StringReader(String.valueOf(obj));
 	}
 
 	/**
@@ -784,7 +885,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Clob getClob(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getClob(int columnIndex)");
 	}
 
 	/**
@@ -792,7 +893,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Clob getClob(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getClob(String columnLabel)");
 	}
 
 	/**
@@ -800,7 +901,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public int getConcurrency() throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getConcurrency()");
 	}
 
 	/**
@@ -808,7 +909,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public String getCursorName() throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getCursorName()");
 	}
 
 	/**
@@ -825,16 +926,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getDate(int)
 	 */
 	public Date getDate(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-
-		String valStr = myRow.getString(columnIndex-1);
-
-		/* handle null dates correctly
-		 * and return null for empty date fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getDateFromString(valStr, null);
 	}
@@ -853,16 +952,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getDate(java.lang.String)
 	 */
 	public Date getDate(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-
-		String valStr = myRow.getString(columnLabel);
-
-		/* handle null dates correctly
-		 * and return null for empty date fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getDateFromString(valStr, null);
 	}
@@ -881,16 +978,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getDate(int, java.util.Calendar)
 	 */
 	public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-		isIndexValid(columnIndex);
-
-		String valStr = myRow.getString(columnIndex-1);
-
-		/* handle null dates correctly
-		 * and return null for empty date fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getDateFromString(valStr, cal);
 	}
@@ -909,16 +1004,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getDate(java.lang.String, java.util.Calendar)
 	 */
 	public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-		isIndexValid(columnLabel);
-
-		String valStr = myRow.getString(columnLabel);
-
-		/* handle null dates correctly
-		 * and return null for empty date fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getDateFromString(valStr, cal);
 	}
@@ -928,27 +1021,26 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public int getHoldability() throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getHoldability()");
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getMetaData()
 	 */
 	public java.sql.ResultSetMetaData getMetaData() throws SQLException {
-		WCResultSetMetaData metaData = null;
 
-		String queryString = mySQL.toLowerCase();
-		boolean isValidSql = queryString.contains("select ") ? true : (queryString.contains("show ") ? true : false);
-
-		if(myConnection!=null && isValidSql){
-			metaData = new WCResultSetMetaData(mySQL, myConnection);
-		}else{
-			throw new SQLException(
-					"You tried to create a ResultSetMetaData Object for a query that is not a SELECT, EXPLAIN, EXEC, DESCRIBE or SHOW Statement. Only SELECT, EXPLAIN, EXEC, DESCRIBE and SHOW Statements can produce a ResultSetMetaData Object.",
-					"S1009");
+		if(internalMetaData!=null){
+			return internalMetaData;
 		}
 
-		return metaData;
+		if(myConnection!=null){
+			return new WCResultSetMetaData(querySQL, myConnection);
+		}else{
+			return new WCResultSetMetaData(new SQLField[0]);
+//			throw new SQLException(
+//					"The Connection parent of this ResultSet is null or closed.",
+//					"08003");
+		}
 	}
 
 	/**
@@ -956,7 +1048,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Reader getNCharacterStream(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getNCharacterStream(int columnIndex)");
 	}
 
 	/**
@@ -964,7 +1056,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Reader getNCharacterStream(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getNCharacterStream(String columnLabel)");
 	}
 
 	/**
@@ -972,7 +1064,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public NClob getNClob(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getNClob(int columnIndex)");
 	}
 
 	/**
@@ -980,7 +1072,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public NClob getNClob(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getNClob(String columnLabel)");
 	}
 
 	/**
@@ -988,7 +1080,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public String getNString(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getNString(int columnIndex)");
 	}
 
 	/**
@@ -996,7 +1088,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public String getNString(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getNString(String columnLabel)");
 	}
 
 	/**
@@ -1004,7 +1096,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Object getObject(int arg0, Map<String, Class<?>> arg1) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getObject(int arg0, Map<String, Class<?>> arg1)");
 	}
 
 	/**
@@ -1012,7 +1104,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Object getObject(String arg0, Map<String, Class<?>> arg1) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getObject(String arg0, Map<String, Class<?>> arg1)");
 	}
 
 	/**
@@ -1020,7 +1112,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Ref getRef(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getRef(int columnIndex)");
 	}
 
 	/**
@@ -1028,7 +1120,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public Ref getRef(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getRef(String columnLabel)");
 	}
 
 	/**
@@ -1036,7 +1128,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public RowId getRowId(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getRowId(int columnIndex)");
 	}
 
 	/**
@@ -1044,7 +1136,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public RowId getRowId(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getRowId(String columnLabel)");
 	}
 
 	/**
@@ -1052,7 +1144,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public SQLXML getSQLXML(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getSQLXML(int columnIndex)");
 	}
 
 	/**
@@ -1060,7 +1152,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public SQLXML getSQLXML(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getSQLXML(String columnLabel)");
 	}
 
 	/**
@@ -1077,16 +1169,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTime(int)
 	 */
 	public Time getTime(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-
-		String valStr = myRow.getString(columnIndex-1);
-
-		/* handle null times correctly
-		 * and return null for empty time fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimeFromString(valStr, null);
 	}
@@ -1105,16 +1195,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTime(java.lang.String)
 	 */
 	public Time getTime(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-
-		String valStr = myRow.getString(columnLabel);
-
-		/* handle null times correctly
-		 * and return null for empty time fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimeFromString(valStr, null);
 	}
@@ -1133,16 +1221,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTime(int, java.util.Calendar)
 	 */
 	public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-		isIndexValid(columnIndex);
-
-		String valStr = myRow.getString(columnIndex-1);
-
-		/* handle null times correctly
-		 * and return null for empty time fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimeFromString(valStr, cal);
 	}
@@ -1161,16 +1247,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTime(java.lang.String, java.util.Calendar)
 	 */
 	public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-		isIndexValid(columnLabel);
-
-		String valStr = myRow.getString(columnLabel);
-
-		/* handle null times correctly
-		 * and return null for empty time fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimeFromString(valStr, cal);
 	}
@@ -1189,16 +1273,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTimestamp(int)
 	 */
 	public Timestamp getTimestamp(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
-
-		String valStr = myRow.getString(columnIndex-1);
-
-		/* handle null Timestamps correctly
-		 * and return null for empty Timestamp fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimestampFromString(valStr, null);
 	}
@@ -1217,16 +1299,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTimestamp(java.lang.String)
 	 */
 	public Timestamp getTimestamp(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
-
-		String valStr = myRow.getString(columnLabel);
-
-		/* handle null Timestamps correctly
-		 * and return null for empty Timestamp fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimestampFromString(valStr, null);
 	}
@@ -1245,16 +1325,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTimestamp(int, java.util.Calendar)
 	 */
 	public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-		isIndexValid(columnIndex);
-
-		String valStr = myRow.getString(columnIndex-1);
-
-		/* handle null Timestamps correctly
-		 * and return null for empty Timestamp fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimestampFromString(valStr, cal);
 	}
@@ -1273,16 +1351,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getTimestamp(java.lang.String, java.util.Calendar)
 	 */
 	public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-		isIndexValid(columnLabel);
-
-		String valStr = myRow.getString(columnLabel);
-
-		/* handle null Timestamps correctly
-		 * and return null for empty Timestamp fields
-		 * to avoid altering the actual value in transit. */
-		if(isNull(valStr) || isEmpty(valStr)){
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
 			return null;
-		}
+
+		String valStr = String.valueOf(obj);
+
+		if(isEmpty(valStr))
+			return null;
 
 		return getTimestampFromString(valStr, cal);
 	}
@@ -1298,10 +1374,13 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getURL(int)
 	 */
 	public URL getURL(int columnIndex) throws SQLException {
-		isIndexValid(columnIndex);
+		Object obj = isIndexValid(columnIndex);
+		if(obj==null)
+			return null;
+
 		URL url = null;
 		try {
-			url = new URL(myRow.getString(columnIndex-1));
+			url = new URL(String.valueOf(obj));
 		} catch (MalformedURLException e) {
 			throw new SQLException(
 					"URL cast Exception. The value at column index " + (columnIndex-1) + " is not a valid URL.",
@@ -1314,10 +1393,13 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 * @see java.sql.ResultSet#getURL(java.lang.String)
 	 */
 	public URL getURL(String columnLabel) throws SQLException {
-		isIndexValid(columnLabel);
+		Object obj = isIndexValid(columnLabel);
+		if(obj==null)
+			return null;
+
 		URL url = null;
 		try {
-			url = new URL(myRow.getString(columnLabel));
+			url = new URL(String.valueOf(obj));
 		} catch (MalformedURLException e) {
 			throw new SQLException(
 					"URL cast Exception. The value at column " + columnLabel + " is not a valid URL.",
@@ -1333,7 +1415,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	@Deprecated
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("@Deprecated : getUnicodeStream(int columnIndex)");
 	}
 
 	/**
@@ -1343,23 +1425,14 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	@Deprecated
 	public InputStream getUnicodeStream(String columnLabel) throws SQLException {
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("@Deprecated : getUnicodeStream(String columnLabel)");
 	}
 
 	/**
 	 * @see java.sql.ResultSet#getWarnings()
 	 */
 	public SQLWarning getWarnings() throws SQLException{
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @see java.sql.ResultSet#insertRow()
-	 */
-	public void insertRow() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		return this.warnings;
 	}
 
 	/**
@@ -1377,76 +1450,28 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	}
 
 	/**
-	 * @see java.sql.ResultSet#moveToCurrentRow()
-	 */
-	public void moveToCurrentRow() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @see java.sql.ResultSet#moveToInsertRow()
-	 */
-	public void moveToInsertRow() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @see java.sql.ResultSet#refreshRow()
-	 */
-	public void refreshRow() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
 	 * @see java.sql.ResultSet#relative(int)
 	 */
 	public boolean relative(int rows) throws SQLException {
 		boolean isRelative = false;
 		if(rows > 0){
-			if(myRows.getData(myPointer+rows) instanceof DataHandler){
-				synchronized(this){
+			if(myRows.getObject(myPointer+rows) instanceof DataHandler){
+//				synchronized(this){
 					myPointer += rows;
 					getCurrentRow();
 					isRelative = true;
-				}
+//				}
 			}
 		}else if(rows < 0){
-			if(myRows.getData(myPointer-rows) instanceof DataHandler){
-				synchronized(this){
+			if(myRows.getObject(myPointer-rows) instanceof DataHandler){
+//				synchronized(this){
 					myPointer -= rows;
 					getCurrentRow();
 					isRelative = true;
-				}
+//				}
 			}
 		}
 		return isRelative;
-	}
-
-	/**
-	 * @see java.sql.ResultSet#rowDeleted()
-	 */
-	public boolean rowDeleted() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @see java.sql.ResultSet#rowInserted()
-	 */
-	public boolean rowInserted() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @see java.sql.ResultSet#rowUpdated()
-	 */
-	public boolean rowUpdated() throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
 	}
 
 	/**
@@ -1454,250 +1479,35 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	 */
 	public void setFetchSize(int rows) throws SQLException{
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("setFetchSize(int rows)");
 	}
 
 	/**
 	 * @see java.sql.ResultSet#wasNull()
 	 */
 	public boolean wasNull() throws SQLException {
-		boolean isNull = false;
-		if(myRow != null && myRow.length()>0){
-			isNull = getString(myPointer).equalsIgnoreCase("NULL");
-		}
-		return isNull;
+		return wasLastNull;
 	}
 
 	/**
 	 * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
 	 */
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		return iface.isInstance(this);
 	}
 
 	/**
 	 * @see java.sql.Wrapper#unwrap(java.lang.Class)
 	 */
 	public <T> T unwrap(Class<T> iface) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented();
+		return iface.cast(this);
 	}
 
+	//--------------------------------------------------------------- protected methods
 
-
-
-
-
-	/* *******************************
-	 *********************************
-	 ******** Private methods ********
-	 *********************************
-	 *********************************/
-
-
-	private void movePointerForward(){
-		synchronized(this){
-			myPointer++;
-			getCurrentRow();
-		}
+	protected void addMetaData(WCResultSetMetaData meta){
+		internalMetaData = meta;
 	}
-
-	private void movePointerBackward(){
-		synchronized(this){
-			myPointer--;
-			getCurrentRow();
-		}
-	}
-
-	private void movePointerToStart(){
-		synchronized(this){
-			myPointer = 0;
-			getCurrentRow();
-		}
-	}
-
-	private void movePointerToEnd(){
-		synchronized(this){
-			myPointer = myRows.length();
-			getCurrentRow();
-		}
-	}
-
-	private void getCurrentRow(){
-		myRow = (DataHandler)myRows.getData(myPointer);
-	}
-
-	private void isResultSetOpen() throws SQLException{
-		if(myRows==null){
-			throw new SQLException(
-					"ResultSet returned a null Object.\n"
-					+ "This indicates your ResultSet is most likely closed.\n"
-					+ "Check your java sytax and logical conditions related to the ResultSet that caused this error first.",
-					"WCNOE");
-		}
-	}
-
-	private boolean isIndexValid(int columnIndex) throws SQLException{
-		boolean isValid = false;
-		if(myRow!=null && columnIndex <= myRow.length()){
-			isValid = true;
-		}else{
-			throw new SQLException(
-					"Column index " + columnIndex + " not found in this ResultSet.",
-					"S0022");
-		}
-		return isValid;
-	}
-
-	private boolean isIndexValid(String columnLabel) throws SQLException{
-		boolean isValid = false;
-		if(myRow!=null && myRow.countMatches(columnLabel) > 0){
-			isValid = true;
-		}else{
-			throw new SQLException(
-					"Column label " + columnLabel + " not found in this ResultSet.",
-					"S0022");
-		}
-		return isValid;
-	}
-
-	private boolean isNull(String valueToCheck){
-		boolean valIsNull = false;
-
-		if(valueToCheck == null || "null".equalsIgnoreCase(valueToCheck)){
-			valIsNull = true;
-		}
-
-		return valIsNull;
-	}
-
-	private boolean isEmpty(String valueToCheck){
-		boolean valIsEmpty = false;
-
-		if(valueToCheck.length()==0){
-			valIsEmpty = true;
-		}
-
-		return valIsEmpty;
-	}
-
-	/**
-	 * Create a normalized java.sql.Date using the given variables
-	 *
-	 * @param cal A Calendar to use for building this Date. Can be null
-	 * @param years int
-	 * @param months int
-	 * @param days int
-	 * @return A normalized java.sql.Date
-	 */
-	private Date createDate(Calendar cal, int years, int months, int days) throws SQLException{
-		Calendar srcCal;
-		if(cal!=null){
-			srcCal = cal;
-		}else{
-			srcCal = Calendar.getInstance(getMyLocalTimeZone(myConnection.myTimeZone));
-		}
-		srcCal.clear();
-
-		srcCal.set(Calendar.YEAR, years);
-		srcCal.set(Calendar.MONTH, months-1);
-		srcCal.set(Calendar.DAY_OF_MONTH, days);
-
-		// normalize the time
-		srcCal.set(Calendar.HOUR_OF_DAY, 0);
-		srcCal.set(Calendar.MINUTE, 0);
-		srcCal.set(Calendar.SECOND, 0);
-		srcCal.set(Calendar.MILLISECOND, 0);
-		if(useJdbcTzShift){
-			srcCal = jdbcTimeZoneShift(srcCal, cal);
-		}
-		return new Date(srcCal.getTimeInMillis());
-	}
-
-	private Time createTime(Calendar cal, int hours, int minutes, int seconds) throws SQLException{
-		Calendar srcCal = Calendar.getInstance(getMyLocalTimeZone(myConnection.myTimeZone));
-		srcCal.clear();
-
-		// set 'date' to epoch of Jan 1, 1970
-		srcCal.set(Calendar.YEAR, 1970);
-		srcCal.set(Calendar.MONTH, 0);
-		srcCal.set(Calendar.DAY_OF_MONTH, 1);
-
-		srcCal.set(Calendar.HOUR_OF_DAY, hours);
-		srcCal.set(Calendar.MINUTE, minutes);
-		srcCal.set(Calendar.SECOND, seconds);
-		srcCal.set(Calendar.MILLISECOND, 0);
-		if(useJdbcTzShift){
-			srcCal = jdbcTimeZoneShift(srcCal, cal);
-		}
-		return new Time(srcCal.getTimeInMillis());
-	}
-
-	private Timestamp createTimestamp(Calendar cal,
-			int years, int months, int days,
-			int hours, int minutes, int seconds, int milliseconds)
-	throws SQLException{
-		Calendar srcCal;
-		if(cal!=null){
-			srcCal = cal;
-		}else{
-			srcCal = Calendar.getInstance(getMyLocalTimeZone(myConnection.myTimeZone));
-		}
-		srcCal.clear();
-
-		srcCal.set(Calendar.YEAR, years);
-		srcCal.set(Calendar.MONTH, months-1);
-		srcCal.set(Calendar.DAY_OF_MONTH, days);
-
-		srcCal.set(Calendar.HOUR_OF_DAY, hours);
-		srcCal.set(Calendar.MINUTE, minutes);
-		srcCal.set(Calendar.SECOND, seconds);
-		srcCal.set(Calendar.MILLISECOND, milliseconds);
-		if(useJdbcTzShift){
-			srcCal = jdbcTimeZoneShift(srcCal, cal);
-		}
-		return new Timestamp(srcCal.getTimeInMillis());
-	}
-
-
-
-
-	private TimeZone getMyLocalTimeZone(String timeZone) {
-		TimeZone tz;
-		if(timeZone==null){
-			tz = TimeZone.getDefault();
-		}else{
-			tz = TimeZone.getTimeZone(timeZone);
-		}
-		return tz;
-	}
-
-	private Calendar jdbcTimeZoneShift(Calendar srcCal, Calendar targetCal) throws SQLException{
-		if(srcCal==null && targetCal==null){
-			throw new SQLException("BOTH CALENDARS ARE NULL.");
-//			return null;
-
-		}else if(targetCal==null){
-			targetCal = Calendar.getInstance(getMyLocalTimeZone(null));
-		}
-
-		targetCal.clear();
-		targetCal.set(Calendar.YEAR, srcCal.get(Calendar.YEAR));
-		targetCal.set(Calendar.MONTH, srcCal.get(Calendar.MONTH));
-		targetCal.set(Calendar.DAY_OF_MONTH, srcCal.get(Calendar.DAY_OF_MONTH));
-
-		targetCal.set(Calendar.HOUR_OF_DAY, srcCal.get(Calendar.HOUR_OF_DAY));
-		targetCal.set(Calendar.MINUTE, srcCal.get(Calendar.MINUTE));
-		targetCal.set(Calendar.SECOND, srcCal.get(Calendar.SECOND));
-		targetCal.set(Calendar.MILLISECOND, srcCal.get(Calendar.MILLISECOND));
-
-		return targetCal;
-	}
-
-
-
-
 
 	/**
 	 * A great deal of this method and any supporting methods it uses
@@ -1714,15 +1524,18 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		int month = 0;
 		int day = 0;
 
-		if (dateAsString!=null){
-			dateAsString = dateAsString.trim();
+		if (dateAsString==null){
+			return null;
 		}
 
-		if (dateAsString==null
-			|| dateAsString.equals("0")
-			|| dateAsString.equals("0000-00-00")
-			|| dateAsString.equals("0000-00-00 00:00:00")
-			|| dateAsString.equals("00000000000000"))
+		dateAsString = dateAsString.trim();
+		int length = dateAsString.length();
+
+		if (isEmpty(dateAsString)
+			|| "0".equals(dateAsString)
+			|| "0000-00-00".equals(dateAsString)
+			|| "0000-00-00 00:00:00".equals(dateAsString)
+			|| "00000000000000".equals(dateAsString))
 		{
 			// '0001-01-01'.
 			return createDate(targetCal, 1, 1, 1);
@@ -1732,9 +1545,9 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		Pattern tStampPtn = Pattern.compile("\\d+&&^-&&^:|-&&\\s&&:|-", Pattern.CASE_INSENSITIVE);
 		Matcher lookFor = tStampPtn.matcher(dateAsString);
 
-		if (lookFor.find() && dateAsString.length()>=2) {
+		if (lookFor.find() && length>=2) {
 			// Convert from TIMESTAMP
-			switch (dateAsString.length()) {
+			switch (length) {
 			case 21:
 			case 19: // java.sql.Timestamp format
 				year = Integer.parseInt(dateAsString.substring(0, 4));
@@ -1798,9 +1611,9 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 //						stringVal, Constants.integerValueOf(columnIndex) }),
 //						"S1009");
 			} /* endswitch */
-		} else if (dateAsString.length()>0 && dateAsString.length()<=4) {
+		} else if (length>0 && length<=4) {
 
-			if (dateAsString.length() == 2 || dateAsString.length() == 1) {
+			if (length == 2 || length == 1) {
 				year = Integer.parseInt(dateAsString);
 
 				if (year <= 69) {
@@ -1816,8 +1629,8 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		} else if (dateAsString.contains(":")) {
 			return createDate(targetCal, 1970, 1, 1); // Return EPOCH
 		} else {
-			if (dateAsString.length() < 10) {
-				if (dateAsString.length() == 8) {
+			if (length < 10) {
+				if (length == 8) {
 					return createDate(targetCal, 1970, 1, 1); // Return EPOCH for TIME
 				}
 
@@ -1827,7 +1640,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 //						"S1009");
 			}
 
-			if (dateAsString.length() != 18) {
+			if (length != 18) {
 				year = Integer.parseInt(dateAsString.substring(0, 4));
 				month = Integer.parseInt(dateAsString.substring(5, 7));
 				day = Integer.parseInt(dateAsString.substring(8, 10));
@@ -1842,16 +1655,6 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		}
 	}
 
-
-
-
-
-
-
-
-
-
-
 	protected java.sql.Time getTimeFromString(String timeAsString, Calendar targetCal) throws SQLException {
 		int hr = 0;
 		int min = 0;
@@ -1863,15 +1666,18 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		// than the iteration over the string, as String.trim()
 		// will return a new string only if whitespace is present
 		//
-		if (timeAsString!=null){
-			timeAsString = timeAsString.trim();
+		if (timeAsString==null){
+			return null;
 		}
 
-		if (timeAsString==null
-			|| timeAsString.equals("0")
-			|| timeAsString.equals("0000-00-00")
-			|| timeAsString.equals("0000-00-00 00:00:00")
-			|| timeAsString.equals("00000000000000"))
+		timeAsString = timeAsString.trim();
+		int length = timeAsString.length();
+
+		if (isEmpty(timeAsString)
+			|| "0".equals(timeAsString)
+			|| "0000-00-00".equals(timeAsString)
+			|| "0000-00-00 00:00:00".equals(timeAsString)
+			|| "00000000000000".equals(timeAsString))
 		{
 			// We're left with the case of 'round' to a time Java _can_
 			// represent, which is '00:00:00'
@@ -1882,10 +1688,8 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		Pattern tStampPtn = Pattern.compile("\\d+&&^-&&^:|:", Pattern.CASE_INSENSITIVE);
 		Matcher lookFor = tStampPtn.matcher(timeAsString);
 
-		if (lookFor.find() && timeAsString.length()>=2) {
+		if (lookFor.find() && length>=2) {
 			// It's a timestamp
-			int length = timeAsString.length();
-
 			switch (length) {
 			case 19: // YYYY-MM-DD hh:mm:ss
 				hr = Integer.parseInt(timeAsString.substring(length-8, length-6));
@@ -1923,7 +1727,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			return createTime(targetCal, 0, 0, 0); // midnight on the given date
 		} else {
 			// convert a String to a Time
-			if ((timeAsString.length() != 5) && (timeAsString.length() != 8)) {
+			if ((length != 5) && (length != 8)) {
 //				throw new SQLException(Messages
 //						.getString("ResultSet.Bad_format_for_Time____267")
 //						+ timeAsString
@@ -1932,7 +1736,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			}else{
 				hr = Integer.parseInt(timeAsString.substring(0, 2));
 				min = Integer.parseInt(timeAsString.substring(3, 5));
-				sec = (timeAsString.length() == 5) ? 0 : Integer.parseInt(timeAsString.substring(6));
+				sec = (length == 5) ? 0 : Integer.parseInt(timeAsString.substring(6));
 			}
 		}
 		return createTime(targetCal, hr, min, sec);
@@ -1953,18 +1757,19 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 
 	protected java.sql.Timestamp getTimestampFromString(String timestampValue, Calendar targetCal) throws java.sql.SQLException {
 
-		int length = 0;
-		if (timestampValue!=null){
-			timestampValue = timestampValue.trim();
-			length = timestampValue.length();
+
+		if (timestampValue==null){
+			return null;
 		}
 
-		if ((timestampValue==null)
-			|| length > 0 && timestampValue.charAt(0) == '0'
-			&& (timestampValue.equals("0000-00-00")
-			|| timestampValue.equals("0000-00-00 00:00:00")
-			|| timestampValue.equals("00000000000000")
-			|| timestampValue.equals("0")) )
+		timestampValue = timestampValue.trim();
+		int length = timestampValue.length();
+
+		if (isEmpty(timestampValue)
+			|| "0000-00-00".equals(timestampValue)
+			|| "0000-00-00 00:00:00".equals(timestampValue)
+			|| "00000000000000".equals(timestampValue)
+			|| "0".equals(timestampValue) )
 		{
 			// '0001-01-01'.
 			return createTimestamp(targetCal, 1, 1, 1, 0, 0, 0, 0);
@@ -1974,7 +1779,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		Pattern tStampPtn = Pattern.compile("\\d+&&^-&&^:", Pattern.CASE_INSENSITIVE);
 		Matcher lookFor = tStampPtn.matcher(timestampValue);
 
-		if (timestampValue.length()>0 && timestampValue.length()<=4 && lookFor.find()) {
+		if (length>0 && length<=4 && lookFor.find()) {
 			return createTimestamp(targetCal, Integer.parseInt(timestampValue.substring(0, 4)), 1, 1, 0, 0, 0, 0);
 
 		} else {
@@ -2004,7 +1809,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 					int decimalIndex = timestampValue.lastIndexOf('.');
 
 					if (decimalIndex != -1) {
-						if ((decimalIndex + 2) <= timestampValue.length()) {
+						if ((decimalIndex + 2) <= length) {
 							nanos = Integer.parseInt(timestampValue.substring(decimalIndex + 1));
 						} else {
 							throw new IllegalArgumentException();
@@ -2133,5 +1938,202 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			}
 		}
 	}
+
+	//--------------------------------------------------------------- private methods
+
+	private void init(int CaseSensitivity, int dbType, String sql){
+		myRow = Util.getCaseSafeHandler(CaseSensitivity);
+		myPointer = -1;
+		querySQL = sql;
+		myDbType = dbType;
+	}
+
+	private void movePointerForward(){
+		myPointer++;
+		getCurrentRow();
+	}
+
+	private void movePointerBackward(){
+		myPointer--;
+		getCurrentRow();
+	}
+
+	private void movePointerToStart(){
+		myPointer = 0;
+		getCurrentRow();
+	}
+
+	private void movePointerToEnd(){
+		synchronized(myRows){
+			myPointer = myRows.length();
+		}
+		getCurrentRow();
+	}
+
+	private void getCurrentRow(){
+		synchronized (myRows) {
+			myRow = (DataHandler) myRows.getObject(myPointer);
+		}
+	}
+
+	private void isResultSetOpen() throws SQLException{
+		if(myRows==null){
+			throw new SQLException(
+					"ResultSet returned a null Object.\n"
+					+ "This indicates your ResultSet is most likely closed.\n"
+					+ "Check your java sytax and logical conditions related to the ResultSet that caused this error first.",
+					"WCNOE");
+		}
+	}
+
+	private Object isIndexValid(int columnIndex) throws SQLException{
+		if (columnIndex >= 0 && myRow!=null && myRow.hasKey(columnIndex-1)) {
+			Object obj = myRow.getObject(columnIndex-1);
+			wasLastNull = obj==null;
+			return obj;
+		} else {
+			throw new SQLException(
+					"Column index " + (columnIndex-1) + " not found in this ResultSet row.",
+					"S0022");
+		}
+	}
+
+	private Object isIndexValid(String columnLabel) throws SQLException{
+		if(myRow!=null && myRow.hasKey(columnLabel)){
+			Object obj = myRow.getObject(columnLabel);
+			wasLastNull = obj==null;
+			return obj;
+		}else{
+			throw new SQLException(
+					"Column label " + columnLabel + " not found in this ResultSet row.",
+					"S0022");
+		}
+	}
+
+	private boolean isEmpty(String valueToCheck){
+		if(valueToCheck.length()==0)
+			return true;
+
+		return false;
+	}
+
+	/**
+	 * Create a normalized java.sql.Date using the given variables
+	 *
+	 * @param cal A Calendar to use for building this Date. Can be null
+	 * @param years int
+	 * @param months int
+	 * @param days int
+	 * @return A normalized java.sql.Date
+	 */
+	private Date createDate(Calendar cal, int years, int months, int days) throws SQLException{
+		Calendar srcCal;
+		if(cal!=null){
+			srcCal = cal;
+		}else{
+			srcCal = Calendar.getInstance(getMyLocalTimeZone(myConnection.myTimeZone));
+		}
+		srcCal.clear();
+
+		srcCal.set(Calendar.YEAR, years);
+		srcCal.set(Calendar.MONTH, months-1);
+		srcCal.set(Calendar.DAY_OF_MONTH, days);
+
+		// normalize the time
+		srcCal.set(Calendar.HOUR_OF_DAY, 0);
+		srcCal.set(Calendar.MINUTE, 0);
+		srcCal.set(Calendar.SECOND, 0);
+		srcCal.set(Calendar.MILLISECOND, 0);
+		if(useJdbcTzShift){
+			try {
+				srcCal = jdbcTimeZoneShift(srcCal, cal);
+			} catch (SQLException e) {
+				throw new SQLException("Could not create date.", "", e);
+			}
+		}
+		return new Date(srcCal.getTimeInMillis());
+	}
+
+	private Time createTime(Calendar cal, int hours, int minutes, int seconds) throws SQLException{
+		Calendar srcCal = Calendar.getInstance(getMyLocalTimeZone(myConnection.myTimeZone));
+		srcCal.clear();
+
+		// set 'date' to epoch of Jan 1, 1970
+		srcCal.set(Calendar.YEAR, 1970);
+		srcCal.set(Calendar.MONTH, 0);
+		srcCal.set(Calendar.DAY_OF_MONTH, 1);
+
+		srcCal.set(Calendar.HOUR_OF_DAY, hours);
+		srcCal.set(Calendar.MINUTE, minutes);
+		srcCal.set(Calendar.SECOND, seconds);
+		srcCal.set(Calendar.MILLISECOND, 0);
+		if(useJdbcTzShift){
+			srcCal = jdbcTimeZoneShift(srcCal, cal);
+		}
+		return new Time(srcCal.getTimeInMillis());
+	}
+
+	private Timestamp createTimestamp(Calendar cal,
+			int years, int months, int days,
+			int hours, int minutes, int seconds, int milliseconds)
+	throws SQLException{
+		Calendar srcCal;
+		if(cal!=null){
+			srcCal = cal;
+		}else{
+			srcCal = Calendar.getInstance(getMyLocalTimeZone(myConnection.myTimeZone));
+		}
+		srcCal.clear();
+
+		srcCal.set(Calendar.YEAR, years);
+		srcCal.set(Calendar.MONTH, months-1);
+		srcCal.set(Calendar.DAY_OF_MONTH, days);
+
+		srcCal.set(Calendar.HOUR_OF_DAY, hours);
+		srcCal.set(Calendar.MINUTE, minutes);
+		srcCal.set(Calendar.SECOND, seconds);
+		srcCal.set(Calendar.MILLISECOND, milliseconds);
+		if(useJdbcTzShift){
+			srcCal = jdbcTimeZoneShift(srcCal, cal);
+		}
+		return new Timestamp(srcCal.getTimeInMillis());
+	}
+
+
+
+
+	private TimeZone getMyLocalTimeZone(String timeZone) {
+		TimeZone tz;
+		if(timeZone==null){
+			tz = TimeZone.getDefault();
+		}else{
+			tz = TimeZone.getTimeZone(timeZone);
+		}
+		return tz;
+	}
+
+	private Calendar jdbcTimeZoneShift(Calendar srcCal, Calendar targetCal) throws SQLException{
+		if(srcCal==null && targetCal==null){
+			throw new SQLException("BOTH CALENDARS ARE NULL.");
+//			return null;
+
+		}else if(targetCal==null){
+			targetCal = Calendar.getInstance(getMyLocalTimeZone(null));
+		}
+
+		targetCal.clear();
+		targetCal.set(Calendar.YEAR, srcCal.get(Calendar.YEAR));
+		targetCal.set(Calendar.MONTH, srcCal.get(Calendar.MONTH));
+		targetCal.set(Calendar.DAY_OF_MONTH, srcCal.get(Calendar.DAY_OF_MONTH));
+
+		targetCal.set(Calendar.HOUR_OF_DAY, srcCal.get(Calendar.HOUR_OF_DAY));
+		targetCal.set(Calendar.MINUTE, srcCal.get(Calendar.MINUTE));
+		targetCal.set(Calendar.SECOND, srcCal.get(Calendar.SECOND));
+		targetCal.set(Calendar.MILLISECOND, srcCal.get(Calendar.MILLISECOND));
+
+		return targetCal;
+	}
+
+
 
 }

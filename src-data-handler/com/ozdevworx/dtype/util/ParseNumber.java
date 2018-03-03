@@ -27,7 +27,7 @@ import com.ozdevworx.dtype.impl.IlegalNumberTypeException;
 /**
  * Persistant number casting class.<br />
  * Throws a NumberFormatException wrapped in an SQLException if a value cannot be parsed into a valid number.
- * 
+ *
  * @author Tim Gall, 2008-07-01
  * @author Tim Gall, 2010-04-10
  * @version 1.0.0.1
@@ -35,7 +35,7 @@ import com.ozdevworx.dtype.impl.IlegalNumberTypeException;
 public class ParseNumber {
 
 	public static BigDecimal getBigDecimal(Object value) throws IlegalNumberTypeException {
-		return getBigDecimal(String.valueOf(value));
+		return getBigDecimal(value);
 	}
 
 	public static BigDecimal getBigDecimal(String textValue) throws IlegalNumberTypeException {
@@ -50,7 +50,7 @@ public class ParseNumber {
 	}
 
 	public static BigInteger getBigInteger(Object value) throws IlegalNumberTypeException {
-		return getBigInteger(String.valueOf(value));
+		return getBigInteger(value);
 	}
 
 	public static BigInteger getBigInteger(String textValue) throws IlegalNumberTypeException {
@@ -65,7 +65,7 @@ public class ParseNumber {
 	}
 
 	public static double getDouble(Object value) throws IlegalNumberTypeException {
-		return getDouble(String.valueOf(value));
+		return getDouble(value);
 	}
 
 	public static double getDouble(String textValue) throws IlegalNumberTypeException {
@@ -81,7 +81,7 @@ public class ParseNumber {
 	}
 
 	public static float getFloat(Object value) throws IlegalNumberTypeException {
-		return getFloat(String.valueOf(value));
+		return getFloat(value);
 	}
 
 	public static float getFloat(String textValue) throws IlegalNumberTypeException {
@@ -96,7 +96,7 @@ public class ParseNumber {
 	}
 
 	public static int getInt(Object value) throws IlegalNumberTypeException {
-		return getInt(String.valueOf(value));
+		return getInt(value);
 	}
 
 	public static int getInt(String textValue) throws IlegalNumberTypeException {
@@ -112,7 +112,7 @@ public class ParseNumber {
 	}
 
 	public static Long getLong(Object value) throws IlegalNumberTypeException {
-		return getLong(String.valueOf(value));
+		return getLong(value);
 	}
 
 	public static Long getLong(String textValue) throws IlegalNumberTypeException {
@@ -128,7 +128,7 @@ public class ParseNumber {
 	}
 
 	public static Short getShort(Object value) throws IlegalNumberTypeException {
-		return getShort(String.valueOf(value));
+		return getShort(value);
 	}
 
 	public static Short getShort(String textValue) throws IlegalNumberTypeException {

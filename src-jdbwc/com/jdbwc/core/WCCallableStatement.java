@@ -68,9 +68,10 @@ public class WCCallableStatement extends WCPreparedStatement implements Callable
 	 *
 	 * @param connection An active WCConnection Object.
 	 * @param stmntSkeleton A CallableStatements initialising SQL. Can contain ? param markers.
+	 * @throws SQLException
 	 */
-	protected WCCallableStatement(WCConnection connection, String stmntSkeleton) {
-		super(connection);
+	protected WCCallableStatement(WCConnection connection, String stmntSkeleton) throws SQLException {
+		super(connection, connection.getCatalog());
 		initialiseInstance(stmntSkeleton);
 	}
 

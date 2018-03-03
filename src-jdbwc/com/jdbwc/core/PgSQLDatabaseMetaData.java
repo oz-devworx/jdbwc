@@ -24,8 +24,9 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 
-import com.ozdevworx.dtype.DataHandler;
+import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.util.Util;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * This MetaData class is designed for PostgreSql implementations.<br />
@@ -80,7 +81,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 
 
-	protected PgSQLDatabaseMetaData(WCConnection connection) throws SQLException {
+	protected PgSQLDatabaseMetaData(final WCConnection connection) throws SQLException {
 		super(connection);
 	}
 
@@ -104,7 +105,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return false;
 	}
 
-	public boolean deletesAreDetected(int type) throws SQLException {
+	public boolean deletesAreDetected(final int type) throws SQLException {
 		return false;
 	}
 
@@ -247,12 +248,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	 * @see java.sql.DatabaseMetaData#getMaxRowSize()
 	 */
 	public int getMaxRowSize() throws SQLException {
-//		if (myConnection.versionMeetsMinimum(7, 1, 0)){
-//            return 1073741824; // 1 GB
-//		}else{
-//            return 8192;  // XXX could be altered
-//		}
-		return 8192;  // XXX could be altered
+		return Integer.MAX_VALUE - 8; // Max buffer size - HEADER
 	}
 
 	public int getMaxSchemaNameLength() throws SQLException {
@@ -274,7 +270,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	}
 
 	public int getMaxTableNameLength() throws SQLException {
-		return 64; // safe guesstimate
+		return 64; // safe guess
 	}
 
 	public int getMaxTablesInSelect() throws SQLException {
@@ -282,7 +278,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	}
 
 	public int getMaxUserNameLength() throws SQLException {
-		return 16; // safe guesstimate
+		return 16; // safe guess
 	}
 
 	public String getNumericFunctions() throws SQLException {
@@ -294,8 +290,15 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	}
 
 	public RowIdLifetime getRowIdLifetime() throws SQLException {
-		// TODO implement me!?
-		return null;
+		return RowIdLifetime.ROWID_UNSUPPORTED;
+	}
+
+	public String getSchemaTerm() throws SQLException {
+		return "schema";
+	}
+
+	public String getSearchStringEscape() throws SQLException {
+		return "\\";
 	}
 
 	public String getSQLKeywords() throws SQLException {
@@ -313,28 +316,20 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return retVal;
 	}
 
-	public String getSchemaTerm() throws SQLException {
-		return "schema";
-	}
-
-	public String getSearchStringEscape() throws SQLException {
-		return "\\";
-	}
-
 	public String getStringFunctions() throws SQLException {
 		return myStringFuncs;
 	}
 
-	public ResultSet getSuperTables(String catalog, String schemaPattern,
-			String tableNamePattern) throws SQLException {
-		// TODO implement me!?
-		return null;
+	public ResultSet getSuperTables(final String catalog, final String schemaPattern,
+			final String tableNamePattern) throws SQLException {
+		// TODO implement me!
+		throw new NotImplemented("getSuperTables(...)");
 	}
 
-	public ResultSet getSuperTypes(String catalog, String schemaPattern,
-			String typeNamePattern) throws SQLException {
-		// TODO implement me!?
-		return null;
+	public ResultSet getSuperTypes(final String catalog, final String schemaPattern,
+			final String typeNamePattern) throws SQLException {
+		// TODO implement me!
+		throw new NotImplemented("getSuperTypes(...)");
 	}
 
 	public String getSystemFunctions() throws SQLException {
@@ -342,14 +337,15 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	}
 
 	public ResultSet getTableTypes() throws SQLException {
-		WCResultSet res = new WCResultSet(myConnection);
-		String[] typesSplit = myTabletypes.split(",");
+		final WCResultSet res = new WCResultSet(myConnection);
+//		final String[] typesSplit = myTabletypes.split(",");
 
-		for(int i = 0; i < typesSplit.length; i++){
-			DataHandler aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-			aRow.addData("TABLE_TYPE", typesSplit[i]);
+		for (final String element : myTabletypes) {
+			final DataHandler aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
+			aRow.addData("TABLE_TYPE", element);
 			res.addRow(aRow);
 		}
+		res.addMetaData(WCStaticMetaData.getTableTypes());
 
 		return res;
 	}
@@ -358,7 +354,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return myTimeDateFuncs;
 	}
 
-	/** 
+	/**
 	 * The data here was derived (not copied) from the Postgres JDBC driver.
 	 *
 	 * @see java.sql.DatabaseMetaData#getTypeInfo()
@@ -388,7 +384,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * The following are ordered by java.sql.Types, and then by how closely
 		 * the pgSQL type matches the JDBC Type (per spec)
 		 */
-		WCResultSet res = new WCResultSet(myConnection);
+		final WCResultSet res = new WCResultSet(myConnection);
 		DataHandler aRow;
 
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
@@ -858,7 +854,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "INT");
+		aRow.addData(NAME, "int");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "10");
 		aRow.addData(PREFIX, "");
@@ -880,7 +876,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "INT UNSIGNED");
+		aRow.addData(NAME, "int unsigned");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "10");
 		aRow.addData(PREFIX, "");
@@ -905,7 +901,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * MySQL Type: MEDIUMINT JDBC Type: INTEGER
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "MEDIUMINT");
+		aRow.addData(NAME, "mediumint");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "7");
 		aRow.addData(PREFIX, "");
@@ -927,7 +923,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "MEDIUMINT UNSIGNED");
+		aRow.addData(NAME, "mediumint unsigned");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "8");
 		aRow.addData(PREFIX, "");
@@ -952,7 +948,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: SMALLINT JDBC Type: SMALLINT
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "SMALLINT");
+		aRow.addData(NAME, "smallint");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.SMALLINT));
 		aRow.addData(PRECISION, "5");
 		aRow.addData(PREFIX, "");
@@ -974,7 +970,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "SMALLINT UNSIGNED");
+		aRow.addData(NAME, "smallint unsigned");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.SMALLINT));
 		aRow.addData(PRECISION, "5");
 		aRow.addData(PREFIX, "");
@@ -1000,7 +996,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * floating point type)
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "FLOAT");
+		aRow.addData(NAME, "float");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.REAL));
 		aRow.addData(PRECISION, "10");
 		aRow.addData(PREFIX, "");
@@ -1025,7 +1021,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: DOUBLE JDBC Type: DOUBLE
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "DOUBLE");
+		aRow.addData(NAME, "double");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "17");
 		aRow.addData(PREFIX, "");
@@ -1050,7 +1046,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: DOUBLE PRECISION JDBC Type: DOUBLE
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "DOUBLE PRECISION");
+		aRow.addData(NAME, "double precision");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "17");
 		aRow.addData(PREFIX, "");
@@ -1075,7 +1071,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: REAL (does not map to Types.REAL) JDBC Type: DOUBLE
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "REAL");
+		aRow.addData(NAME, "real");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "17");
 		aRow.addData(PREFIX, "");
@@ -1100,7 +1096,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: VARCHAR JDBC Type: VARCHAR
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "VARCHAR");
+		aRow.addData(NAME, "varchar");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "255");
 		aRow.addData(PREFIX, "'");
@@ -1125,7 +1121,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: ENUM JDBC Type: VARCHAR
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "ENUM");
+		aRow.addData(NAME, "enum");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "65535");
 		aRow.addData(PREFIX, "'");
@@ -1150,7 +1146,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: SET JDBC Type: VARCHAR
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "SET");
+		aRow.addData(NAME, "set");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "64");
 		aRow.addData(PREFIX, "'");
@@ -1175,7 +1171,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: DATE JDBC Type: DATE
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "DATE");
+		aRow.addData(NAME, "date");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DATE));
 		aRow.addData(PRECISION, "0");
 		aRow.addData(PREFIX, "'");
@@ -1200,7 +1196,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: TIME JDBC Type: TIME
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "TIME");
+		aRow.addData(NAME, "time");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIME));
 		aRow.addData(PRECISION, "0");
 		aRow.addData(PREFIX, "'");
@@ -1225,7 +1221,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: DATETIME JDBC Type: TIMESTAMP
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "DATETIME");
+		aRow.addData(NAME, "datetime");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIMESTAMP));
 		aRow.addData(PRECISION, "0");
 		aRow.addData(PREFIX, "'");
@@ -1250,7 +1246,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		 * pgSQL Type: TIMESTAMP JDBC Type: TIMESTAMP
 		 */
 		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
-		aRow.addData(NAME, "TIMESTAMP");
+		aRow.addData(NAME, "timestamp");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIMESTAMP));
 		aRow.addData(PRECISION, "0");
 		aRow.addData(PREFIX, "'");
@@ -1270,6 +1266,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		aRow.addData(RADIX, "10");
 		res.addRow(aRow);
 
+		res.addMetaData(WCStaticMetaData.getTypeInfo());
 
 		return res;
 	}
@@ -1282,7 +1279,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return myConnection.getUser();
 	}
 
-	public boolean insertsAreDetected(int type) throws SQLException {
+	public boolean insertsAreDetected(final int type) throws SQLException {
 		return false;
 	}
 
@@ -1291,7 +1288,11 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	}
 
 	public boolean isReadOnly() throws SQLException {
-		return false; // safe guesstimate
+		return false; //TODO: calculate this value properly
+	}
+
+	public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+		return iface.isInstance(this);
 	}
 
 	public boolean locatorsUpdateCopy() throws SQLException {
@@ -1318,27 +1319,27 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return !nullsAreSortedHigh();
 	}
 
-	public boolean othersDeletesAreVisible(int type) throws SQLException {
+	public boolean othersDeletesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean othersInsertsAreVisible(int type) throws SQLException {
+	public boolean othersInsertsAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean othersUpdatesAreVisible(int type) throws SQLException {
+	public boolean othersUpdatesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean ownDeletesAreVisible(int type) throws SQLException {
+	public boolean ownDeletesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean ownInsertsAreVisible(int type) throws SQLException {
+	public boolean ownInsertsAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
-	public boolean ownUpdatesAreVisible(int type) throws SQLException {
+	public boolean ownUpdatesAreVisible(final int type) throws SQLException {
 		return false;
 	}
 
@@ -1372,6 +1373,14 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return true;
 	}
 
+	public boolean supportsAlterTableWithAddColumn() throws SQLException {
+		return true;
+	}
+
+	public boolean supportsAlterTableWithDropColumn() throws SQLException {
+		return true;
+	}
+
 	public boolean supportsANSI92EntryLevelSQL() throws SQLException {
 		return true;
 	}
@@ -1382,14 +1391,6 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 	public boolean supportsANSI92IntermediateSQL() throws SQLException {
 		return false;
-	}
-
-	public boolean supportsAlterTableWithAddColumn() throws SQLException {
-		return true;
-	}
-
-	public boolean supportsAlterTableWithDropColumn() throws SQLException {
-		return true;
 	}
 
 	public boolean supportsBatchUpdates() throws SQLException {
@@ -1427,7 +1428,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	/**
 	 * @see java.sql.DatabaseMetaData#supportsConvert(int, int)
 	 */
-	public boolean supportsConvert(int fromType, int toType) throws SQLException {
+	public boolean supportsConvert(final int fromType, final int toType) throws SQLException {
 		switch (fromType) {
 		/*
 		 * The char/binary types can be converted to pretty much anything.
@@ -1639,9 +1640,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 	public boolean supportsIntegrityEnhancementFacility() throws SQLException {
 		// XXX: Off-hand I dont think IntegrityEnhancementFacility will be implemented.
-		// Need to find out more about what it does and
-		// what MySQL engines it applies to at some point.
-		// Could well be an InnoDB thing.
+		// Need to find out more about what it does.
 		return false;
 	}
 
@@ -1720,7 +1719,7 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	/**
 	 * @see java.sql.DatabaseMetaData#supportsResultSetConcurrency(int, int)
 	 */
-	public boolean supportsResultSetConcurrency(int type, int concurrency)
+	public boolean supportsResultSetConcurrency(final int type, final int concurrency)
 	throws SQLException {
 		switch (type) {
 		case ResultSet.TYPE_SCROLL_INSENSITIVE:
@@ -1751,42 +1750,16 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 	}
 
-	public boolean supportsResultSetHoldability(int holdability) throws SQLException {
+	public boolean supportsResultSetHoldability(final int holdability) throws SQLException {
 		return (holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
-	public boolean supportsResultSetType(int type) throws SQLException {
+	public boolean supportsResultSetType(final int type) throws SQLException {
 		return (type == ResultSet.TYPE_SCROLL_INSENSITIVE);
 	}
 
 	public boolean supportsSavepoints() throws SQLException {
-		// XXX: I think this should be based on each tables engine type unless Im mistaken,
-		// which poses a few problems in working this out accurately.
-		//
-		// We can limit this to the database that was logged into originally.
-		// Unless the database is entirely InnoDB tables (or other transactional engine),
-		// we should return false (I think ???).
-		//
-		// IMPORTANT NOTE:
-		// MySQL-Connector/J seem to set this according the the MySQL server version.
-		// Oddly enough they check for two version numbers >= 4.0.14 & >= 4.1.1
-		// Not sure why they do that. I would assume the lower of the numbers would be enough.
-		// We may as well do the same although technically the result
-		// isnt necessarily always correct unless all table engines fully support transactions.
-		// MyISAM only provides partial transaction support,
-		// although this can be increased slightly through using stored procedures
-		// with custom transaction rollback and commit handlers.
-		//
-		// Still, I dont think MyISAM supports savePoints but cant entirely verify this as yet.
-		//
-		// EG:
-		// MyISAM should be false,
-		// InnoDB should be true,
-		// etc.
-		// For now, false is the safest bet as MyISAM is the
-		// most common of the MySQL engines.
-		//return false;
-		return myConnection.versionMeetsMinimum(4, 0, 14);
+		return myConnection.versionMeetsMinimum(7, 3, 0);
 	}
 
 	public boolean supportsSchemasInDataManipulation() throws SQLException {
@@ -1810,23 +1783,12 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 	}
 
 	public boolean supportsSelectForUpdate() throws SQLException {
-		// XXX: If possible and if necessary???.
-		// Returning true from this method only applies to InnoDB
-		// from what I can tell. MyISAM should return false.
-		// Not sure about the other MySQL storage engines yet.
-		//return false;
-		return myConnection.versionMeetsMinimum(4, 0, 0);
+		// XXX: revise this
+		return myConnection.versionMeetsMinimum(7, 3, 0);
 	}
 
 	public boolean supportsStatementPooling() throws SQLException {
-		// XXX: Pooling could be potentially usefull
-		// and should be invesitgated further at some point.
-		// Due to the unique construction of this Driver
-		// it may be achievable with minimal change.
-		//
-		// Maybee pooling isnt so applicable
-		// to this Driver so a basic feasability study should
-		// be done before any actual implementations are considered.
+		// XXX: Pooling would be good and will be implemented at a later date
 		return false;
 	}
 
@@ -1858,9 +1820,9 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return true;
 	}
 
-	public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
+	public boolean supportsTransactionIsolationLevel(final int level) throws SQLException {
 		// TODO implement me!
-		return false;
+		throw new NotImplemented("supportsTransactionIsolationLevel(final int level)");
 	}
 
 	public boolean supportsTransactions() throws SQLException {
@@ -1875,9 +1837,13 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 		return false;
 	}
 
-	public boolean updatesAreDetected(int type) throws SQLException {
-		// TODO: make sure the return value is correct for this Driver.
-		return true;
+	public <T> T unwrap(final Class<T> iface) throws SQLException {
+		return iface.cast(this);
+	}
+
+	public boolean updatesAreDetected(final int type) throws SQLException {
+		// TODO implement me!
+		throw new NotImplemented("updatesAreDetected(final int type)");
 	}
 
 	public boolean usesLocalFilePerTable() throws SQLException {
@@ -1886,18 +1852,6 @@ public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema impleme
 
 	public boolean usesLocalFiles() throws SQLException {
 		return false;
-	}
-
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		// TODO do something with the wrappers.
-		// this applies to all clasees that have wrapper methods.
-		return false;
-	}
-
-	public <T> T unwrap(Class<T> iface) throws SQLException {
-		// TODO do something with the wrappers.
-		// this applies to all clasees that have wrapper methods.
-		return null;
 	}
 
 }

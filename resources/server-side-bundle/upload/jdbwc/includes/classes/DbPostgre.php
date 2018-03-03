@@ -214,7 +214,7 @@ class DbPostgre extends DbCore{
    * @return metadata information about a column
    */
   function fetch_fields($query) {
-    return pg_fetch_object($query);
+    return false;
   }
 }
 ?>

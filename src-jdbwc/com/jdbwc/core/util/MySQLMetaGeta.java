@@ -19,24 +19,26 @@
  */
 package com.jdbwc.core.util;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jdbwc.core.WCConnection;
-import com.jdbwc.util.Util;
+import com.jdbwc.core.WCResultSet;
+import com.jdbwc.core.WCStatement;
 import com.ozdevworx.dtype.DataHandler;
 
 /**
+ * Gets meta data from MySQL databases.
  *
- *
- * @author Tim Gall (Oz-DevWorX)
+ * @author Tim Gall
  * @version 2008-05-29
+ * @version 2010-04-27
  */
 public class MySQLMetaGeta {
 
 	private transient WCConnection myConnection = null;
-	private transient boolean USE_INFOSCHEMA = true;
+
 
 	/**
 	 * Constructs a new instance of this.
@@ -46,29 +48,21 @@ public class MySQLMetaGeta {
 	}
 
 	/**
-	 *
-	 * @param tableNames
+	 * @param sql
 	 * @param columns
-	 * @param aliases
 	 * @return array of SQLField MetaData
 	 * @throws SQLException
 	 */
 	protected SQLField[] getResultSetMetaData(
-			DataHandler tableNames,
-			DataHandler columns,
-			DataHandler aliases)
+			String sql,
+			DataHandler columns)
 	throws SQLException{
-		SQLField[] rsMd = new SQLField[0];
-		USE_INFOSCHEMA = myConnection.versionMeetsMinimum(5, 0, 0);
 
-		if(USE_INFOSCHEMA){
-//			for(int i = 0; i < tableNames.length(); i++){
-				rsMd = getRsMetaData2(rsMd, tableNames, columns, aliases);
-//			}
+		if(myConnection.versionMeetsMinimum(5, 0, 0)){
+			return getRsMetaData(sql, columns);
 		}else{
-			rsMd = getRsMetaData(tableNames, columns, aliases);
+			throw new SQLException("MySQL versions less than 5.0.0 are not supported in this release.");
 		}
-		return rsMd;
 	}
 
 	/**
@@ -84,346 +78,204 @@ public class MySQLMetaGeta {
 			DataHandler columns,
 			DataHandler params)
 	throws SQLException{
-		SQLField[] paramMdFields = new SQLField[0];
-		USE_INFOSCHEMA = myConnection.versionMeetsMinimum(5, 0, 0);
 
-		for(int tIdx = 0; tIdx < tableNames.length(); tIdx++){
-			if(USE_INFOSCHEMA){
-				paramMdFields = getParamMetaData(paramMdFields, tableNames.getKey(tIdx), columns, params);
-			}else{
+		SQLField[] paramMdFields = new SQLField[0];
+
+		if(myConnection.versionMeetsMinimum(5, 0, 0)){
+			for(int tIdx = 0; tIdx < tableNames.length(); tIdx++){
+				//new results get appended to existing
 				paramMdFields = getParamMetaData(paramMdFields, tableNames.getKey(tIdx), columns, params);
 			}
-		}
-
-		return paramMdFields;
-	}
-
-
-	private SQLField[] getRsMetaData(DataHandler tables, DataHandler columns, DataHandler aliases) throws SQLException{
-		SQLField[] paramMdFields = new SQLField[0];
-		for(int i = 0; i < tables.length(); i++){
-			DataHandler rsMetadata = getCourseRsMetaData(Util.getCaseSafeHandler(Util.CASE_MIXED), tables.getKey(i));
-			paramMdFields = getFineRsMetaData(paramMdFields, rsMetadata, tables.getKey(i), columns, aliases);
-		}
-		return paramMdFields;
-	}
-
-	private DataHandler getCourseRsMetaData(DataHandler myDbMetadata, String tableName) throws SQLException{
-
-		Statement statement = myConnection.createStatement();
-
-		String sql = "";
-		if(tableName.contains(".")){
-			String[] dbNTable = SQLUtils.removeBlanks(tableName.trim().split("\\."));
-			sql = "SHOW TABLE STATUS FROM " + dbNTable[0].trim() + " WHERE Name LIKE '" + dbNTable[1].trim() + "';";
 		}else{
-			sql = "SHOW TABLE STATUS LIKE '" + tableName + "';";
+			throw new SQLException("MySQL versions less than 5.0.0 are not supported in this release.");
 		}
 
-		ResultSet resultSet = statement.executeQuery(sql);
-		if(resultSet.next()){
-			myDbMetadata.addData("Engine", resultSet.getString("Engine"));
-			myDbMetadata.addData("Auto_increment", resultSet.getString("Auto_increment"));
-			myDbMetadata.addData("Collation", resultSet.getString("Collation"));
-		}
-		statement.close();
-		return myDbMetadata;
+		return paramMdFields;
 	}
 
-	private SQLField[] getFineRsMetaData(SQLField[] fieldSet, DataHandler myDbMetadata, String tableName, DataHandler columns, DataHandler aliases) throws SQLException{
-
-		final String[] keys = {"PRI","UNI","MUL"};
-		final String autoInc = "auto_increment";
-		final String nullable = "YES";
-
-		/* these values are for the Field constructor */
-		String columnName = "";
-		String columnAlias = "";// AS - Field label goes here
-		String mySqlTypeName = "";
-		String valueDefault = "";
-
-		boolean isAutoIndex = false;
-		boolean isNullable = false;
-
-		boolean isPrimaryKey = false;
-		boolean isUniqueKey = false;
-		boolean isIndex = false;
-
-		String database = myConnection.getDatabase();
-		String schema = database;
-		String charsetName = "";
-		String collation = myDbMetadata.getString("Collation");
-		String engine = myDbMetadata.getString("Engine");
-
-		int autoindexValue = 0;
-
-		try {
-			autoindexValue = myDbMetadata.getInt("Auto_increment");
-		} catch (NumberFormatException ignored) {
-			//ignored.printStackTrace();
-		}
-
-		int length = -1;
-
-		ResultSet resultSet = null;
-
-		/* the next queries get fine metadata relating to the result fields. */
-		Statement statement = myConnection.createStatement();
-
-		// We could probably use the mysqli MetaData function
-		// on the scripting end for this next bit.
-		// Work out which is the fastest & least labour intensive
-		// remembering that we need to do one additional query before this
-		// to get the collation, engine & auto_increment values.
-		//
-		String sql = "SHOW COLLATION LIKE '" + collation + "';";
-		sql += "DESCRIBE " + tableName + ";";
-
-		if(statement.execute(sql)){
-			resultSet = statement.getResultSet();
-			if(resultSet.next()){
-				charsetName = resultSet.getString("Charset");
-			}
-
-			if(statement.getMoreResults()){
-				resultSet = statement.getResultSet();
-
-				while(resultSet.next()){
-					columnName = resultSet.getString("Field");
-
-					/* allows fields for tableName that are specifically defined OR wildcard entries */
-					if(columns.length()==0 || columns.hasKey(tableName) && (columns.hasElement(tableName, columnName) || columns.hasElement(tableName, "*"))){
-
-						/* if we have a specific db with the table name, we need to
-						 * correct the column, schema and database names */
-						if(tableName.contains(".")){
-							database = tableName.substring(0, tableName.indexOf('.'));
-							schema = database;
-							tableName = tableName.substring(tableName.indexOf('.')+1);
-						}
-
-						columnAlias = (aliases.length()==0) ? columnName : aliases.getString(columnName);
-						mySqlTypeName = resultSet.getString("Type");
-						valueDefault = resultSet.getString("Default");
-
-						isAutoIndex = resultSet.getString("Extra").equalsIgnoreCase(autoInc);
-						isNullable = resultSet.getString("Null").equalsIgnoreCase(nullable);
-
-						isPrimaryKey = resultSet.getString("Key").equalsIgnoreCase(keys[0]);
-						isUniqueKey = resultSet.getString("Key").equalsIgnoreCase(keys[1]);
-						isIndex = resultSet.getString("Key").equalsIgnoreCase(keys[2]);
-
-						SQLField field = new SQLField(
-								myConnection.getDbType(),
-								columnName,
-								columnAlias,
-								tableName,
-								database,
-								collation,
-								schema,
-								engine,
-								charsetName,
-								mySqlTypeName,
-								valueDefault,
-
-								isAutoIndex,
-								isNullable,
-								isPrimaryKey,
-								isUniqueKey,
-								isIndex,
-
-								length,
-								autoindexValue);
-
-
-						fieldSet = SQLUtils.rebuildFieldSet(field, fieldSet);
-					}
-				}
-			}
-		}
-		statement.close();
-		return fieldSet;
-	}
 
 	/**
-	 * Gets ResultSetMetaData from the INFORMATION_SCHEMA database
-	 * in a single query (per table).
-	 * 
-	 * @param fieldSet
-	 * @param tableNames
+	 * Gets ResultSetMetaData from the INFORMATION_SCHEMA database.<br />
+	 * This method gets bypassed for MySQL.
+	 * It was originally the second official version for harvesting ResultSetMetaData.
+	 * Now MySQL metadata is harvested in the same pass as the queries ResultSet.
+	 *
+	 * @param sql
 	 * @param columns
-	 * @param aliases
 	 * @return an array of SQLField Objects
 	 * @throws SQLException
 	 */
-	private SQLField[] getRsMetaData2(SQLField[] fieldSet, DataHandler tableNames, DataHandler columns, DataHandler aliases) throws SQLException{
+	private SQLField[] getRsMetaData(String sql, DataHandler columns) throws SQLException{
+
+		if(sql.isEmpty())
+			throw new SQLException("Could not determine the resultsets query to get metadata for.");
+
 
 		final String[] keys = {"PRI","UNI","MUL"};
 
+		List<SQLField> fieldList = new ArrayList<SQLField>();
+
 		/* these values are for the Field constructor */
-		String columnName = "";
-		String columnAlias = "";// AS - Field label goes here
-		String mySqlTypeName = "";
-		String valueDefault = "";
+		String catalogName;
+		String schemaName = "";
+		String tableName;
+		String columnName;
+		String columnAlias;
 
-		boolean isAutoIndex = false;
-		boolean isNullable = false;
+		String columnDefault;
+		boolean isNullable;
+		int sqlType;
 
-		boolean isPrimaryKey = false;
-		boolean isUniqueKey = false;
-		boolean isIndex = false;
+		int maxLength;
+		int maxPrecision;
+		int maxScale;
 
-		String database = myConnection.getDatabase();
-		String schema = "";
-		String charsetName = "";
-		String collation = "";
-		String engine = "";
+		String collationName;
+		boolean isAutoIndex;
+		boolean isUnsigned;
+		boolean isPrimaryKey;
+		boolean isUniqueKey;
+		boolean isIndex;
 
-		int autoindexValue = 0;
-		int length = 0;
 
-		/* get metadata relating to the result fields.
-		 * Check for database names appended to the Table's name
-		 * and build the query conditional part accordingly
+		/*
+		 * build a temporary sql view of the resultset query.
+		 * This saves a a monumental amount of work but still requires
+		 * we manually produce the database-name/s and original field-name/s.
+		 *
+		 * Other than that, we simply retrieve all other relevant meta info from the view
+		 * then delete it. This is handled in batches on the server end to save time.
 		 */
-		String sqlConditions = "";
-		String sqlOr;
-		for(int i = 0; i < tableNames.length(); i++){
-			sqlOr = ((i>0) ? "OR " : "WHERE ");
-			if(tableNames.getKey(i).contains(".")){
-				String[] dbNTable = SQLUtils.removeBlanks(tableNames.getKey(i).trim().split("\\."));
-				sqlConditions += new StringBuilder(sqlOr).append("(TABLE_SCHEMA LIKE '").append(dbNTable[0].trim()).append("' ")
-					.append(" AND TABLE_NAME LIKE '").append(dbNTable[1].trim()).append("') ").toString();
 
-			}else{
-				sqlConditions += new StringBuilder(sqlOr).append("(TABLE_SCHEMA LIKE '").append(database).append("' ")
-					.append(" AND TABLE_NAME LIKE '").append(tableNames.getKey(i)).append("') ").toString();
-			}
-		}
-		/* TABLE META-FIELDS */
-		StringBuilder sqlBuilder = new StringBuilder("SELECT ")
-			.append("AUTO_INCREMENT, ")
-			.append("ENGINE ")
-			.append("FROM INFORMATION_SCHEMA.TABLES ")
-			.append(sqlConditions)
-			.append("ORDER BY TABLE_SCHEMA, TABLE_NAME;");
+		// generate a name thats not likly to conflict
+		// but is easy to locate using LIKE
+		String viewName = "wc_rsmeta_" + com.jdbwc.util.Security.getHash("md5", sql);
+
+		if(!sql.endsWith(";"))
+			sql += ";";
+
+		WCStatement statement = myConnection.createInternalStatement();
+
+		statement.addBatch("DROP VIEW IF EXISTS " + viewName + ";");
+		statement.addBatch("CREATE VIEW " + viewName + " AS " + sql);
+
 
 		/* COLUMN META-FIELDS */
+		StringBuilder sqlBuilder = new StringBuilder(200);
 		sqlBuilder.append("SELECT ")
-			.append("CHARACTER_SET_NAME, ")
-			.append("COLLATION_NAME, ")
-			.append("COLUMN_NAME, ")
-			.append("TABLE_NAME, ")
 			.append("TABLE_SCHEMA, ")
+			.append("TABLE_NAME, ")
+			.append("COLUMN_NAME, ")
 			.append("COLUMN_DEFAULT, ")
+
 			.append("IF(IS_NULLABLE='YES', 'TRUE', 'FALSE') AS NULLABLE, ")
+			.append("DATA_TYPE, ")
 			.append("COLUMN_TYPE, ")
+
+			.append("CHARACTER_MAXIMUM_LENGTH, ")
+			.append("NUMERIC_PRECISION, ")
+			.append("NUMERIC_SCALE, ")
+
+			.append("COLLATION_NAME, ")
+
 			.append("COLUMN_KEY, ")
-			.append("IF(EXTRA='auto_increment', 'TRUE', 'FALSE') AS IS_AUTOINC, ")
-			.append("COLUMN_COMMENT ")
+			.append("IF(EXTRA LIKE '%auto_increment%', 'TRUE', 'FALSE') AS IS_AUTOINC ")
+
+
 			.append("FROM INFORMATION_SCHEMA.COLUMNS ")
-			.append(sqlConditions)
-			.append("ORDER BY TABLE_SCHEMA, TABLE_NAME, COLUMN_TYPE, EXTRA;");
+			.append("WHERE TABLE_SCHEMA LIKE '" + myConnection.getCatalog() + "' AND TABLE_NAME = '" + viewName + "' ")
+			.append("ORDER BY TABLE_SCHEMA, TABLE_NAME;");
+
+		statement.addBatch(sqlBuilder.toString());
+		statement.addBatch("DROP VIEW " + viewName + ";");
+
+		statement.executeBatch();
+
+		// move to the first result
+		statement.getMoreResults();
+		statement.getMoreResults();
 
 
-		ResultSet resultSet = null;
-		Statement statement = myConnection.createStatement();
+		if(statement.getMoreResults()){
+			WCResultSet resultSet = statement.getResultSet();
 
-		/* check for results and build a metaData fieldSet accordingly.
-		 * The results ratio is 1 MetaTable row to many MetaColumn rows */
-		if(statement.execute(sqlBuilder.toString())){
-			resultSet = statement.getResultSet();
-			/* process the first ResultSet from INFORMATION_SCHEMA.TABLES */
-			if(resultSet.next()){
-				engine = resultSet.getString("ENGINE");
-				String aidx = resultSet.getString("AUTO_INCREMENT");
+			/* process the second ResultSet from INFORMATION_SCHEMA.COLUMNS */
+			while(resultSet.next()){
+
+				catalogName = resultSet.getString("TABLE_SCHEMA");
+
+				tableName = resultSet.getString("TABLE_NAME");
+				columnName = resultSet.getString("COLUMN_NAME");
+				columnAlias = columnName;
+
+				/* if the parser could split the query properly, get the real col name.
+				 * Otherwise we use the alias
+				 */
+				if(columns.hasKey(columnAlias)){
+					columnName = columns.getString(columnName);
+				}
+
+				columnDefault = resultSet.getString("COLUMN_DEFAULT");
+				isNullable = resultSet.getBoolean("NULLABLE");
+				sqlType = MySQLTypes.mysqlNameToMysqlType(resultSet.getString("DATA_TYPE"));
+
 				try {
-					autoindexValue = Integer.parseInt(aidx);
-				} catch (NumberFormatException e) {
-					autoindexValue = 0;
+					maxLength = resultSet.getInt("CHARACTER_MAXIMUM_LENGTH");
+				} catch (Exception e) {
+					maxLength = 0;
 				}
-				resultSet.close();
-
-				if(statement.getMoreResults()){
-					resultSet = statement.getResultSet();
-					/* process the second ResultSet from INFORMATION_SCHEMA.COLUMNS */
-					while(resultSet.next()){
-
-						columnName = resultSet.getString("COLUMN_NAME");
-						String tableName = tableNames.getKey(0);
-						boolean hasWildcard = columns.hasElement(tableName, "*");
-
-						/* allows fields for tableName that are specifically defined OR wildcard entries */
-						if((columns.hasKey(tableName) && (columns.hasElement(tableName, columnName)) || hasWildcard)){
-
-							database = resultSet.getString("TABLE_SCHEMA");
-							schema = database;
-							tableName = resultSet.getString("TABLE_NAME");
-							columnAlias = "";
-
-							if(!hasWildcard){
-								synchronized(tableNames){
-									/* remove processed elements from DataHandlers */
-									columnAlias = aliases.getString(columns.getIndexByElement(tableName, columnName));
-									columns.removeByIndex(columns.getIndexByElement(tableName, columnName));
-									aliases.removeByIndex(aliases.getIndexByElement(columnName, columnAlias));
-//									System.err.println("1 column & 1 alias removed!");
-									if(!columns.hasKey(tableName)){
-										tableNames.removeByIndex(0);
-//										System.err.println("1 table removed!");
-									}
-
-								}
-							}
-							tableName = resultSet.getString("TABLE_NAME");
-
-
-							charsetName = resultSet.getString("CHARACTER_SET_NAME");
-							collation = resultSet.getString("COLLATION_NAME");
-
-							mySqlTypeName = resultSet.getString("COLUMN_TYPE");
-							valueDefault = resultSet.getString("COLUMN_DEFAULT");
-
-							isAutoIndex = resultSet.getBoolean("IS_AUTOINC");
-							isNullable = resultSet.getBoolean("NULLABLE");
-
-							String colKey = resultSet.getString("COLUMN_KEY");
-							isPrimaryKey = colKey.equalsIgnoreCase(keys[0]);
-							isUniqueKey = colKey.equalsIgnoreCase(keys[1]);
-							isIndex = colKey.equalsIgnoreCase(keys[2]);
-
-							SQLField field = new SQLField(
-									myConnection.getDbType(),
-									columnName,
-									columnAlias,
-									tableName,
-									database,
-									collation,
-									schema,
-									engine,
-									charsetName,
-									mySqlTypeName,
-									valueDefault,
-
-									isAutoIndex,
-									isNullable,
-									isPrimaryKey,
-									isUniqueKey,
-									isIndex,
-
-									length,
-									autoindexValue);
-
-
-							fieldSet = SQLUtils.rebuildFieldSet(field, fieldSet);
-						}
-					}
-					resultSet.close();
+				try {
+					maxPrecision = resultSet.getInt("NUMERIC_PRECISION");
+				} catch (Exception e) {
+					maxPrecision = 0;
 				}
+				try {
+					maxScale = resultSet.getInt("NUMERIC_SCALE");
+				} catch (Exception e) {
+					maxScale = 0;
+				}
+
+				collationName = resultSet.getString("COLLATION_NAME");
+
+				isAutoIndex = resultSet.getBoolean("IS_AUTOINC");
+
+				isUnsigned = isUnsigned(resultSet.getString("COLUMN_TYPE"));
+
+				String colKey = resultSet.getString("COLUMN_KEY");
+				isPrimaryKey = colKey.equalsIgnoreCase(keys[0]);
+				isUniqueKey = colKey.equalsIgnoreCase(keys[1]);
+				isIndex = colKey.equalsIgnoreCase(keys[2]);
+
+
+				SQLField field = new SQLField(
+						myConnection.getDbType(),
+						catalogName,
+						schemaName,
+						tableName,
+						columnName,
+						columnAlias,
+						columnDefault,
+						collationName,
+
+						sqlType,
+						maxLength,
+						maxPrecision,
+						maxScale,
+
+						isNullable,
+						isAutoIndex,
+						isUnsigned,
+						isPrimaryKey,
+						isUniqueKey,
+						isIndex);
+
+				fieldList.add(field);
 			}
+			resultSet.close();
 		}
 		statement.close();
-		return fieldSet;
+
+		return fieldList.toArray(new SQLField[fieldList.size()]);
 	}
 
 
@@ -435,11 +287,8 @@ public class MySQLMetaGeta {
 
 
 
-
-
-
 	/**
-	 * 
+	 *
 	 * @param paramMdFields
 	 * @param tableName
 	 * @param columns
@@ -460,9 +309,9 @@ public class MySQLMetaGeta {
 		String mode = MY_MODE_UNKNOWN;
 
 		/* the next queries get fine metadata relating to the result fields. */
-		Statement statement = myConnection.createStatement();
+		WCStatement statement = myConnection.createInternalStatement();
 		String sql = "DESCRIBE `" + tableName + "`;";
-		ResultSet resultSet = statement.executeQuery(sql);
+		WCResultSet resultSet = statement.executeQuery(sql);
 
 		while(!columns.isEmpty()){
 			/* Cycle forward through the results */
@@ -513,13 +362,17 @@ public class MySQLMetaGeta {
 							typeName,
 							isNullable,
 							mode);
-					
+
 					paramMdFields = SQLUtils.rebuildFieldSet(field, paramMdFields);
 				}
 			}
 		}
 		statement.close();
 		return paramMdFields;
+	}
+
+	private boolean isUnsigned(final String typeName) {
+		return typeName.toLowerCase().endsWith("unsigned");
 	}
 
 }

@@ -43,7 +43,7 @@ ini_set('session.cache_limiter', 'nocache');
 
 //avoid timeouts and memory overflows
 set_time_limit(5400);
-////ATM respect php.ini settings
+////ATM respect php.ini settings. PHP rarely uses much.. sql servers on the other hand may
 //ini_set('post_max_size', '128M');
 //ini_set('memory_limit', '128M');
 
@@ -102,7 +102,7 @@ if ( isset($_POST['GLOBALS'])
 || isset($_COOKIE['GLOBALS'])
 || (isset($_SESSION) && !is_array($_SESSION))
 ) {
-  WcApiCore::wcCustomHandler(WC_ERROR_HACK, "Hacking attempt using GLOBALS or \$HTTP_SESSION_VARS");
+  WcApiCore::wcCustomHandler(WC_ERROR_HACK, "Hacking attempt using GLOBALS or \$_SESSION");
 }
 
 //finally: deprecated PHP>=5.3, removed PHP>=6
@@ -116,7 +116,7 @@ if(( function_exists("get_magic_quotes_gpc") && get_magic_quotes_gpc() )
 /* Primary PHP authentication.
  * This eliminates the need for apache authentication.
  */
-if(!isset($_SESSION['user']) || sizeof($_SESSION['user'])<4 || !WcApiCore::verifyUser()){
+if(!isset($_SESSION['user']) || !WcApiCore::verifyUser()){
   if(isset($_POST['su']) && isset($_POST['sp']) && preg_match('/[a-z0-9]+/ui', $_POST['su'].$_POST['sp']) && WcApiCore::verifyLogin($_POST['su'], $_POST['sp'])){
     LogWriter::write('Access has been granted for this user. Connection uses '.((getenv('HTTPS')=='on') ? 'SSL':'NONSSL'), 'ACCESS-GRANTED');
   }else{
@@ -126,8 +126,15 @@ if(!isset($_SESSION['user']) || sizeof($_SESSION['user'])<4 || !WcApiCore::verif
 }
 
 /* Secondary PHP authentication */
+$authState = false;
 if(isset($_POST['auth']) && preg_match('/[a-z0-9]+/ui', $_POST['auth'])){
   $safe_auth = $_POST['auth'];
+  $authState = false;
+  require (WC_PRI_INC . WC_DATABASES);
+
+  $requested_database = WcApiCore::wcFindDataBase($safe_auth, $database_array);
+}elseif(isset($_SESSION['dbCreds'])){
+  $safe_auth = $_SESSION['dbCreds']['jdbcCreds'];
   $authState = false;
   require (WC_PRI_INC . WC_DATABASES);
 
@@ -136,7 +143,8 @@ if(isset($_POST['auth']) && preg_match('/[a-z0-9]+/ui', $_POST['auth'])){
   WcApiCore::wcCustomHandler(WC_ERROR_HACK, 'SESSION REFUSED - The session was refused because the credentials string is empty or uses non valid characters.');
 }
 
-if ($requested_database != null && sizeof($requested_database) == 3) {
+
+if ($requested_database != null && count($requested_database) == 3) {
   define('WC_DB', $requested_database['wc_database']);
   define('WC_DB_USERNAME', $requested_database['wc_user']);
   define('WC_DB_PASSWORD', $requested_database['wc_password']);
@@ -149,7 +157,7 @@ if ($requested_database != null && sizeof($requested_database) == 3) {
   if (!isset($_SESSION[WC_AUTH])) {
     $_SESSION[WC_AUTH] = $safe_auth;
 
-    /* LIMIT SESSIONS. Checks once per new session. */
+    /* SQLite: LIMIT SESSIONS. Checks once per new session. */
     if (WC_STORE_SESSIONS=='sqlite' && $WC_SESS_LIMIT > 0) {
 
       if($sessdb = sqlite_open(WC_FILE_SESSIONS.'/phpsess.db', 0666, $sqliterror)){
@@ -177,16 +185,19 @@ if ($requested_database != null && sizeof($requested_database) == 3) {
 
     switch ($dbType) {
       case 2: // type 2 is PostgreSQL.
-        echo $dbHandler->exec_results("SELECT textcat(version(), " . "'|PHP-" . phpversion() . "|JDBWC " . WC_VERSION . "|".date_default_timezone_get()."|".getenv('SERVER_PROTOCOL')."') AS SERVER_VERSIONS;");
+        $initResult = $dbHandler->query("SELECT textcat(version(), " . "'|PHP-" . phpversion() . "|JDBWC " . WC_VERSION . "|".date_default_timezone_get()."|".getenv('SERVER_PROTOCOL')."|0') as server_versions;");
         LogWriter::write('This user has PostgreSQL as the db type.', 'DB-TYPE');
         break;
 
       case 0:
       case 1: // types "0 & 1 & default" are MySQL".
       default:
-        echo $dbHandler->exec_results("SELECT CONCAT('MySQL-', VERSION(), " . "'|PHP-" . phpversion() . "|JDBWC " . WC_VERSION . "|".date_default_timezone_get()."|".getenv('SERVER_PROTOCOL')."') AS SERVER_VERSIONS;");
+        $initResult = $dbHandler->query("SELECT CONCAT('MySQL-', VERSION(), " . "'|PHP-" . phpversion() . "|JDBWC " . WC_VERSION . "|".date_default_timezone_get()."|".getenv('SERVER_PROTOCOL')."|".(class_exists('mysqli') ? 1:0)."') as server_versions;");
         LogWriter::write('This user has MySQL as the db type.', 'DB-TYPE');
         break;
+    }
+    if(false!==($initData = $dbHandler->fetch_array($initResult))){
+      echo $initData['server_versions'];
     }
   }
 

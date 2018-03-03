@@ -20,7 +20,7 @@ ob_start("wc_compress_output");
 
 /**
  * Callback function for ob_start()
- * Provides compression (when suitable).
+ * Provides compression (when supported).
  *
  * @param string $buffer The servers output buffer
  * @return string - the contents from the servers output buffer.

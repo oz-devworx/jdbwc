@@ -38,10 +38,9 @@ if ($authState==true) {
   /* Handle setting and getting data to and from database */
   if(isset($_POST[WC_ACTION])){
     switch ($_POST[WC_ACTION]) {
-      /* caters for insert, update, delete and execute;
-       * however no resultset will be returned for execute */
-      case 'insert':
-      case 'update':
+      /* caters for insert, update, delete execute, savepoint and release savepoint;
+       * No resultset will be returned for execute, savepoint or release savepoint */
+      case 'query':
         if (!empty($sqlString)) {
           echo $dbHandler->query($sqlString);
         }
@@ -89,6 +88,11 @@ if ($authState==true) {
         }
         break;
 
+        /* responds to JDBC pings for Connection.isValid() and Connection.isClosed() */
+      case 'ping':
+        echo 'true';
+        break;
+
         /* just like it sounds, this cleans-up after we have finished
          * and is triggered by java.sql.Connection.close();
          * on the JDBC side */
@@ -98,8 +102,8 @@ if ($authState==true) {
           $timeTaken = microtime(true) - $_SESSION['workStart'];
 
           echo("--Serverside: Processing took: " . round($timeTaken, 4) . " seconds to complete.\n");
-          if (function_exists('memory_get_usage')){
-            $_SESSION['memUse'][] = memory_get_usage(true);
+          if (function_exists('memory_get_peak_usage')){
+            $_SESSION['memUse'][] = memory_get_peak_usage(true);
             $avg = 0;
             $max = 0;
             $min = -1;
@@ -126,7 +130,7 @@ if ($authState==true) {
         break;
     }
   }
-  if($_SESSION['DEBUG_MODE']=='true') $_SESSION['memUse'][] = function_exists('memory_get_usage') ? memory_get_usage(true) : 0;
+  if($_SESSION['DEBUG_MODE']=='true') $_SESSION['memUse'][] = function_exists('memory_get_peak_usage') ? memory_get_peak_usage(true) : 0;
 
 } else {
   /* just incase; better to inform user than not */
