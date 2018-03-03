@@ -55,6 +55,9 @@ public class WCConnectionInfo {
 	/** -1 = lowercase, 0 = mixed-case, 1 = uppercase */
 	protected transient int myCaseSensitivity = 0;
 
+	/** Handle for database specific implementation helper methods */
+	protected transient DBConnection dbconn;
+
 	protected WCConnectionInfo() {
 		super();
 	}
@@ -76,7 +79,7 @@ public class WCConnectionInfo {
 	protected int getDatabaseMicroVersion() throws SQLException {
 		String minorStr = myDatabaseVersion.substring(myDatabaseVersion.lastIndexOf('.')+1);
 
-		return com.jdbwc.core.util.SQLUtils.getNumberFromString(minorStr);
+		return com.jdbwc.util.SQLUtils.getNumberFromString(minorStr);
 	}
 
 	/**
@@ -88,11 +91,11 @@ public class WCConnectionInfo {
 	 * <li> 1 = uppercase</li>
 	 * </ul>
 	 */
-	public int getCaseSensitivity() {
+	public final int getCaseSensitivity() {
 		return myCaseSensitivity;
 	}
 
-	public String getDatabase() {
+	public final String getDatabase() {
 		return currentDatabase;
 	}
 
@@ -122,11 +125,11 @@ public class WCConnectionInfo {
 		return minorVer;
 	}
 
-	public String getDatabaseProductName() throws SQLException {
+	public final String getDatabaseProductName() throws SQLException {
 		return myDBName;
 	}
 
-	public String getDatabaseProductVersion() throws SQLException {
+	public final String getDatabaseProductVersion() throws SQLException {
 		return myDBVersion;
 	}
 
@@ -134,32 +137,24 @@ public class WCConnectionInfo {
 		return myDbType;
 	}
 
+	public String getDbPackagePath() throws SQLException {
+		return new WCDriver().getDbPackagePath(myDbType);
+	}
+
 	public int getDriverMajorVersion() {
-		int majorVersion = 1;
-		try {
-			majorVersion = new Driver().getMajorVersion();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return majorVersion;
+		return new WCDriver().getMajorVersion();
 	}
 
 	public int getDriverMinorVersion() {
-		int minorVersion = 1;
-		try {
-			minorVersion = new Driver().getMinorVersion();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return minorVersion;
+		return new WCDriver().getMinorVersion();
 	}
 
 	public String getDriverName() throws SQLException {
-		return new Driver().getVersionName();
+		return new WCDriver().getVersionName();
 	}
 
 	public String getDriverVersion() throws SQLException {
-		return new Driver().getVersionString();
+		return new WCDriver().getVersionString();
 	}
 
 	/**
@@ -195,7 +190,7 @@ public class WCConnectionInfo {
 		return isBaseServer;
 	}
 
-	public boolean versionMeetsMinimum(int majorVersion, int minorVersion, int microVersion) throws SQLException {
+	public boolean versionMeetsMinimum(final int majorVersion, final int minorVersion, final int microVersion) throws SQLException {
 		boolean meetsMin = false;
 
 		if(getDatabaseMajorVersion() > majorVersion){

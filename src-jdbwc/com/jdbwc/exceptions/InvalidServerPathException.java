@@ -19,6 +19,12 @@
  */
 package com.jdbwc.exceptions;
 
+/**
+ * Handles Server path Exceptions thrown by the server or the JDBC Driver.
+ *
+ * @author Tim Gall
+ * @version 2010-04-17
+ */
 public class InvalidServerPathException extends ServerSideException {
 
 	/**

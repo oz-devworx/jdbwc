@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Properties;
 
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * Handles explaining parameters and thier defaults
@@ -48,12 +48,6 @@ public class WCDriverPropertiesInfo {
 
 		/**
 		 *
-		 * @param name String -
-		 * @param maxLength int -
-		 * @param required boolean -
-		 * @param defaultValue String -
-		 * @param choices String[] -
-		 * @param description String -
 		 */
 		private DriverProperty(String name, int maxLength, boolean required, String defaultValue, String[] choices, String description) {
 			this.name = name;
@@ -129,7 +123,7 @@ public class WCDriverPropertiesInfo {
 	 */
 	public WCResultSet getClientInfoResultSet() throws SQLException {
 		WCResultSet res = new WCResultSet(this.connection, WCStaticMetaData.getClientInfoProperties());
-		DataHandler row = Util.getCaseSafeHandler(this.connection.myCaseSensitivity);
+		ObjectArray row = Util.getCaseSafeHandler(this.connection.myCaseSensitivity);
 
 		for(DriverProperty element : clientProperties){
 			row.clearData();

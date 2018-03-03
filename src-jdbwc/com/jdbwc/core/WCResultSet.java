@@ -46,11 +46,10 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.jdbwc.core.util.SQLField;
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.iface.ResultSet;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * Extended JDBC-API implementation for java.sql.ResultSet.<br />
@@ -79,7 +78,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 
 	//--------------------------------------------------------------- constructors
 
-	protected WCResultSet(WCConnection connection) throws SQLException{
+	public WCResultSet(WCConnection connection) throws SQLException{
 		super();
 		myConnection = connection;
 		myStatement = new WCStatement(myConnection, myConnection.getCatalog());
@@ -88,7 +87,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		init(myConnection.getCaseSensitivity(), myConnection.getDbType(), "");
 	}
 
-	protected WCResultSet(WCConnection connection, WCResultSetMetaData metaData) throws SQLException{
+	public WCResultSet(WCConnection connection, WCResultSetMetaData metaData) throws SQLException{
 		super();
 		myConnection = connection;
 		myStatement = new WCStatement(myConnection, myConnection.getCatalog());
@@ -116,7 +115,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		init(myConnection.getCaseSensitivity(), myConnection.getDbType(), sql);
 	}
 
-	protected WCResultSet(WCConnection connection, WCStatement statement, String sql, DataHandler results) throws SQLException{
+	protected WCResultSet(WCConnection connection, WCStatement statement, String sql, ObjectArray results) throws SQLException{
 		super();
 		myConnection = connection;
 		myStatement = statement;
@@ -127,16 +126,20 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 
 	//--------------------------------------------------------------- public methods
 
-	public void addRow(DataHandler row){
+	public void addRow(ObjectArray row){
 		synchronized (myRows) {
 			myRows.addData(myRows.length() + "", row);
 		}
 	}
 
+	public WCConnection getConnection(){
+		return this.myConnection;
+	}
+
 	public boolean next() throws SQLException{
 		isResultSetOpen();
 		boolean hasNext = false;
-		if(myRows.getObject(myPointer+1) instanceof DataHandler){
+		if(myRows.getObject(myPointer+1) instanceof ObjectArray){
 			movePointerForward();
 			hasNext = true;
 		}
@@ -147,7 +150,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	public boolean previous() throws SQLException{
 		isResultSetOpen();
 		boolean hasPrevious = false;
-		if(myRows.getObject(myPointer-1) instanceof DataHandler){
+		if(myRows.getObject(myPointer-1) instanceof ObjectArray){
 			movePointerBackward();
 			hasPrevious = true;
 		}
@@ -159,7 +162,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		isResultSetOpen();
 		boolean hasFirst = false;
 		movePointerToStart();
-		if(myRows.getObject(myPointer) instanceof DataHandler){
+		if(myRows.getObject(myPointer) instanceof ObjectArray){
 			hasFirst = true;
 		}else{
 			throw new SQLException(
@@ -173,7 +176,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		isResultSetOpen();
 		boolean hasLast = false;
 		movePointerToEnd();
-		if(myRows.getObject(myPointer) instanceof DataHandler){
+		if(myRows.getObject(myPointer) instanceof ObjectArray){
 			hasLast = true;
 		}else{
 			throw new SQLException(
@@ -267,7 +270,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Integer.parseInt(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Integer cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not an Integer.",
+					"Integer cast Exception. The value '" + obj + "' at column index " + columnIndex + " is not an Integer.",
 					"22003", e);
 		}
 		return val;
@@ -283,7 +286,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Integer.parseInt(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Integer cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not an Integer.",
+					"Integer cast Exception. The value '" + obj + "' at column '" + columnLabel + "' is not an Integer.",
 					"22003", e);
 		}
 		return val;
@@ -299,7 +302,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Double.parseDouble(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Double cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Double.",
+					"Double cast Exception. The value '" + obj + "' at column index " + columnIndex + " is not a Double.",
 					"22003", e);
 		}
 		return val;
@@ -315,7 +318,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Double.parseDouble(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Double cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Double.",
+					"Double cast Exception. The value '" + obj + "' at column '" + columnLabel + "' is not a Double.",
 					"22003", e);
 		}
 		return val;
@@ -331,7 +334,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Float.parseFloat(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Float cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Float.",
+					"Float cast Exception. The value '" + obj + "' at column index " + columnIndex + " is not a Float.",
 					"22003", e);
 		}
 		return val;
@@ -347,7 +350,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Float.parseFloat(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Float cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Float.",
+					"Float cast Exception. The value '" + obj + "' at column '" + columnLabel + "' is not a Float.",
 					"22003", e);
 		}
 		return val;
@@ -387,7 +390,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Long.parseLong(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Long cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Long.",
+					"Long cast Exception. The value '" + obj + "' at column index " + columnIndex + " is not a Long.",
 					"22003", e);
 		}
 		return val;
@@ -403,7 +406,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Long.parseLong(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Long cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Long.",
+					"Long cast Exception. The value '" + obj + "' at column '" + columnLabel + "' is not a Long.",
 					"22003", e);
 		}
 		return val;
@@ -419,7 +422,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Short.parseShort(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Short cast Exception. The value '" + myRow.getObject(columnIndex-1) + "' at column index " + (columnIndex-1) + " is not a Short.",
+					"Short cast Exception. The value '" + obj + "' at column index " + columnIndex + " is not a Short.",
 					"22003", e);
 		}
 		return val;
@@ -435,7 +438,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Short.parseShort(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Short cast Exception. The value '" + myRow.getObject(columnLabel) + "' at column '" + columnLabel + "' is not a Short.",
+					"Short cast Exception. The value '" + obj + "' at column '" + columnLabel + "' is not a Short.",
 					"22003", e);
 		}
 		return val;
@@ -476,7 +479,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 				myPointer = 0;
 			}
 
-			if(myRows.getObject(myPointer) instanceof DataHandler){
+			if(myRows.getObject(myPointer) instanceof ObjectArray){
 				getCurrentRow();
 				isAbsolute = true;
 			}
@@ -596,7 +599,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = BigDecimal.valueOf(dVal);
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"BigDecimal cast Exception. The value at column index " + (columnIndex-1) + " is not a BigDecimal.",
+					"BigDecimal cast Exception. The value at column index " + columnIndex + " is not a BigDecimal.",
 					"22003", e);
 		}
 		return val;
@@ -639,7 +642,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val.setScale(scale);
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"BigDecimal cast Exception. The value at column index " + (columnIndex-1) + " is not a BigDecimal.",
+					"BigDecimal cast Exception. The value at column index " + columnIndex + " is not a BigDecimal.",
 					"22003", e);
 		}
 		return val;
@@ -811,7 +814,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			val = Byte.parseByte(String.valueOf(obj));
 		} catch (NumberFormatException e) {
 			throw new SQLException(
-					"Byte cast Exception. The value at column index " + (columnIndex-1) + " is not a byte.",
+					"Byte cast Exception. The value at column index " + columnIndex + " is not a byte.",
 					"S1000");
 		}
 		return val;
@@ -1036,7 +1039,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 		if(myConnection!=null){
 			return new WCResultSetMetaData(querySQL, myConnection);
 		}else{
-			return new WCResultSetMetaData(new SQLField[0]);
+			return new WCResultSetMetaData(new com.jdbwc.util.SQLField[0]);
 //			throw new SQLException(
 //					"The Connection parent of this ResultSet is null or closed.",
 //					"08003");
@@ -1383,7 +1386,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			url = new URL(String.valueOf(obj));
 		} catch (MalformedURLException e) {
 			throw new SQLException(
-					"URL cast Exception. The value at column index " + (columnIndex-1) + " is not a valid URL.",
+					"URL cast Exception. The value at column index " + columnIndex + " is not a valid URL.",
 					"S1000", e);
 		}
 		return url;
@@ -1455,7 +1458,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 	public boolean relative(int rows) throws SQLException {
 		boolean isRelative = false;
 		if(rows > 0){
-			if(myRows.getObject(myPointer+rows) instanceof DataHandler){
+			if(myRows.getObject(myPointer+rows) instanceof ObjectArray){
 //				synchronized(this){
 					myPointer += rows;
 					getCurrentRow();
@@ -1463,7 +1466,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 //				}
 			}
 		}else if(rows < 0){
-			if(myRows.getObject(myPointer-rows) instanceof DataHandler){
+			if(myRows.getObject(myPointer-rows) instanceof ObjectArray){
 //				synchronized(this){
 					myPointer -= rows;
 					getCurrentRow();
@@ -1505,7 +1508,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 
 	//--------------------------------------------------------------- protected methods
 
-	protected void addMetaData(WCResultSetMetaData meta){
+	public void addMetaData(WCResultSetMetaData meta){
 		internalMetaData = meta;
 	}
 
@@ -1972,7 +1975,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 
 	private void getCurrentRow(){
 		synchronized (myRows) {
-			myRow = (DataHandler) myRows.getObject(myPointer);
+			myRow = (ObjectArray) myRows.getObject(myPointer);
 		}
 	}
 
@@ -1993,7 +1996,7 @@ public class WCResultSet extends WCResultSetUpdates implements ResultSet {
 			return obj;
 		} else {
 			throw new SQLException(
-					"Column index " + (columnIndex-1) + " not found in this ResultSet row.",
+					"Column index " + columnIndex + " not found in this ResultSet row.",
 					"S0022");
 		}
 	}

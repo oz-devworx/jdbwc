@@ -17,7 +17,7 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core.util;
+package com.jdbwc.core.postgresql;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,7 +28,9 @@ import java.util.List;
 import com.jdbwc.core.WCConnection;
 import com.jdbwc.core.WCResultSet;
 import com.jdbwc.core.WCStatement;
-import com.ozdevworx.dtype.DataHandler;
+import com.jdbwc.util.SQLField;
+import com.jdbwc.util.SQLUtils;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * Gets meta data from PostgreSQL databases.
@@ -37,7 +39,7 @@ import com.ozdevworx.dtype.DataHandler;
  * @version 2008-05-29
  * @version 2010-05-20
  */
-public class PgSQLMetaGeta {
+public class SQLMetaGetaImp implements com.jdbwc.util.SQLMetaGeta {
 
 	private transient WCConnection myConnection = null;
 
@@ -45,40 +47,34 @@ public class PgSQLMetaGeta {
 	/**
 	 * Constructs a new instance of this.
 	 */
-	protected PgSQLMetaGeta(WCConnection connection) {
+	public SQLMetaGetaImp(WCConnection connection) {
 		myConnection = connection;
 	}
 
 	/**
-	 * @param sql
-	 * @param columns
-	 * @return array of SQLField MetaData
-	 * @throws SQLException
+	 * @see com.jdbwc.util.SQLMetaGeta#getResultSetMetaData(java.lang.String, com.ozdevworx.dtype.ObjectArray)
 	 */
-	protected SQLField[] getResultSetMetaData(
+	@Override
+	public SQLField[] getResultSetMetaData(
 			String sql,
-			DataHandler columns)
+			ObjectArray columns)
 	throws SQLException{
 
 		if(myConnection.versionMeetsMinimum(7, 4, 0)){
-			return getRsMetaData2(sql, columns);
+			return getRsMetaData(sql, columns);
 		}else{
 			throw new SQLException("PostgreSQL versions less than 7.4.0 are not supported in this release.");
 		}
 	}
 
 	/**
-	 *
-	 * @param tableNames
-	 * @param columns
-	 * @param params
-	 * @return array of SQLField MetaData
-	 * @throws SQLException
+	 * @see com.jdbwc.util.SQLMetaGeta#getParameterMetaData(com.ozdevworx.dtype.ObjectArray, com.ozdevworx.dtype.ObjectArray, com.ozdevworx.dtype.ObjectArray)
 	 */
-	protected SQLField[] getParameterMetaData(
-			DataHandler tableNames,
-			DataHandler columns,
-			DataHandler params)
+	@Override
+	public SQLField[] getParameterMetaData(
+			ObjectArray tableNames,
+			ObjectArray columns,
+			ObjectArray params)
 	throws SQLException{
 
 		if(myConnection.versionMeetsMinimum(7, 4, 0)){
@@ -112,7 +108,7 @@ public class PgSQLMetaGeta {
 	 * @return an array of SQLField Objects
 	 * @throws SQLException
 	 */
-	private SQLField[] getRsMetaData2(String sql, DataHandler columns) throws SQLException{
+	private SQLField[] getRsMetaData(String sql, ObjectArray columns) throws SQLException{
 
 		if(sql.isEmpty())
 			throw new SQLException("Could not determine the resultsets query to get metadata for.");
@@ -235,7 +231,7 @@ public class PgSQLMetaGeta {
 
 				columnDefault = resultSet.getString("column_default");
 				isNullable = resultSet.getBoolean("nullable");
-				sqlType = PgSQLTypes.pgsqlNameToPgsqlType(resultSet.getString("data_type"));
+				sqlType = myConnection.nativeNameToNativeType(resultSet.getString("data_type"));
 
 
 //				System.err.println("data_type = " + resultSet.getString("data_type"));
@@ -271,7 +267,6 @@ public class PgSQLMetaGeta {
 
 
 				SQLField field = new SQLField(
-						myConnection.getDbType(),
 						catalogName,
 						schemaName,
 						tableName,
@@ -310,7 +305,7 @@ public class PgSQLMetaGeta {
 //	 * @param tableName
 //	 * @throws SQLException
 //	 */
-//	private SQLField[] getRsMetaData(SQLField[] fieldSet, DataHandler columns) throws SQLException{
+//	private SQLField[] getRsMetaData(SQLField[] fieldSet, ObjectArray columns) throws SQLException{
 //
 //		final String[] keys = {"PRIMARY KEY","UNIQUE","FOREIGN KEY"};
 //
@@ -637,7 +632,7 @@ public class PgSQLMetaGeta {
 
 
 
-	private SQLField[] getParamMetaData(String tableName, DataHandler columns, DataHandler params) throws SQLException{
+	private SQLField[] getParamMetaData(String tableName, ObjectArray columns, ObjectArray params) throws SQLException{
 
 		SQLField[] paramMdFields = new SQLField[0];
 		final String nullable = "TRUE";
@@ -690,7 +685,6 @@ public class PgSQLMetaGeta {
 					mode = params.getString(fieldName);
 
 					SQLField field = new SQLField(
-							myConnection.getDbType(),
 							fieldName,
 							typeName,
 							isNullable,
@@ -716,7 +710,6 @@ public class PgSQLMetaGeta {
 					mode = params.getString(fieldName);
 
 					SQLField field = new SQLField(
-							myConnection.getDbType(),
 							fieldName,
 							typeName,
 							isNullable,

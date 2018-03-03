@@ -5,8 +5,10 @@ Document Revision: 1
 
 Release Information
 Project Name 	JDBWC
-Project Type 	Type 3 Java JDBC Driver
-Version 	1.0.0-4beta
+Project Type 	Type 3
+<http://en.wikipedia.org/wiki/JDBC_driver#Type_3_Driver_-_Network-Protocol_Driver>
+Java JDBC Driver
+Version 	1.0.0-5beta
 License 	GNU GPLv3 http://www.gnu.org/licenses/
 Web 	http://sourceforge.net/projects/jdbwc
 Support 	https://sourceforge.net/projects/jdbwc/support
@@ -20,9 +22,9 @@ Contents
     * Connection URL in detail <#params>
     * What's new? <#new>
     * Limitations <#limits>
-    * TODO <#todo>
     * Known issues <#issues>
-    * Reporting Bugs <#bugs>
+    * TODO <#todo>
+    * <#issues>Reporting Bugs <#bugs>
 
 Introduction
 
@@ -203,7 +205,8 @@ starting a new Connection requires an |SQLException| handler.
 See the example below.
 *NOTE:* SSL is highly recommended over sending sql in plaintext.
 v1.0.0.3 will only work with validated certs.
-v1.0.0.4 will work with validated and unvalidated/self-signed certs.
+v1.0.0.4 and v1.0.0.5 will work with validated and
+unvalidated/self-signed certs.
 Un-validated/self-signed certs require the optional param:
 |nonVerifiedSSL = true|
 
@@ -368,8 +371,9 @@ Examples:
 
 /The port number is only required for non standard ports in the range
 [1-0xfffe] (anything other than 80 or 443)/.
-Custom port usage may incur up to 7ms overhead per query (100 queries =
-+0.7 of a second).
+In rare circumstances custom port usage may incur up to 7ms overhead per
+query (100 queries = +0.7 of a second). This rare delay seems to be
+related to the webserver, not the driver.
 
 The JDBWC driver will append |jdbwc/index.php| to the end of the URL
 before requesting a connection from the server.
@@ -477,102 +481,68 @@ OPTIONS: true, false (or not used. defaults to false)
 What's new?
 
 
-          Since v1.0.0.3beta
+          Since v1.0.0-4beta
 
-    * Communication layer changed from being powered by
-      Apache-HttpClient 3.1 (legacy) to Apache-HttpClient 4.0.1.
-    * Host connection can use _any valid port_ in the range [1-0xfffe].
-      Non standard port use may incur up to 7ms delay per query (100
-      queries = +0.7 of a second).
-    * Added _support for 1 proxy_ server.
-    * Added optional connection parameters:
-          o timeout
-          o nonVerifiedSSL
-          o proxyUrl
-    * Added 2 more debug levels.
-    * Trimmed down the exception classes to only those currently
-      required by the driver.
-    * Added support for un-validated server-side SSL.
-    * Added transparent gzip support for incoming data (from server-side
-      going to JDBC side).
-    * Added JDBC Fatal Server-Side Error handling.
-    * Lots of work on MySql DatabaseMetaData and ResultSetMetaData.
-    * New ResultSetMetaData backend v3. Uses a connection
-      resource-economic approach, is faster and suitably accurate. Works
-      with any SQL that produces a MySQL resultset including SHOW and
-      EXPLAIN.
-    * Rewrote and fine tuned the MySQL Types class (handles most of the
-      type juggling between MySQL and Java.sql).
-    * Added a static metadata feed class for the java.sql metadata classes.
-    * Better handling of null and empty values by the drivers underlying
-      data type. This versions uses a new implementation better suited
-      to SQL data.
-    * Completed numerous (previously un-implemented methods) in the core
-      implementation classes.
-    * Simplified connection parameters (reduced amount of params by
-      including more information in the remote url's.
-          o Combined required port param with server url. (EG:
-            |https://myserver.ext:8081/mysubfolder/|)
-          o Combined use proxy, proxy protocol, domain and port into 1
-            url. (EG: |http://myproxyserver.ext:8085|)
-    * The Driver is now compatible and very functional in the following
-      SQL clients.
-          o SQL Workbench - build 108
-          o DB Visualizer - Free 7.0.6
-          o SQuirreL SQL Client 3.1
-    * Changed main server file to look for the |config/local| folder
-      rather than a host named |localhost| (this is usually for testing
-      setups).
-    * Updated valid parameter key strings for com.jdbwc.Driver
-    * Migrated connection param verification and setup to the Driver
-      class (from the connection class).
-    * Updated javadocs.
-    * Improved JDBWC test class.
-          o Implemented the new optional parameters in connect() method.
-          o Implemented a test code block for demonstrating the use of
-            Driver.getPropertyInfo() (un comment to use it).
-          o Improved the main() method with time taken display and the
-            ability to run the test in loops for reliability and stress
-            testing.
-          o Test main() can accept one external parameter to trigger
-            multiple passes.
-    * Added NotImplemented exceptions to all methods that are not yet
-      full implemented. Added an additional message to make finding the
-      cause of these exceptions easier.
-    * Minor improvements to the Ant build file.
+    * Migrated database specific code into brand named packages. This
+      makes the database types transparent to the driver and makes
+      integration of more database types easier and less error prone.
+    * Migrated com.jdbwc.core.util package to com.jdbwc.util to
+      consolidate utility classes.
+    * Fixed java.sql.Driver.getPropertyInfo() so it works properly with
+      SQL Client software. Added all properties to the list. Previously
+      only required properties were returned.
+    * Minor performance tweak in dealing with changing catalogs. Before,
+      a credentials hash had to be generated on the server for each
+      query. Now the hash is only generated on login and
+      java.sql.Connection.setCatalog(String) whci is called when
+      changing catalogs on a live connection (NOTE: the user must have
+      been granted prior access to all databases they wish to access on
+      the server-side <#databases>).
 
 Limitations
 
-    * JDBWC is aimed at JDBC 3 specifications with a few limitations
+    * JDBWC is aimed at JDBC 3/4 specifications with a few limitations
       (/also see the other limitations and TODO <#todo>'s/).
     * No support for some of the newer JDBC 3 and 4 data-types.
-    * Shared IP's don't agree with the driver. Dedicated IP's are fine.
-    * Single connections? My advice would be no, multiple connections
-      are OK, but be carefull. If latency isn't an issue It should be
-      fine. If latency is an issue, you may find things happening out of
-      order. EG: a delete query sent after a select query, could end up
-      getting to the server first, in which case your select query would
-      probably not be correct based on the order it was sent. I would
-      recommend using single connections when communicating across large
-      unknown networks like the internet.
+    * Data sizes of queries should be kept at a reasonable size. This
+      applies to sending and receiving. Sending is limited to the $_POST
+      limit set on the server (32MB is a common size for the post limit,
+      but it could be much larger depending on your web servers
+      configuration). Receiving is limited by the amount of free memory
+      on the machine running the Driver (and the JRE running the
+      driver). JDBWC caches the entire resultset/s from a query while it
+      is open (this isnt so much of a problem as most modern machines
+      have ample RAM and can fallback to pagefile. Falling back to
+      pagefile would reduce performance. < 10MB is a safe size).
+    * Connection Limits. In early versions <= v1.0.0-3 multiple
+      connections caused issues. Version v1.0.0-4 and v1.0.0-5 seem OK
+      with multiple connections, but be carefull if latency or high
+      error rates are an issue, as you could potentially find things
+      happening out of order. EG: a delete query sent after a select
+      query, could end up getting to the server first, in which case
+      your select query would probably not be correct based on the order
+      it was sent. Much like un-synchonized Java code can in certain
+      circumstances. For now, I would recommend using single connections
+      when communicating across large unknown networks like the internet
+      unless they are consistently reliable. This limitation is planned
+      to be resolved in a future release by using a manual
+      synchronization system for queries. See the TODO <#todo>'s for
+      more information.
     * Also see Known Issues <#issues>.
-
-TODO
-
-    * Finish PreparedStatement (/almost done/), CallableStatement,
-      ParameterMetaData (/almost done/) and anything else not
-      implemented yet.
-    * Implement support for more of the newer JDBC 3 and 4 data types.
-    * Implement support for the N data types.
-    * JUnit tests (/not the highest priority at this point/).
-    * Implement support for more databases. This will occur with or
-      after the next release.
 
 Known issues
 
     * Shared IP's don't agree with the driver (or previous versions).
       Dedicated IP's, localhost testing servers or production servers on
-      the same machine as the driver aren't usually a problem.
+      the same machine as the driver usually aren't a problem.
+    * * PostgreSQL ResultSetMetaData does not return key references.
+      Unfortunately PostgreSQL is fairly awkward to extract
+      ResultSetMetaData from. The current implementation does not
+      correctly indentify table keys (primary, unique and multi). This
+      is in part due to some limitations with PostgreSQL. Work is in
+      progress to try and overcome this; however its not the main focus
+      and a release time is not yet planned. DatabaseMetaData does NOT
+      have this limitation.
     * Not really an issue but worth mentioning. Server-Side testing in
       relation to Fatal Errors: Given the amount of different
       os/apache/php setups its not possible to test on all platforms. At
@@ -587,6 +557,28 @@ Known issues
 communicating across a network or the internet as you will be sending
 raw sql. To correctly install SSL your web-server _must have a dedicated
 IP_.
+
+TODO
+
+    * Synchronize query processing: Add a unique key to each statement
+      for the purpose of processing results in the same order they were
+      sent; So if a required query has not responded, this will also
+      give the driver the ability to detect it and resend the lost query
+      if required. It will also make the prospect of threading queries
+      more feasable, which would in turn provide a good controlled base
+      for limiting the amount of active statements, gracefully timing
+      out from the client side, and more control when cancelling and
+      closing statements. This single TODO will most likely be the
+      entire focus of a new version/code-branch when it gets implemented
+      and may be broken down into multiple development steps.
+    * Add more database support (EG: any database that can be easily
+      accessed from PHP).
+    * Finish PreparedStatement (/almost done/), CallableStatement,
+      ParameterMetaData (/almost done/) and anything else not
+      implemented yet.
+    * Implement support for more of the newer JDBC 3 and 4 data types.
+    * JUnit tests (/not the highest priority at this point but would be
+      good later/).
 
 Reporting Bugs
 

@@ -17,15 +17,15 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core.util;
+package com.jdbwc.util;
 
+import java.lang.reflect.Constructor;
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.jdbwc.core.WCConnection;
-import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * This class is designed to parse an SQL <b>SELECT</b> String into table and field variables suitable for building ResultSetMetaData from.<br />
@@ -47,11 +47,11 @@ public class SQLResultsParser {
 
 	private transient SQLField[] fieldSet = new SQLField[0];
 
-//	private transient final DataHandler table2Alias = null;
-	private transient DataHandler table2Column = null;
-//	private transient DataHandler column2Alias = null;
+//	private transient final ObjectArray table2Alias = null;
+	private transient ObjectArray table2Column = null;
+//	private transient ObjectArray column2Alias = null;
 
-//	private transient final DataHandler myResultsOrder = null;
+//	private transient final ObjectArray myResultsOrder = null;
 
 	/* Regex Strings suitable for using in Regex Patterns */
 	private static final String MY_WS = "\\s+";
@@ -119,7 +119,7 @@ public class SQLResultsParser {
 
 
 	public SQLResultsParser(){
-		//delegate for accessing static methods
+		//for accessing static methods
 	}
 
 
@@ -156,17 +156,18 @@ public class SQLResultsParser {
 					, "S1009");
 		}
 
-		switch(connection.getDbType()){
-			case Util.ID_POSTGRESQL:
-				PgSQLMetaGeta pgMg = new PgSQLMetaGeta(connection);
-				fieldSet = pgMg.getResultSetMetaData(sql, table2Column);
-				break;
 
-			case Util.ID_MYSQL:
-			case Util.ID_DEFAULT:
-				MySQLMetaGeta myMg = new MySQLMetaGeta(connection);
-				fieldSet = myMg.getResultSetMetaData(sql, table2Column);
-				break;
+		// using reflection, get the correct class for the database type thats in use
+		try {
+			Class<?> metaClass = Class.forName(connection.getDbPackagePath() + "SQLMetaGetaImp");
+
+            Constructor<?> ct = metaClass.getConstructor(new Class[]{connection.getClass()});
+
+            SQLMetaGeta metaG = (SQLMetaGeta)ct.newInstance(new Object[]{connection});
+            fieldSet = metaG.getResultSetMetaData(sql, table2Column);
+
+		} catch (Throwable e) {
+			throw new SQLException("Could not construct a SQLMetaGeta Object", e);
 		}
 	}
 
@@ -232,8 +233,8 @@ public class SQLResultsParser {
 		}
 	}
 
-//	private DataHandler findTablesInString(String inputStr){
-//		DataHandler tableSet = Util.getCaseSafeHandler(Util.CASE_MIXED);
+//	private ObjectArray findTablesInString(String inputStr){
+//		ObjectArray tableSet = Util.getCaseSafeHandler(Util.CASE_MIXED);
 //
 //		outer:
 //			for(int i = 0; i < myFromTrim.length; i++){
@@ -253,7 +254,7 @@ public class SQLResultsParser {
 //		return tableSet;
 //	}
 
-//	private DataHandler seperateTableEntries(String entries){
+//	private ObjectArray seperateTableEntries(String entries){
 //		/* find joins and make the table names visible to the rest of this method */
 //		String workingArea = entries;
 //		for(int i = 0; i < myJoins.length; i++){
@@ -263,7 +264,7 @@ public class SQLResultsParser {
 //			}
 //		}
 //
-//		DataHandler results = Util.getCaseSafeHandler(Util.CASE_MIXED);
+//		ObjectArray results = Util.getCaseSafeHandler(Util.CASE_MIXED);
 //		String[] myFields = SQLUtils.removeBlanks(myFieldSeperator.split(workingArea));
 //
 //		for(int mf = 0; mf < myFields.length; mf++){
@@ -298,13 +299,13 @@ public class SQLResultsParser {
 	 *
 	 *
 	 * @param entries
-	 * @return entries separated and stored in a DataHandler.
+	 * @return entries separated and stored in a ObjectArray.
 	 */
-	private DataHandler seperateFieldEntries(String entries){
+	private ObjectArray seperateFieldEntries(String entries){
 
 		String fieldName = "";
 
-		DataHandler results = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		ObjectArray results = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		String[] myFields = SQLUtils.removeBlanks(myFieldSeperator.split(SQLUtils.stripWhiteSpace(entries)));
 		String wholeField = "";
 

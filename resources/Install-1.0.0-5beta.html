@@ -48,7 +48,7 @@ td.text {text-align:left; padding:2px;}
 	</tr>
 	<tr>
 		<td class="tag">Version</td>
-		<td class="text">1.0.0-4beta</td>
+		<td class="text">1.0.0-5beta</td>
 	</tr>
 	<tr>
 		<td class="tag">License</td>
@@ -191,7 +191,7 @@ td.text {text-align:left; padding:2px;}
 <p> See the example below.<br />
 	<strong>NOTE:</strong> SSL is highly recommended over sending sql in plaintext.<br />
 	v1.0.0.3 will only work with validated certs.<br />
-	v1.0.0.4 will work with validated and unvalidated/self-signed certs.<br />
+	v1.0.0.4 and v1.0.0.5 will work with validated and unvalidated/self-signed certs.<br />
 	Un-validated/self-signed certs require the optional param: <code>nonVerifiedSSL = true</code></p>
 <fieldset>
 <legend>EXAMPLE</legend>
@@ -384,57 +384,11 @@ connection = DriverManager.getConnection(<strong>jdbcUrl</strong>, <strong>props
 	This is rarely required. Its for situations where the host server blocks the default HttpClient <code>User-Agent</code>. The server would need to have been configured to deliberately block the HttpClient user agent.<br />
 	OPTIONS: true, false (or not used. defaults to false)</p>
 <div class="head"><a name="new" id="new"></a>What's new?</div>
-<h5>Since v1.0.0.3beta</h5>
+<h5>Since v1.0.0-4beta</h5>
 <ul>
-	<li>Communication layer changed from being powered by Apache-HttpClient 3.1 (legacy) to Apache-HttpClient 4.0.1.</li>
-	<li>Host connection can use <u>any valid port</u> in the range [1-0xfffe]. Non standard port use may incur up to 7ms delay per query (100 queries = +0.7 of a second).</li>
-	<li>Added <u>support for 1 proxy</u> server.</li>
-	<li>Added optional connection parameters:
-		<ul>
-			<li>timeout</li>
-			<li> nonVerifiedSSL</li>
-			<li>proxyUrl</li>
-		</ul>
-	</li>
-	<li>Added 2 more debug levels.</li>
-	<li>Trimmed down the exception classes to only those currently required by the driver.</li>
-	<li>Added support for un-validated server-side SSL.</li>
-	<li>Added transparent gzip support for incoming data (from server-side going to JDBC side).</li>
-	<li>Added JDBC Fatal Server-Side Error handling.</li>
-	<li>Lots of work on MySql DatabaseMetaData and ResultSetMetaData.</li>
-	<li>New ResultSetMetaData backend v3. Uses a connection resource-economic approach, is faster and suitably accurate. Works with any SQL that produces a MySQL resultset including SHOW and EXPLAIN.</li>
-	<li>Rewrote and fine tuned   the MySQL Types class (handles most of the type juggling between MySQL and Java.sql).</li>
-	<li>Added a static metadata feed class for the java.sql metadata classes.</li>
-	<li>Better handling of null and empty values by the drivers underlying data type. This versions uses a new implementation better suited to SQL data.</li>
-	<li>Completed numerous (previously un-implemented methods) in the core implementation classes.</li>
-	<li>Simplified connection parameters (reduced amount of params by including more information in the remote url's.
-		<ul>
-			<li>Combined required port param with server url. (EG: <code>https://myserver.ext:445/mysubfolder/</code>)</li>
-			<li>Combined use proxy, proxy protocol, domain and port into 1 url. (EG: <code>http://myproxyserver.ext:8085</code>)</li>
-		</ul>
-	</li>
-	<li>The Driver is now compatible and very functional in the following SQL clients.
-		<ul>
-			<li>SQL Workbench - build 108</li>
-			<li>DB Visualizer - Free 7.0.6</li>
-			<li>SQuirreL SQL Client 3.1</li>
-		</ul>
-	</li>
-	<li>Changed main server file to look for the <code>config/local</code> folder rather than a host named <code>localhost</code> (this is usually for testing setups).</li>
-	<li>Updated valid parameter key strings for com.jdbwc.Driver</li>
-	<li>Migrated connection param verification and setup to the Driver class (from the connection class).</li>
-	<li>Updated javadocs.</li>
-	<li>Improved JDBWC test class.
-		<ul>
-			<li>Implemented the new optional parameters in connect() method.</li>
-			<li>Implemented a test code block for demonstrating the use of Driver.getPropertyInfo() (un comment to use it).</li>
-			<li>Improved the main() method with time taken display and the ability to run the test in loops for reliability and stress testing.</li>
-			<li>Test main() can accept one external parameter (int) to trigger multiple passes.</li>
-		</ul>
-	</li>
-	<li>Added NotImplemented exceptions to all methods that are not yet full implemented. Added an additional message for clarity and to make finding the cause of these exceptions easier.</li>
-	<li>Minor improvements to the Ant build file.</li>
-	<li>The following improvements were back ported from v1.0.0-5:
+	<li>Migrated database specific code into brand named packages. This makes the database types transparent to the driver and makes integration of more database types  easier and less error prone.</li>
+	<li>Migrated com.jdbwc.core.util package to com.jdbwc.util to consolidate utility classes.</li>
+	<li>The following improvements have also been ported to v1.0.0-4:
 		<ul>
 			<li>Fixed java.sql.Driver.getPropertyInfo() so it works properly with SQL Client software and exposes all parameters accepted by the driver.</li>
 			<li>Dropped the version number from the compiled data-handler.jar's name to eliminate the need to update classpaths if the package changes.</li>
@@ -442,13 +396,14 @@ connection = DriverManager.getConnection(<strong>jdbcUrl</strong>, <strong>props
 			<li>Added a variable to expose improved sql extensions to the driver so the appropriate processing can take place. MySQLi is currently the only improved extension Im aware of.</li>
 		</ul>
 	</li>
+	<li>For better backwards compatibility with the old v1.0.0-2_x releases, the new DataHandler package has been remodelled to be more like the old package as far as interface and method naming goes. The DataHandler interface extends the lightweight interface used by the driver.</li>
 </ul>
 <div class="head"><a name="limits" id="limits"></a>Limitations</div>
 <ul>
 	<li>JDBWC is aimed at JDBC 3/4 specifications with a few limitations (<em>also see the other limitations and <a href="#todo">TODO</a>'s</em>).</li>
 	<li>No support for some of the newer JDBC 3 and 4 data-types.</li>
 	<li>Data sizes of queries should be kept at a reasonable size. This applies to sending and receiving. Sending is limited to the $_POST limit set on the server (32MB is a common size for the post limit, but it could be much larger depending on your web servers configuration). Receiving is limited by the amount of free memory on the machine running the Driver (and the JRE running the driver). JDBWC caches the entire resultset/s from a query while it is open (this isnt so much of a problem as most modern machines have ample RAM and can fallback to pagefile. Falling back to pagefile would reduce performance. &lt; 10MB is a safe size).</li>
-	<li>Connection Limits. In early versions &lt;= v1.0.0-3 multiple connections caused issues. Version v1.0.0-4 seems OK with multiple connections, but be carefull if latency or high error rates are an issue, as you could potentially  find things happening out of order. EG: a delete query sent after a select query, could end up getting to the server first, in which case your select query would probably not be correct based on the order it was sent. Much like un-synchonized Java code can in certain circumstances. For now, I would recommend using single connections when communicating across large unknown networks like the internet unless they are consistently reliable. This limitation is planned to be resolved in a future release by using a manual synchronization system for queries. See the <a href="#todo">TODO</a>'s for more information.</li>
+	<li>Connection Limits. In early versions &lt;= v1.0.0-3 multiple connections caused issues. Version v1.0.0-4 and v1.0.0-5 seem OK with multiple connections, but be carefull if latency or high error rates are an issue, as you could potentially  find things happening out of order. EG: a delete query sent after a select query, could end up getting to the server first, in which case your select query would probably not be correct based on the order it was sent. Much like un-synchonized Java code can in certain circumstances. For now, I would recommend using single connections when communicating across large unknown networks like the internet unless they are consistently reliable. This limitation is planned to be resolved in a future release by using a manual synchronization system for queries. See the <a href="#todo">TODO</a>'s for more information.</li>
 	<li>Also see <a href="#issues">Known Issues</a>.</li>
 </ul>
 <div class="head"><a name="issues" id="issues"></a>Known issues</div>
@@ -461,9 +416,8 @@ connection = DriverManager.getConnection(<strong>jdbcUrl</strong>, <strong>props
 <p><strong>NOTE:</strong> Its <u>strongly</u> advised to use an SSL connection when communicating across a network or the internet as you will be sending raw sql. To correctly install SSL your web-server <u>must have a dedicated IP</u>.</p>
 <div class="head"><a name="todo" id="todo"></a>TODO</div>
 <ul>
-	<li>The main focus for the next release will be restructuring database specific code into brand specific packages. This is to make further database integration faster and easier.</li>
-	<li>Add a unique key to each statement for the purpose of processing results in the same order they were sent. If a required query has not responded, this will also give the driver the ability to detect it and resend the lost query if required. This is an important aspect for wide area networks and data relaying (particularly latent networks or/and those with high error rates). 
-		It will also make the prospect of threading queries more feasable,  which would in turn provide a good controlled base for limiting the amount of active statements, gracefully timing out from the client side, cancelling and closing  statements. This single TODO will most likely be the entire focus of a new version/code-branch when it gets implemented.</li>
+	<li>Fix SQuirreL SQL Client not returning valid row data. This should be done before this version is released.</li>
+	<li>Synchronize query processing: Add a unique key to each statement for the purpose of processing results in the same order they were sent; So if a required query has not responded, this will also give the driver the ability to detect it and resend the lost query if required. It will also make the prospect of threading queries more feasable,  which would in turn provide a good controlled base for limiting the amount of active statements, gracefully timing out from the client side, and more control when cancelling and closing  statements. This single TODO will most likely be the entire focus of a new version/code-branch when it gets implemented and may be broken down into multiple development steps.</li>
 	<li>Add more database support (EG: any database that can be easily accessed from PHP).</li>
 	<li>Finish PreparedStatement (<em>almost done</em>), 
 		CallableStatement, ParameterMetaData (<em>almost done</em>) and anything else not implemented yet.</li>

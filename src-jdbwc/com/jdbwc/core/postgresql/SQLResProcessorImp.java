@@ -1,5 +1,5 @@
 /* ********************************************************************
- * Copyright (C) 2008 Oz-DevWorX (Tim Gall)
+ * Copyright (C) 2010 Oz-DevWorX (Tim Gall)
  * ********************************************************************
  * This file is part of JDBWC.
  *
@@ -17,27 +17,41 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.exceptions;
+package com.jdbwc.core.postgresql;
+
+import java.sql.SQLException;
+
+import com.jdbwc.core.WCResultSet;
+import com.jdbwc.util.SQLField;
 
 /**
- * Handles Authorisation Exceptions sent from the JDBWC server.<br />
- * Triggers could be invalid host credentials or invalid database credentials.
+ * Process Internal ResultSetMetadata for PostgreSQL databases.
  *
  * @author Tim Gall
- * @version 2010-04-17
+ * @version 2010-06-06
  */
-public class InvalidAuthorizationException extends ServerSideException {
+public class SQLResProcessorImp implements com.jdbwc.util.SQLResProcessor {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 1L;
+	public SQLResProcessorImp() {
 
-	public InvalidAuthorizationException() {
-		super();
 	}
 
-	public InvalidAuthorizationException(String reason) {
-		super(reason);
+	/**
+	 * @see com.jdbwc.util.SQLResProcessor#getFields(java.lang.String, com.jdbwc.core.WCResultSet)
+	 */
+	@Override
+	public SQLField[] getFields(String catalog, WCResultSet metaRes) throws SQLException {
+		final SQLField[] metaFields = new SQLField[metaRes.myRows.length()];
+
+		//This release does not support this type of metadata.
+		//An alternative system is used to retrieve PostgreSQL metadata at the moment.
+
+		metaRes.close();
+
+		return metaFields;
 	}
+
 }

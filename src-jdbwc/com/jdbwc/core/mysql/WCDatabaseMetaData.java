@@ -17,7 +17,7 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core;
+package com.jdbwc.core.mysql;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -27,9 +27,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 
+import com.jdbwc.core.WCConnection;
+import com.jdbwc.core.WCResultSet;
+import com.jdbwc.core.WCStaticMetaData;
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * This MetaData class is designed for MySql implementations.<br />
@@ -44,7 +47,7 @@ import com.ozdevworx.dtype.DataHandler;
  * @version 2008-05-29
  * @version 2010-04-30
  */
-public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema implements java.sql.DatabaseMetaData {
+public final class WCDatabaseMetaData extends MySQLDBMDFromInfoSchema implements java.sql.DatabaseMetaData {
 
 	/* DEVELOPER NOTE:
 	 * ***************
@@ -206,7 +209,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 	}
 
 
-	protected MySQLDatabaseMetaData(final WCConnection connection) throws SQLException {
+	public WCDatabaseMetaData(final WCConnection connection) throws SQLException {
 		super(connection);
 	}
 
@@ -465,7 +468,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		final WCResultSet res = new WCResultSet(myConnection, WCStaticMetaData.getTableTypes());
 
 		for (final String myTabletype : myTabletypes) {
-			final DataHandler aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+			final ObjectArray aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 			aRow.addData("TABLE_TYPE", myTabletype);
 			res.addRow(aRow);
 		}
@@ -574,7 +577,7 @@ public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema impleme
 		/*
 		 * MySQL Type: BIT (silently converted to TINYINT(1)) JDBC Type: BIT
 		 */
-		DataHandler aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		ObjectArray aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "BIT");
 		aRow.addData(TYPE, java.sql.Types.TINYINT);
 		aRow.addData(PRECISION, 1);

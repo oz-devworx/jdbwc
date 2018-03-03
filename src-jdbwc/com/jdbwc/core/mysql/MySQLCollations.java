@@ -17,20 +17,22 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core;
+package com.jdbwc.core.mysql;
 
 
-import com.ozdevworx.dtype.DataHandler;
-import com.ozdevworx.dtype.impl.ObjectList;
+import com.ozdevworx.dtype.ObjectArray;
 
 
 /**
+ * Translates a characterset ID into a collation name for MySQL databases.<br />
+ * This is primarily used for metadata.
+ *
  * @author Tim Gall
  * @version 2010-05-08
  */
 public final class MySQLCollations {
 
-	private final static DataHandler collations = new ObjectList();
+	private final static ObjectArray collations = com.jdbwc.util.Util.getCaseSafeHandler(com.jdbwc.util.Util.CASE_MIXED);
 
 	static {
 		collations.addData("1", "big5_chinese_ci");

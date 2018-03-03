@@ -3,6 +3,7 @@
 </head>
 <body>
 The core JDBC implementations that make up the JDBWC Driver.
-The Driver class is the only file that should be accessed (usually via Java's DriverManager).
+The Driver class is the only file that should be accessed. All other access is caried out through the java.sql intefaces. 
+Usually java.sql.Connection is started via Java's DriverManager or by using a javax.sql.DataSource Object. JDBC Driver's should not be called directly (As per the JDBC specifications).
 </body>
 </html>

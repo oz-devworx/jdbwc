@@ -27,11 +27,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPost;
 
-import com.jdbwc.core.util.SQLUtils;
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.iface.Statement;
+import com.jdbwc.util.SQLUtils;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * Extended JDBC-API implementation for java.sql.Statement.<br />
@@ -1036,7 +1036,7 @@ public class WCStatement implements Statement{
 		HttpPost pmethod = localConnection.getHttpPost();
 
 		synchronized(pmethod){
-			DataHandler nvpArray = Util.getCaseSafeHandler(0);
+			ObjectArray nvpArray = Util.getCaseSafeHandler(0);
 			nvpArray.addData(Util.TAG_AUTH, localConnection.getCredentials());
 			nvpArray.addData(Util.TAG_DBTYPE, localConnection.getDbType());
 			nvpArray.addData(Util.TAG_ACTION, actionType);

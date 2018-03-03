@@ -17,9 +17,12 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core.util;
+package com.jdbwc.core.mysql;
 
 import java.sql.Types;
+
+import com.jdbwc.util.SQLField;
+
 
 /**
  * MySql types<br />
@@ -31,7 +34,7 @@ import java.sql.Types;
  * @version 2008-05-29
  * @version 2010-05-09
  */
-public final class MySQLTypes {
+public final class SQLTypesImp implements com.jdbwc.util.SQLTypes {
 
 //	CHAR
 //	VARCHAR
@@ -57,68 +60,81 @@ public final class MySQLTypes {
 //	ENUM
 //	SET
 
+	//-------------------------------------------------------- fields
+
 	// MySQL type names.
-	public static final String MYSQL_NAME_BIT = "BIT";
-	public static final String MYSQL_NAME_BLOB = "BLOB";
-	public static final String MYSQL_NAME_CHAR = "CHAR";
-	public static final String MYSQL_NAME_DATE = "DATE";
-	public static final String MYSQL_NAME_DATETIME = "DATETIME";
-	public static final String MYSQL_NAME_DECIMAL = "DECIMAL";
-	public static final String MYSQL_NAME_DOUBLE = "DOUBLE";
-	public static final String MYSQL_NAME_ENUM = "ENUM";
-	public static final String MYSQL_NAME_FLOAT = "FLOAT";
-	public static final String MYSQL_NAME_GEOMETRY = "GEOMETRY";
-	public static final String MYSQL_NAME_INT24 = "INT";
-	public static final String MYSQL_NAME_INTERVAL = "ENUM";
-	public static final String MYSQL_NAME_LONG = "LONG";
-	public static final String MYSQL_NAME_LONG_BLOB = "LONGBLOB";
-	public static final String MYSQL_NAME_LONGLONG = "LONGLONG";
-	public static final String MYSQL_NAME_MEDIUM_BLOB = "MEDIUMBLOB";
-	public static final String MYSQL_NAME_NEWDATE = "DATE";
-	public static final String MYSQL_NAME_NEWDECIMAL = "DECIMAL";
-	public static final String MYSQL_NAME_NULL = "NULL";
-	public static final String MYSQL_NAME_SET = "SET";
-	public static final String MYSQL_NAME_SHORT = "SHORT";
-	public static final String MYSQL_NAME_STRING = "VARCHAR";
-	public static final String MYSQL_NAME_TIME = "TIME";
-	public static final String MYSQL_NAME_TIMESTAMP = "TIMESTAMP";
-	public static final String MYSQL_NAME_TINY = "TINY";
-	public static final String MYSQL_NAME_TINY_BLOB = "TINYBLOB";
-	public static final String MYSQL_NAME_VAR_STRING = "LONGVARCHAR";
-	public static final String MYSQL_NAME_YEAR = "YEAR";
+	private static final String MYSQL_NAME_BIT = "BIT";
+	private static final String MYSQL_NAME_BLOB = "BLOB";
+	private static final String MYSQL_NAME_CHAR = "CHAR";
+	private static final String MYSQL_NAME_DATE = "DATE";
+	private static final String MYSQL_NAME_DATETIME = "DATETIME";
+	private static final String MYSQL_NAME_DECIMAL = "DECIMAL";
+	private static final String MYSQL_NAME_DOUBLE = "DOUBLE";
+	private static final String MYSQL_NAME_ENUM = "ENUM";
+	private static final String MYSQL_NAME_FLOAT = "FLOAT";
+	private static final String MYSQL_NAME_GEOMETRY = "GEOMETRY";
+	private static final String MYSQL_NAME_INT24 = "INT";
+	private static final String MYSQL_NAME_INTERVAL = "ENUM";
+	private static final String MYSQL_NAME_LONG = "LONG";
+	private static final String MYSQL_NAME_LONG_BLOB = "LONGBLOB";
+	private static final String MYSQL_NAME_LONGLONG = "LONGLONG";
+	private static final String MYSQL_NAME_MEDIUM_BLOB = "MEDIUMBLOB";
+	private static final String MYSQL_NAME_NEWDATE = "DATE";
+	private static final String MYSQL_NAME_NEWDECIMAL = "DECIMAL";
+	private static final String MYSQL_NAME_NULL = "NULL";
+	private static final String MYSQL_NAME_SET = "SET";
+	private static final String MYSQL_NAME_SHORT = "SHORT";
+	private static final String MYSQL_NAME_STRING = "VARCHAR";
+	private static final String MYSQL_NAME_TIME = "TIME";
+	private static final String MYSQL_NAME_TIMESTAMP = "TIMESTAMP";
+	private static final String MYSQL_NAME_TINY = "TINY";
+	private static final String MYSQL_NAME_TINY_BLOB = "TINYBLOB";
+	private static final String MYSQL_NAME_VAR_STRING = "LONGVARCHAR";
+	private static final String MYSQL_NAME_YEAR = "YEAR";
 
 	// MySQL types as per the mysqli PHP specs.
-	public static final int MYSQL_TYPE_BIT = 16;
-	public static final int MYSQL_TYPE_BLOB = 252;
-	public static final int MYSQL_TYPE_CHAR = 1;
-	public static final int MYSQL_TYPE_DATE = 10;
-	public static final int MYSQL_TYPE_DATETIME = 12;
-	public static final int MYSQL_TYPE_DECIMAL = 0;
-	public static final int MYSQL_TYPE_DOUBLE = 5;
-	public static final int MYSQL_TYPE_ENUM = 247;
-	public static final int MYSQL_TYPE_FLOAT = 4;
-	public static final int MYSQL_TYPE_GEOMETRY = 255;
-	public static final int MYSQL_TYPE_INT24 = 9;
-	public static final int MYSQL_TYPE_INTERVAL = 247;
-	public static final int MYSQL_TYPE_LONG = 3;
-	public static final int MYSQL_TYPE_LONG_BLOB = 251;
-	public static final int MYSQL_TYPE_LONGLONG = 8;
-	public static final int MYSQL_TYPE_MEDIUM_BLOB = 250;
-	public static final int MYSQL_TYPE_NEWDATE = 14;
-	public static final int MYSQL_TYPE_NEWDECIMAL = 246;
-	public static final int MYSQL_TYPE_NULL = 6;
-	public static final int MYSQL_TYPE_SET = 248;
-	public static final int MYSQL_TYPE_SHORT = 2;
-	public static final int MYSQL_TYPE_STRING = 254;
-	public static final int MYSQL_TYPE_TIME = 11;
-	public static final int MYSQL_TYPE_TIMESTAMP = 7;
-	public static final int MYSQL_TYPE_TINY = 1;
-	public static final int MYSQL_TYPE_TINY_BLOB = 249;
-	public static final int MYSQL_TYPE_VAR_STRING = 253;
-	public static final int MYSQL_TYPE_YEAR = 13;
+	private static final int MYSQL_TYPE_BIT = 16;
+	private static final int MYSQL_TYPE_BLOB = 252;
+	private static final int MYSQL_TYPE_CHAR = 1;
+	private static final int MYSQL_TYPE_DATE = 10;
+	private static final int MYSQL_TYPE_DATETIME = 12;
+	private static final int MYSQL_TYPE_DECIMAL = 0;
+	private static final int MYSQL_TYPE_DOUBLE = 5;
+	private static final int MYSQL_TYPE_ENUM = 247;
+	private static final int MYSQL_TYPE_FLOAT = 4;
+	private static final int MYSQL_TYPE_GEOMETRY = 255;
+	private static final int MYSQL_TYPE_INT24 = 9;
+//	private static final int MYSQL_TYPE_INTERVAL = 247;//TODO: implement me!
+	private static final int MYSQL_TYPE_LONG = 3;
+	private static final int MYSQL_TYPE_LONG_BLOB = 251;
+	private static final int MYSQL_TYPE_LONGLONG = 8;
+	private static final int MYSQL_TYPE_MEDIUM_BLOB = 250;
+	private static final int MYSQL_TYPE_NEWDATE = 14;
+	private static final int MYSQL_TYPE_NEWDECIMAL = 246;
+	private static final int MYSQL_TYPE_NULL = 6;
+	private static final int MYSQL_TYPE_SET = 248;
+	private static final int MYSQL_TYPE_SHORT = 2;
+	private static final int MYSQL_TYPE_STRING = 254;
+	private static final int MYSQL_TYPE_TIME = 11;
+	private static final int MYSQL_TYPE_TIMESTAMP = 7;
+	private static final int MYSQL_TYPE_TINY = 1;
+	private static final int MYSQL_TYPE_TINY_BLOB = 249;
+	private static final int MYSQL_TYPE_VAR_STRING = 253;
+	private static final int MYSQL_TYPE_YEAR = 13;
 
+	//-------------------------------------------------------- constructors
 
-	public static String mysqlNameToJdbcName(final String mysqlType) {
+	public SQLTypesImp(){
+
+    }
+
+	//-------------------------------------------------------- public methods
+
+	/**
+	 * @see com.jdbwc.util.SQLTypes#nativeNameToJdbcName(java.lang.String)
+	 */
+	@Override
+	public String nativeNameToJdbcName(final String mysqlType) {
 		if (mysqlType.equalsIgnoreCase("BIT")) {
 			return "TINYINT";
 		} else if (mysqlType.equalsIgnoreCase("BOOL")) {
@@ -193,9 +209,10 @@ public final class MySQLTypes {
 	}
 
 	/**
-	 * Maps MySQL type name to Java.sql.types
+	 * @see com.jdbwc.util.SQLTypes#nativeNameToJdbcType(java.lang.String)
 	 */
-	public static int mysqlNameToJdbcType(final String mysqlType) {
+	@Override
+	public int nativeNameToJdbcType(final String mysqlType) {
 
 		if (mysqlType.equalsIgnoreCase(MYSQL_NAME_DECIMAL)){
 			return Types.DECIMAL;
@@ -271,9 +288,49 @@ public final class MySQLTypes {
 	}
 
 	/**
-	 * Maps the given MySQL type to the equivalent java.sql.Types name.
+	 * @see com.jdbwc.util.SQLTypes#nativeNameToNativeType(java.lang.String)
 	 */
-	public static String mysqlTypeToJdbcName(final int mysqlType) {
+	@Override
+	public int nativeNameToNativeType(final String mysqlType) {
+
+			if(MYSQL_NAME_DECIMAL.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DECIMAL;
+			else if(MYSQL_NAME_BIT.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_BIT;
+			else if(MYSQL_NAME_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_BLOB;
+			else if(MYSQL_NAME_CHAR.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_CHAR;
+			else if(MYSQL_NAME_DATE.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DATE;
+			else if(MYSQL_NAME_DATETIME.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DATETIME;
+			else if(MYSQL_NAME_DOUBLE.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DOUBLE;
+			else if(MYSQL_NAME_ENUM.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_ENUM;
+			else if(MYSQL_NAME_FLOAT.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_FLOAT;
+			else if(MYSQL_NAME_GEOMETRY.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_GEOMETRY;
+			else if(MYSQL_NAME_INT24.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_INT24;
+			//case MYSQL_TYPE_INTERVAL: return MYSQL_NAME_INTERVAL;
+			else if(MYSQL_NAME_LONG.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_LONG;
+			else if(MYSQL_NAME_LONG_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_LONG_BLOB;
+			else if(MYSQL_NAME_LONGLONG.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_LONGLONG;
+			else if(MYSQL_NAME_MEDIUM_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_MEDIUM_BLOB;
+			else if(MYSQL_NAME_NEWDATE.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_NEWDATE;
+			else if(MYSQL_NAME_NEWDECIMAL.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_NEWDECIMAL;
+			else if(MYSQL_NAME_NULL.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_NULL;
+			else if(MYSQL_NAME_SET.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_SET;
+			else if(MYSQL_NAME_SHORT.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_SHORT;
+			else if(MYSQL_NAME_STRING.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_STRING;
+			else if(MYSQL_NAME_TIME.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_TIME;
+			else if(MYSQL_NAME_TIMESTAMP.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_TIMESTAMP;
+			//case MYSQL_TYPE_TINY: return MYSQL_NAME_TINY;
+			else if(MYSQL_NAME_TINY_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_TINY_BLOB;
+			else if(MYSQL_NAME_VAR_STRING.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_VAR_STRING;
+			else if(MYSQL_NAME_YEAR.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_YEAR;
+
+			else return MYSQL_TYPE_STRING;// Guess? Return varchar for max compatibility
+	}
+
+
+	/**
+	 * @see com.jdbwc.util.SQLTypes#nativeTypeToJdbcName(int)
+	 */
+	@Override
+	public String nativeTypeToJdbcName(final int mysqlType) {
 
 		switch (mysqlType) {
 
@@ -310,9 +367,10 @@ public final class MySQLTypes {
 	}
 
 	/**
-	 * Maps the given MySQL type to the equivalent JDBC type.
+	 * @see com.jdbwc.util.SQLTypes#nativeTypeToJdbcType(int)
 	 */
-	public static int mysqlTypeToJdbcType(final int mysqlType) {
+	@Override
+	public int nativeTypeToJdbcType(final int mysqlType) {
 
 		switch (mysqlType) {
 
@@ -348,13 +406,12 @@ public final class MySQLTypes {
 		}
 	}
 
+
 	/**
-	 * Maps MySQL type id's to thier type name.
-	 *
-	 * @param mysqlType int - MySQL type id
-	 * @return String - the MySQL type name
+	 * @see com.jdbwc.util.SQLTypes#nativeTypeToNativeName(int)
 	 */
-	public static String mysqlTypeToMysqlName(final int mysqlType) {
+	@Override
+	public String nativeTypeToNativeName(final int mysqlType) {
 		switch (mysqlType) {
 
 			case MYSQL_TYPE_DECIMAL: return MYSQL_NAME_DECIMAL;
@@ -391,42 +448,76 @@ public final class MySQLTypes {
 	}
 
 	/**
-	 * Maps MySQL type name to thier type id's.
-	 *
-	 * @param mysqlType String - MySQL type name
-	 * @return int - the MySQL type id
+	 * @see com.jdbwc.util.SQLTypes#updateField(com.jdbwc.util.SQLField)
 	 */
-	public static int mysqlNameToMysqlType(final String mysqlType) {
+	@Override
+	public SQLField updateField(final SQLField field) {
 
-			if(MYSQL_NAME_DECIMAL.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DECIMAL;
-			else if(MYSQL_NAME_BIT.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_BIT;
-			else if(MYSQL_NAME_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_BLOB;
-			else if(MYSQL_NAME_CHAR.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_CHAR;
-			else if(MYSQL_NAME_DATE.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DATE;
-			else if(MYSQL_NAME_DATETIME.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DATETIME;
-			else if(MYSQL_NAME_DOUBLE.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_DOUBLE;
-			else if(MYSQL_NAME_ENUM.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_ENUM;
-			else if(MYSQL_NAME_FLOAT.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_FLOAT;
-			else if(MYSQL_NAME_GEOMETRY.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_GEOMETRY;
-			else if(MYSQL_NAME_INT24.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_INT24;
-			//case MYSQL_TYPE_INTERVAL: return MYSQL_NAME_INTERVAL;
-			else if(MYSQL_NAME_LONG.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_LONG;
-			else if(MYSQL_NAME_LONG_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_LONG_BLOB;
-			else if(MYSQL_NAME_LONGLONG.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_LONGLONG;
-			else if(MYSQL_NAME_MEDIUM_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_MEDIUM_BLOB;
-			else if(MYSQL_NAME_NEWDATE.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_NEWDATE;
-			else if(MYSQL_NAME_NEWDECIMAL.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_NEWDECIMAL;
-			else if(MYSQL_NAME_NULL.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_NULL;
-			else if(MYSQL_NAME_SET.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_SET;
-			else if(MYSQL_NAME_SHORT.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_SHORT;
-			else if(MYSQL_NAME_STRING.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_STRING;
-			else if(MYSQL_NAME_TIME.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_TIME;
-			else if(MYSQL_NAME_TIMESTAMP.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_TIMESTAMP;
-			//case MYSQL_TYPE_TINY: return MYSQL_NAME_TINY;
-			else if(MYSQL_NAME_TINY_BLOB.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_TINY_BLOB;
-			else if(MYSQL_NAME_VAR_STRING.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_VAR_STRING;
-			else if(MYSQL_NAME_YEAR.equalsIgnoreCase(mysqlType)) return MYSQL_TYPE_YEAR;
+		// Map native sql to java.sql Types
+		if(field.getFieldName().isEmpty()){
+			field.jdbcSqlType = nativeTypeToJdbcType(field.genericSqlType);
+			field.jdbcSqlTypeName = nativeTypeToJdbcName(field.genericSqlType);
+			field.genericSqlTypeName = nativeTypeToNativeName(field.genericSqlType);
+		}else{
+			field.jdbcSqlType = nativeNameToJdbcType(field.genericSqlTypeName);
+			field.jdbcSqlTypeName = nativeNameToJdbcName(field.genericSqlTypeName);
+			field.genericSqlType = nativeNameToNativeType(field.genericSqlTypeName);
+		}
 
-			else return MYSQL_TYPE_STRING;// Guess? Return varchar for max compatibility
+		field.isSearchable = true;//all MySQL columns are searchable as far as I know
+		field.isCurrency = false;// MySQL doen't have a currency datatype I know of
+
+		field.precisionAdjustFactor = 0;
+		switch (field.genericSqlType) {
+			case MYSQL_TYPE_DECIMAL:
+			case MYSQL_TYPE_NEWDECIMAL:
+
+				if (!field.isUnsigned) field.precisionAdjustFactor = -1;
+
+				break;
+			case MYSQL_TYPE_DOUBLE:
+			case MYSQL_TYPE_FLOAT:
+				field.precisionAdjustFactor = 1;
+
+				break;
+		}
+
+		if(isNativeDateTimeType(field.genericSqlType))
+			field.isCaseSensitive = false;
+		if(isNativeNumericType(field.genericSqlType))
+			field.isCaseSensitive = false;
+		if(field.collation.endsWith("_ci"))
+			field.isCaseSensitive = false;
+
+		return field;
+	}
+
+	//-------------------------------------------------------- private methods
+
+	/**
+	 *
+	 */
+	private boolean isNativeDateTimeType(final int inputType) {
+		final boolean nativeDateTime = (
+					inputType == MYSQL_TYPE_DATE ||
+					inputType == MYSQL_TYPE_NEWDATE ||
+					inputType == MYSQL_TYPE_DATETIME ||
+					inputType == MYSQL_TYPE_TIME ||
+					inputType == MYSQL_TYPE_TIMESTAMP);
+
+		return nativeDateTime;
+	}
+
+	/**
+	 *
+	 */
+	private boolean isNativeNumericType(final int inputType) {
+		final boolean nativeNumeric = (
+			(inputType >= MYSQL_TYPE_TINY &&
+					inputType <= MYSQL_TYPE_DOUBLE) ||
+					inputType == MYSQL_TYPE_LONGLONG ||
+					inputType == MYSQL_TYPE_YEAR);
+
+		return nativeNumeric;
 	}
 }

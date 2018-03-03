@@ -1,5 +1,5 @@
 /* ********************************************************************
- * Copyright (C) 2008 Oz-DevWorX (Tim Gall)
+ * Copyright (C) 2010 Oz-DevWorX (Tim Gall)
  * ********************************************************************
  * This file is part of JDBWC.
  *
@@ -17,27 +17,28 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.exceptions;
+package com.jdbwc.util;
+
+import java.sql.SQLException;
+
+import com.jdbwc.core.WCResultSet;
 
 /**
- * Handles Authorisation Exceptions sent from the JDBWC server.<br />
- * Triggers could be invalid host credentials or invalid database credentials.
+ * Process Internal ResultSetMetadata.
  *
  * @author Tim Gall
- * @version 2010-04-17
+ * @version 2010-06-06
  */
-public class InvalidAuthorizationException extends ServerSideException {
+public interface SQLResProcessor {
 
 	/**
+	 * Process metadata to suit the current database type.
+	 * The metadata to be processed is usually retreved in the same exchange as the ResultSet data.
 	 *
+	 * @param catalog String - Current catalog name used by the parent connection.
+	 * @param metaRes WCResultSet - A ResultSet conatining metadata. Usually retreved with a data resultset.
+	 * @return SQLField[] containing internal metadata
+	 * @throws SQLException if an error occurs while accessing metaRes
 	 */
-	private static final long serialVersionUID = 1L;
-
-	public InvalidAuthorizationException() {
-		super();
-	}
-
-	public InvalidAuthorizationException(String reason) {
-		super(reason);
-	}
+	SQLField[] getFields(String catalog, WCResultSet metaRes) throws SQLException;
 }

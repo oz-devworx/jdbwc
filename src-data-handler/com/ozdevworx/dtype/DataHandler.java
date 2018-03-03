@@ -19,6 +19,7 @@
  */
 package com.ozdevworx.dtype;
 
+import com.ozdevworx.dtype.impl.IlegalNumberTypeException;
 
 /**
  * <b style="color:red;">IMPORTANT NOTE:</b> implementations should be synchronised.<br /><br />
@@ -31,158 +32,152 @@ package com.ozdevworx.dtype;
  * @author Tim Gall (Oz-DevWorX)
  * @version 1.0.0-7
  * @version 1.0.0-8
- * @version 1.0.0-9
  */
-public interface DataHandler {
+public interface DataHandler extends ObjectArray {
 
-	static final String VERSION = "1.0.0-9";
+	static final String VERSION = "1.0.0-8";
+
 	/**
-	 * Adds Elements to this DataHandler Object.<br />
-	 * If the key is null or the equivalent of,
-	 * the Element will not be added to this DataHandler.<br /><br />
-	 * NOTE:<br />
-	 * Use <code>setData(String n, Object d)</code> to modify existing data by key<br />
-	 * or <code>setData(int i, Object d)</code> to modify existing data by index.
+	 *
+	 * @param key The keys name to locate
+	 * @param data The data to find a match for
+	 * @return The data Object at key location (or null if none found)
+	 */
+	Object getObjectByElement(final String key, final String data);
+
+	/**
+	 *
+	 * @param key The keys name to locate
+	 * @param data The data to find a match for
+	 * @return The Objects index at key location (or -1 if none found)
+	 */
+	int getIndexByElement(final String key, final String data);
+
+	/**
+	 * Alias function for getObject(int i)
+	 *
+	 * @param i int - keys index
+	 * @return a data Object based on its key index i
+	 */
+	Object getData(int i);
+
+	/**
+	 * Alias function for getObject(String n)
 	 *
 	 * @param n String - key name
-	 * @param d Object - data to add to this DataHandler.
+	 * @return a data Object based on its keys name n
 	 */
-	void addData(String n, Object d);
+	Object getData(String n);
 
 	/**
-	 * Resets this DataHandler.
-	 */
-	void clearData();
-
-	/**
-	 * Counts the Elements with key names matching name n in this DataHandler.
+	 * Get all key indexes in this set from a key name String.
 	 *
-	 * @param n The keys name to seek
-	 * @return the number of matching keys in this DataHandler
+	 * @param n String - key name
+	 * @return int[] with the matching key-indexes in this DataHandler matching n (keyName)
 	 */
-	int countMatches(String n);
+	int[] getIndexes(String n);
 
 	/**
-	 * Does this key exist in the set?
-	 *
-	 * @param value key to search the set for.
-	 * @return true if the key is found, else false.
-	 */
-	boolean hasKey(String value);
-
-	/**
-	 * Does this key exist in the set?
-	 *
-	 * @param index key index to search the set for.
-	 * @return true if the key is found, else false.
-	 */
-	boolean hasKey(int index);
-
-	/**
-	 * Does this DataHandler Element exist in the set?
-	 *
-	 * @param key The Elements key String
-	 * @param data The Elements data Object as a String
-	 * @return true if this Element is found, else false.
-	 */
-	boolean hasElement(String key, String data);
-
-	/**
-	 * Get a keys index in this set from its name String
-	 *
-	 * @param n String - keys name
-	 * @return The keys index.
-	 */
-	int getIndex(String n);
-
-	/**
-	 * Get the keys name at index i.
+	 * Get the value at index i as a Double or throw an error if the data is not valid for this java Type.
 	 *
 	 * @param i The columns index to seek.
-	 * @return the keys name
+	 * @return Double value located at column index i.
+	 * @throws IlegalNumberTypeException if value at i is not a Double.
 	 */
-	String getKey(int i);
+	double getDouble(int i) throws IlegalNumberTypeException;
 
 	/**
-	 * Count all Elements in this DataHandler.
-	 *
-	 * @return the size of this DataHandler
-	 */
-	int length();
-
-	/**
-	 * Get the Object at column index i as a String.
-	 * @param i The columns index to seek.
-	 * @return a data String based on its keys index
-	 */
-	String getString(int i);
-
-	/**
-	 * Get the Object at column name n as a String.
+	 * Get the value at name n as a Double or throw an error if the data is not valid for this java Type.
 	 *
 	 * @param n The columns name to seek.
-	 * @return a data String based on its keys name
+	 * @return Double value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not a Double.
 	 */
-	String getString(String n);
+	double getDouble(String n) throws IlegalNumberTypeException;
 
 	/**
-	 * Get the Object at column index i.
+	 * Get the value at index i as an Integer or throw an error if the data is not valid for this java Type.
 	 *
 	 * @param i The columns index to seek.
-	 * @return Object located at column i.
+	 * @return Integer value located at column index i.
+	 * @throws IlegalNumberTypeException if value at i is not an Integer.
 	 */
-	Object getObject(int i);
+	int getInt(int i) throws IlegalNumberTypeException;
 
 	/**
-	 * Get the Object at column name n.
+	 * Get the value at name n as an Integer or throw an error if the data is not valid for this java Type.
 	 *
 	 * @param n The columns name to seek.
-	 * @return Object located at column name n.
+	 * @return Integer value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not an Integer.
 	 */
-	Object getObject(String n);
+	int getInt(String n) throws IlegalNumberTypeException;
 
 	/**
-	 * Determines if this DataHandler contains Elements.
+	 * Get the value at index i as a Float or throw an error if the data is not valid for this java Type.
 	 *
-	 * @return true if this DataHandler does not contain Elements else returns false
+	 * @param i The columns index to seek.
+	 * @return Float value located at column i.
+	 * @throws IlegalNumberTypeException if value at i is not a Float.
 	 */
-	boolean isEmpty();
+	float getFloat(int i) throws IlegalNumberTypeException;
 
 	/**
-	 * Removes the Element at index and shrinks this DataHandler
-	 * so that Element index+1 will be positioned at index after
-	 * the original Element at index is removed.
+	 * Get the value at name n as a Float or throw an error if the data is not valid for this java Type.
 	 *
-	 * @param i Element index to remove from this DataHandler.
+	 * @param n The columns name to seek.
+	 * @return Float value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not a Float.
 	 */
-	void removeByIndex(int i);
+	float getFloat(String n) throws IlegalNumberTypeException;
 
 	/**
-	 * Removes the Element at name n and shrinks this DataHandler by one Element.
+	 * Get the value at index i as a Long or throw an error if the data is not valid for this java Type.
 	 *
-	 * @param n Elements name to remove from this DataHandler.
+	 * @param i The columns index to seek.
+	 * @return Long value located at column i.
+	 * @throws IlegalNumberTypeException if value at i is not a Long.
 	 */
-	void removeByKey(String n);
+	long getLong(int i) throws IlegalNumberTypeException;
 
 	/**
-	 * Update the Element at name n with data d
-	 * or add a new Element if key name n doesnt exist.<br /><br />
-	 * USE:<br />
-	 * <code>addData(String n, Object d)</code> to add new data or data with duplicate keys to this DataHandler.
+	 * Get the value at name n as a Long or throw an error if the data is not valid for this java Type.
 	 *
-	 * @param n The Elements name.
-	 * @param d the Data to update/add to this DataHandler.
+	 * @param n The columns name to seek.
+	 * @return Long value located at column name n.
+	 * @throws IlegalNumberTypeException if value at i is not a Long.
 	 */
-	void setData(String n, Object d);
+	long getLong(String n) throws IlegalNumberTypeException;
 
 	/**
-	 * Update the Element at index i with data d.<br />
-	 * No action is taken if index i is greater than this DataHandlers size.
+	 * Get the value at index i as a Short or throw an error if the data is not valid for this java Type.
 	 *
-	 * @param i The Elements index.
-	 * @param d the Data to update index i with.
+	 * @param i The columns index to seek.
+	 * @return Short value located at column i.
+	 * @throws IlegalNumberTypeException if value at i is not a Short.
 	 */
-	void setData(int i, Object d);
+	Short getShort(int i) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at name n as a Short or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param n The columns name to seek.
+	 * @return Short value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not a Short.
+	 */
+	Short getShort(String n) throws IlegalNumberTypeException;
+
+	/**
+	 * Update the Element at name key with a new key and new data
+	 * or add a new Element if name key doesnt exist.<br /><br />
+	 * NOTE:<br />
+	 * Use <code>addData(String n, Object d)</code> to add new data or data with duplicate keys to this DataHandler.
+	 *
+	 * @param key The first Element with name matching key.
+	 * @param newKey the new key for the Element.
+	 * @param newObj the Data to update the Element with.
+	 */
+	void setData(String key, String newKey, Object newObj);
 
 	/**
 	 * Update the Element at index with a new key and new data.<br />
@@ -193,4 +188,5 @@ public interface DataHandler {
 	 * @param newObj the Data to update the Element with.
 	 */
 	void setData(int index, String newKey, Object newObj);
+
 }

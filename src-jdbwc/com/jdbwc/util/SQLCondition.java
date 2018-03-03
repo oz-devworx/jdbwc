@@ -1,5 +1,5 @@
 /* ********************************************************************
- * Copyright (C) 2008 Oz-DevWorX (Tim Gall)
+ * Copyright (C) 2010 Oz-DevWorX (Tim Gall)
  * ********************************************************************
  * This file is part of JDBWC.
  *
@@ -17,27 +17,31 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.exceptions;
+package com.jdbwc.util;
 
 /**
- * Handles Authorisation Exceptions sent from the JDBWC server.<br />
- * Triggers could be invalid host credentials or invalid database credentials.
+ * Simple class for getting condition keywords 'WHERE' and 'AND'
+ * in the correct order. Allows for more flexibility with metadata query building.
  *
  * @author Tim Gall
- * @version 2010-04-17
+ * @version 18/05/2010
  */
-public class InvalidAuthorizationException extends ServerSideException {
+public class SQLCondition {
+
+	private transient boolean usedWhere;
+
+	public SQLCondition(){
+		usedWhere = false;
+	}
 
 	/**
 	 *
+	 * @return SQL keyword 'WHERE' or 'AND' in the correct order and quantity.
 	 */
-	private static final long serialVersionUID = 1L;
-
-	public InvalidAuthorizationException() {
-		super();
+	public String getKeyWord(){
+		String ret = usedWhere ? "AND " : "WHERE ";
+		usedWhere = true;
+		return ret;
 	}
 
-	public InvalidAuthorizationException(String reason) {
-		super(reason);
-	}
 }

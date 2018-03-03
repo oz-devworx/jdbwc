@@ -21,9 +21,9 @@ package com.jdbwc.core;
 
 import java.sql.SQLException;
 
-import com.jdbwc.core.util.SQLField;
-import com.jdbwc.core.util.SQLResultsParser;
 import com.jdbwc.exceptions.NotImplemented;
+import com.jdbwc.util.SQLField;
+import com.jdbwc.util.SQLResultsParser;
 
 /**
  * Looks after the supply of ResultSetMetaData for ResultSets.
@@ -67,6 +67,8 @@ public final class WCResultSetMetaData implements java.sql.ResultSetMetaData {
 					"This indicates the ResultSet is most likely empty or closed."
 					, "S1009");
 		}
+
+		myFields = connection.updateFields(myFields);
 	}
 
 	//---------------------------------------------------- public methods
@@ -245,7 +247,7 @@ public final class WCResultSetMetaData implements java.sql.ResultSetMetaData {
 	 * @throws SQLException if the column index does not exist
 	 */
 	private SQLField getColumnField(int column) throws SQLException{
-		if(column > 0 && column <= myFields.length){
+		if(myFields!=null && column > 0 && column <= myFields.length){
 			return myFields[column-1];
 		}else{
 			throw new SQLException(

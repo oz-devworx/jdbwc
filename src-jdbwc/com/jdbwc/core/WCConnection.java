@@ -20,6 +20,7 @@
 package com.jdbwc.core;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -79,8 +80,10 @@ import org.apache.http.protocol.HttpContext;
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.iface.Connection;
 import com.jdbwc.util.GzipStreamReader;
+import com.jdbwc.util.SQLField;
+import com.jdbwc.util.SQLTypes;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 
 /**
@@ -155,8 +158,9 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 
 	private transient Map<String, Class<?>> typeMap = new HashMap<String, Class<?>>();
 
-	protected SQLWarning warnings = null;
+	private SQLWarning warnings = null;
 
+	private transient SQLTypes metaT = null;
 
 
 //	protected HttpMethodRetryHandler myretryhandler = new HttpMethodRetryHandler() {
@@ -185,15 +189,15 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 
 	//--------------------------------------------------------- constructors
 
-	/**
-	 * For the delegate only.<br />
-	 *
-	 * See <code>WCConnection(String, String, int, String, String, String, String, int, String)</code>
-	 * for the actual Connection initialiser routine.
-	 */
-	protected WCConnection(){
-		super();
-	}
+//	/**
+//	 * For the delegate only.<br />
+//	 *
+//	 * See <code>WCConnection(String, String, int, String, String, String, String, int, String)</code>
+//	 * for the actual Connection initialiser routine.
+//	 */
+//	public WCConnection(){
+//		super();
+//	}
 
 	/**
 	 * Initialises a jdbc connection.<br />
@@ -248,6 +252,20 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 
 			) throws SQLException{
 		super();
+		this.myDbType = dbType;//must be first
+
+		// using reflection, get the correct class for the database type thats in use
+		try {
+			Class<?> metaClass = Class.forName(getDbPackagePath() + "DBConnectionImp");
+
+            Constructor<?> ct = metaClass.getConstructor(new Class[]{});
+
+            dbconn = (DBConnection)ct.newInstance(new Object[]{});
+
+		} catch (Throwable e) {
+			throw new SQLException("Could not construct a DBConnection Object", e);
+		}
+
 
 		this.myfullJdbcUrl = fullJdbcUrl;
 		this.myUserName = hostUser;
@@ -264,8 +282,8 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 			this.hostPass = com.jdbwc.util.Security.getSecureString(hostPass); // serverside-api passsword
 			this.dbCredentials = com.jdbwc.util.Security.getSecureString(dbName + dbUser + dbPass); // database (name + user + password)
 
-			this.myDbType = dbType;
-			this.myCaseSensitivity = (dbType==Util.ID_POSTGRESQL) ? -1 : 0;//lowercase for Postgres
+
+			this.myCaseSensitivity = dbconn.getCaseSensitivity();
 			this.currentDatabase = dbName;
 			this.databaseUser = dbUser;
 			this.databasePass = dbPass;
@@ -306,6 +324,15 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 		return dbCredentials;
 	}
 
+	public SQLTypes getTypes(){
+		try {
+			initTypes();
+		} catch (SQLException e) {
+			return null;
+		}
+		return metaT;
+	}
+
 	public String getUrl(){
 		return myfullJdbcUrl;
 	}
@@ -332,6 +359,54 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 
 	public void setSessLimit(boolean sessLimit){
 		this.sessLimit = sessLimit;
+	}
+
+	public SQLField[] updateFields(SQLField[] fields) throws SQLException {
+		try {
+			initTypes();
+		} catch (SQLException e) {
+			return fields;
+		}
+
+		for(int i = 0; i < fields.length; i++){
+        	fields[i] = metaT.updateField(fields[i]);
+        }
+        return fields;
+	}
+
+	public int nativeNameToNativeType(String nativeName) {
+		try {
+			initTypes();
+		} catch (SQLException e) {
+			return 0;
+		}
+
+		return metaT.nativeNameToNativeType(nativeName);
+	}
+
+	public int nativeNameToJdbcType(String nativeName){
+		try {
+			initTypes();
+		} catch (SQLException e) {
+			return 0;
+		}
+
+		return metaT.nativeNameToJdbcType(nativeName);
+	}
+
+	private void initTypes() throws SQLException {
+		if(metaT==null){
+			// using reflection, get the correct class for the database type thats in use
+			try {
+				Class<?> metaClass = Class.forName(getDbPackagePath() + "SQLTypesImp");
+
+	            Constructor<?> ct = metaClass.getConstructor(new Class[]{});
+
+	            metaT = (SQLTypes)ct.newInstance(new Object[]{});
+			} catch (Throwable e) {
+				throw new SQLException("Could not construct a SQLTypes Object", e);
+			}
+		}
 	}
 
 	public WCStatement createInternalStatement() throws SQLException {
@@ -387,7 +462,8 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 	public void close() throws SQLException {
 		final HttpPost pmethod = getHttpPost();
 
-		DataHandler nvpArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		ObjectArray nvpArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		nvpArray.addData(Util.TAG_AUTH, dbCredentials);
 		nvpArray.addData(Util.TAG_DBTYPE, myDbType);
 		nvpArray.addData(Util.TAG_ACTION, "cleanup");
 		pmethod.setEntity(Util.prepareForWeb(nvpArray));
@@ -466,31 +542,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 	 * @see java.sql.Connection#getAutoCommit()
 	 */
 	public boolean getAutoCommit() throws SQLException {
-		Statement stmnt = new WCStatement(this, this.currentDatabase);
-		boolean autocommit = true;
-
-		java.sql.ResultSet results = null;
-		switch (this.myDbType){
-		case Util.ID_POSTGRESQL:
-			results = stmnt.executeQuery("show autocommit;");
-			if(results.next()){
-				autocommit = "on".equals(results.getString(1)) ? true:false;
-			}
-			break;
-
-		case Util.ID_MYSQL:
-		case Util.ID_DEFAULT:
-			results = stmnt.executeQuery("select @@autocommit;");
-			if(results.next()){
-				autocommit = results.getInt(1)==0 ? false:true;
-			}
-			break;
-		}
-
-		results.close();
-		stmnt.close();
-
-		return autocommit;
+		return dbconn.getAutoCommit(this.createInternalStatement());
 	}
 
 	/**
@@ -532,15 +584,16 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 	public DatabaseMetaData getMetaData() throws SQLException {
 		DatabaseMetaData dbm = null;
 
-		switch(myDbType){
-		case Util.ID_POSTGRESQL:
-			dbm = new PgSQLDatabaseMetaData(this);
-			break;
+		// using reflection, get the correct class for the database type thats in use
+		try {
+			Class<?> metaClass = Class.forName(getDbPackagePath() + "WCDatabaseMetaData");
 
-		case Util.ID_MYSQL:
-		case Util.ID_DEFAULT:
-			dbm = new MySQLDatabaseMetaData(this);
-			break;
+            Constructor<?> ct = metaClass.getConstructor(new Class[]{this.getClass()});
+
+            dbm = (DatabaseMetaData)ct.newInstance(new Object[]{this});
+
+		} catch (Throwable e) {
+			throw new SQLException("Could not construct a DatabaseMetaData Object", e);
 		}
 
 		return dbm;
@@ -586,7 +639,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 		setTimeOut(timeout);
 		final HttpPost pmethod = getHttpPost();
 
-		DataHandler nvpArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		ObjectArray nvpArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		nvpArray.addData(Util.TAG_AUTH, dbCredentials);
 		nvpArray.addData(Util.TAG_DBTYPE, myDbType);
 		nvpArray.addData(Util.TAG_ACTION, "ping");
@@ -636,19 +689,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 	 * @see java.sql.Connection#setAutoCommit(boolean)
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		WCStatement stmnt = new WCStatement(this, this.currentDatabase);
-
-		switch(myDbType){
-		case Util.ID_POSTGRESQL:
-			stmnt.execute("SET autocommit='" + (autoCommit ? "on":"off") + "';");
-			break;
-
-		case Util.ID_MYSQL:
-		case Util.ID_DEFAULT:
-			stmnt.execute("SET autocommit=" + (autoCommit ? 1:0) + ";");
-		}
-
-		stmnt.close();
+		dbconn.setAutoCommit(this.createInternalStatement(), autoCommit);
 	}
 
 	/**
@@ -659,6 +700,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 		//when the next query is run.
 		this.currentDatabase = catalog;
 		this.dbCredentials = com.jdbwc.util.Security.getSecureString(currentDatabase + databaseUser + databasePass); // database (name + user + password)
+//		isValid(this.myTimeOut);
 	}
 
 	/**
@@ -689,19 +731,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 	 * @see java.sql.Connection#setReadOnly(boolean)
 	 */
 	public void setReadOnly(boolean readOnly) throws SQLException {
-		WCStatement stmnt = this.createInternalStatement();
-		switch(myDbType){
-		case Util.ID_POSTGRESQL:
-			if (versionMeetsMinimum(7, 4, 0) && readOnly != this.isReadOnly){
-	            stmnt.execute("SET SESSION CHARACTERISTICS AS TRANSACTION " + (readOnly ? "READ ONLY" : "READ WRITE"));
-	        }
-			break;
-
-		case Util.ID_MYSQL:
-		case Util.ID_DEFAULT:
-			stmnt.executeQuery("SET GLOBAL read_only="+readOnly+";");
-		}
-		stmnt.close();
+		dbconn.setReadOnly(this.createInternalStatement(), readOnly);
 
 		this.isReadOnly = readOnly;
 	}
@@ -727,11 +757,6 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 		return iface.cast(this);
 	}
 
-
-	/* ****************************************************
-	 * transaction methods
-	 * **************************************************** */
-
 	/**
 	 * @see java.sql.Connection#commit()
 	 */
@@ -746,25 +771,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 	 */
 	public int getTransactionIsolation() throws SQLException {
 		int isolationType = 0;
-		String isolation = "";
-		Statement stmnt = new WCStatement(this, this.currentDatabase);
-
-		java.sql.ResultSet results = null;
-		switch(myDbType){
-		case Util.ID_POSTGRESQL:
-			results = stmnt.executeQuery("show transaction isolation level;");
-			break;
-
-		case Util.ID_MYSQL:
-		case Util.ID_DEFAULT:
-			results = stmnt.executeQuery("SELECT @@SESSION.tx_isolation;");
-		}
-
-		if(results.next()){
-			isolation = results.getString(1);
-		}
-		results.close();
-		stmnt.close();
+		String isolation = dbconn.getTransactionIsolation(this.createInternalStatement());
 
 		if(isolation==null)
 			return Connection.TRANSACTION_NONE;
@@ -934,8 +941,6 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 		switch(level){
 		case Connection.TRANSACTION_NONE:
 			levelName = "";
-			// TODO: need to check the table type, if myisam then notify user in an exception???
-			// or just set the level anyway and leave it up to the user to know this???
 			break;
 		case Connection.TRANSACTION_READ_COMMITTED:
 			levelName = "READ COMMITTED";
@@ -954,19 +959,8 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 		if(levelName.isEmpty()){
 			throw new SQLException("Isolation Level " + level + " not supported.");
 		}
-		Statement stmnt = new WCStatement(this, this.currentDatabase);
 
-		switch(myDbType){
-		case Util.ID_POSTGRESQL:
-			stmnt.execute("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL " + levelName + ";");
-			break;
-
-		case Util.ID_MYSQL:
-		case Util.ID_DEFAULT:
-			stmnt.execute("SET SESSION TRANSACTION ISOLATION LEVEL " + levelName + ";");
-		}
-
-		stmnt.close();
+		dbconn.setTransactionIsolation(this.createInternalStatement(), levelName);
 	}
 
 
@@ -1201,7 +1195,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 		final HttpPost pmethod = getHttpPost();
 
 		synchronized(pmethod){
-			DataHandler nvpArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
+			ObjectArray nvpArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
 
 			//the next 3 items have been stored using a random-salt based hash for security
 			//(never transmitted in plaintext)
@@ -1303,7 +1297,7 @@ public class WCConnection extends WCConnectionInfo implements Connection {
 					LOG.debug("Server Protocol  = " + myServerProtocol);
 					LOG.debug("JDBWC Server Version = " + myJDBWCScriptVersion);
 					LOG.debug("JDBWC Driver Version = " + getDriverName() + " " + getDriverVersion());
-					LOG.debug("CORE DATA DRIVER = " + DataHandler.class + " " + DataHandler.VERSION);//interface
+					LOG.debug("CORE DATA DRIVER = " + ObjectArray.class + " " + ObjectArray.VERSION);//interface
 					LOG.debug("CORE DATA DRIVER = " + Util.DT_IMPL_VER);//implementation
 				}
 

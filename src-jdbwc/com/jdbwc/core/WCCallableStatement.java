@@ -43,7 +43,7 @@ import java.util.Map;
 
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * NOTE: This is only mostly just a skeleton and has not been fully implemented yet!!!
@@ -60,7 +60,7 @@ public class WCCallableStatement extends WCPreparedStatement implements Callable
 	private transient StringBuilder myBatchStatement = null;
 
 	/** stores parepared statements that are being built */
-	private transient DataHandler myCallStatement = null;
+	private transient ObjectArray myCallStatement = null;
 
 	/**
 	 * Constructs a new instance of this.<br />

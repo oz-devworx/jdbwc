@@ -24,15 +24,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import com.ozdevworx.dtype.LabelledArray;
+import com.ozdevworx.dtype.DataHandler;
 import com.ozdevworx.dtype.util.ParseNumber;
 
 
 /**
- * A List based array. Access LabelledArrays Data via a String label or a numeric index.<br />
- * A LabelledArray is an Object itself so support for multidimensional LabelledArray Objects is generic to this implementation.<br /><br />
- * <i>This LabelledArray implementation uses synchronisation as specified by the LabelledArray interface.</i><br /><br />
- * The core abstract implementation for this LabelledArray implementation is ArrayList.<br />
+ * A List based array. Access DataHandlers Data via a String label or a numeric index.<br />
+ * A DataHandler is an Object itself so support for multidimensional DataHandler Objects is generic to this implementation.<br /><br />
+ * <i>This DataHandler implementation uses synchronisation as specified by the DataHandler interface.</i><br /><br />
+ * The core abstract implementation for this DataHandler implementation is ArrayList.<br />
  * We are using dual synchronised ArrayList's that work in strict unison to maintain data integrity
  * and maximise the flexibility and dynamics in this Data Type.<br />
  * ArrayList is one of the better performing List implementations.
@@ -42,13 +42,13 @@ import com.ozdevworx.dtype.util.ParseNumber;
  * @author Tim Gall (Oz-DevWorX)
  * @version 1.0.0.7
  */
-public class KeyedList implements LabelledArray {
+public class KeyedList implements DataHandler {
 
 	/** static version number of this class */
 	public static final String VERSION = "1.0.0-7";
 	/**
 	 * int myInc default List increment size.<br />
-	 * This value can be over-ridden when constructing a new LabelledArray.
+	 * This value can be over-ridden when constructing a new DataHandler.
 	 */
 	private transient int myInc = 10;
 
@@ -66,13 +66,13 @@ public class KeyedList implements LabelledArray {
 	private transient boolean myLowerCaseKeys = false;
 
 	/**
-	 * Create a <b>case sensitive</b> LabelledArray of initial capacity 10.<br />
+	 * Create a <b>case sensitive</b> DataHandler of initial capacity 10.<br />
 	 * <b>Initial capacity is 10
-	 * with an expansion rate of 10</b> when the LabelledArray is growing.<br />
+	 * with an expansion rate of 10</b> when the DataHandler is growing.<br />
 	 * Empty place holders are ignored when manipulating and querying data.<br /><br />
 	 * EG:<br /><i>
-	 * <b>length()</b> returns the actual size and does not include placeholders related to this LabelledArrays growth rate.<br />
-	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the LabelledArray.<br />
+	 * <b>length()</b> returns the actual size and does not include placeholders related to this DataHandlers growth rate.<br />
+	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the DataHandler.<br />
 	 * etc.</i>
 	 */
 	public KeyedList() {
@@ -81,13 +81,13 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * Create a <b>case insensitive</b> LabelledArray of initial capacity incSize.<br />
+	 * Create a <b>case insensitive</b> DataHandler of initial capacity incSize.<br />
 	 * <b>Initial capacity is 10
-	 * with an expansion rate of 10</b> when the LabelledArray is growing.<br />
+	 * with an expansion rate of 10</b> when the DataHandler is growing.<br />
 	 * Empty place holders are ignored when manipulating and querying data.<br /><br />
 	 * EG:<br /><i>
-	 * <b>getSize()</b> returns the actual Element count and does not include placeholders related to this LabelledArrays growth rate.<br />
-	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the LabelledArray.<br />
+	 * <b>getSize()</b> returns the actual Element count and does not include placeholders related to this DataHandlers growth rate.<br />
+	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the DataHandler.<br />
 	 * etc.</i>
 	 *
 	 * @param lowerCaseKeys boolean. If true, keys all use lower case,
@@ -101,17 +101,17 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * Create a <b>case sensitive</b> LabelledArray of initial capacity incSize.<br />
+	 * Create a <b>case sensitive</b> DataHandler of initial capacity incSize.<br />
 	 * <b>Initial capacity is incSize
-	 * with an expansion rate of incSize</b> when the LabelledArray is growing.<br />
+	 * with an expansion rate of incSize</b> when the DataHandler is growing.<br />
 	 * Empty place holders are ignored when manipulating and querying data.<br /><br />
 	 * EG:<br /><i>
-	 * <b>getSize()</b> returns the actual Element count and does not include placeholders related to this LabelledArrays growth rate.<br />
-	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the LabelledArray.<br />
+	 * <b>getSize()</b> returns the actual Element count and does not include placeholders related to this DataHandlers growth rate.<br />
+	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the DataHandler.<br />
 	 * etc.</i>
 	 *
 	 * @param incSize int. This value affects the initial size
-	 * and the expansion rate when the LabelledArray is growing.
+	 * and the expansion rate when the DataHandler is growing.
 	 */
 	public KeyedList(final int incSize) {
 		super();
@@ -120,17 +120,17 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * Create a <b>case insensitive</b> LabelledArray of initial capacity incSize.<br />
+	 * Create a <b>case insensitive</b> DataHandler of initial capacity incSize.<br />
 	 * <b>Initial capacity is incSize
-	 * with an expansion rate of incSize</b> when the LabelledArray is growing.<br />
+	 * with an expansion rate of incSize</b> when the DataHandler is growing.<br />
 	 * Empty place holders are ignored when manipulating and querying data.<br /><br />
 	 * EG:<br /><i>
-	 * <b>getSize()</b> returns the actual Element count and does not include placeholders related to this LabelledArrays growth rate.<br />
-	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the LabelledArray.<br />
+	 * <b>getSize()</b> returns the actual Element count and does not include placeholders related to this DataHandlers growth rate.<br />
+	 * <b>isEmpty()</b> does not count placeholders, only actual Elements that were added to the DataHandler.<br />
 	 * etc.</i>
 	 *
 	 * @param incSize int. This value affects the initial size
-	 * and the expansion rate when the LabelledArray is growing.
+	 * and the expansion rate when the DataHandler is growing.
 	 * @param lowerCaseKeys boolean. If true, keys all use lower case,
 	 * if false keys all use upper case.
 	 */
@@ -143,7 +143,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#addData(java.lang.String, java.lang.Object)
+	 * @see com.ozdevworx.dtype.DataHandler#addData(java.lang.String, java.lang.Object)
 	 */
 	public void addData(final String n, final Object d) {
 		try{
@@ -160,7 +160,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#clearData()
+	 * @see com.ozdevworx.dtype.DataHandler#clearData()
 	 */
 	public void clearData(){
 		synchronized(myKey) {
@@ -170,7 +170,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#countMatches(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#countMatches(java.lang.String)
 	 */
 	public int countMatches(final String n) {
 		int m = 0;
@@ -183,56 +183,72 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getData(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getData(int)
 	 */
 	public Object getData(final int i) {
 		return getObject(i);
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getData(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getData(java.lang.String)
 	 */
 	public Object getData(final String n) {
 		return getObject(n);
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getDouble(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getDouble(int)
 	 */
-	public double getDouble(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getDouble(getDouble(getString(i)));
+	public double getDouble(final int i) {
+		try {
+			return ParseNumber.getDouble(getDouble(getString(i)));
+		} catch (IlegalNumberTypeException e) {
+			return 0D;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getDouble(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getDouble(java.lang.String)
 	 */
-	public double getDouble(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getDouble(getString(n));
+	public double getDouble(final String n) {
+		try {
+			return ParseNumber.getDouble(getString(n));
+		} catch (IlegalNumberTypeException e) {
+			return 0D;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getFloat(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getFloat(int)
 	 */
-	public float getFloat(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getFloat(getString(i));
+	public float getFloat(final int i) {
+		try {
+			return ParseNumber.getFloat(getString(i));
+		} catch (IlegalNumberTypeException e) {
+			return 0F;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getFloat(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getFloat(java.lang.String)
 	 */
-	public float getFloat(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getFloat(getString(n));
+	public float getFloat(final String n) {
+		try {
+			return ParseNumber.getFloat(getString(n));
+		} catch (IlegalNumberTypeException e) {
+			return 0F;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getIndex(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getIndex(java.lang.String)
 	 */
 	public int getIndex(final String n) {
 		return myKey.indexOf(fixCase(n));
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getIndexByElement(java.lang.String, java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getIndexByElement(java.lang.String, java.lang.String)
 	 */
 	public int getIndexByElement(final String key, final String data){
 		int found = -1;
@@ -246,7 +262,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getIndexes(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getIndexes(java.lang.String)
 	 */
 	public int[] getIndexes(final String n) {
 		final int m = countMatches(n);
@@ -261,21 +277,29 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getInt(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getInt(int)
 	 */
-	public int getInt(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getInt(getString(i));
+	public int getInt(final int i) {
+		try {
+			return ParseNumber.getInt(getString(i));
+		} catch (IlegalNumberTypeException e) {
+			return 0;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getInt(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getInt(java.lang.String)
 	 */
-	public int getInt(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getInt(getString(n));
+	public int getInt(final String n) {
+		try {
+			return ParseNumber.getInt(getString(n));
+		} catch (IlegalNumberTypeException e) {
+			return 0;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getKey(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getKey(int)
 	 */
 	public String getKey(final int i) {
 		String key = "";
@@ -291,35 +315,43 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getLong(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getLong(int)
 	 */
-	public long getLong(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getLong(getString(i));
+	public long getLong(final int i) {
+		try {
+			return ParseNumber.getLong(getString(i));
+		} catch (IlegalNumberTypeException e) {
+			return 0L;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getLong(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getLong(java.lang.String)
 	 */
-	public long getLong(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getLong(getString(n));
+	public long getLong(final String n) {
+		try {
+			return ParseNumber.getLong(getString(n));
+		} catch (IlegalNumberTypeException e) {
+			return 0L;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getObject(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getObject(int)
 	 */
 	public Object getObject(final int i) {
 		return getItem(i, false);
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getObject(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getObject(java.lang.String)
 	 */
 	public Object getObject(final String n) {
 		return getItem(myKey.indexOf(fixCase(n)), false);
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getObjectByElement(java.lang.String, java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getObjectByElement(java.lang.String, java.lang.String)
 	 */
 	public Object getObjectByElement(final String key, final String data){
 		Object found = null;
@@ -333,42 +365,43 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getShort(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getShort(int)
 	 */
-	public Short getShort(final int i) throws IlegalNumberTypeException {
-		return ParseNumber.getShort(getString(i));
+	public Short getShort(final int i) {
+		try {
+			return ParseNumber.getShort(getString(i));
+		} catch (IlegalNumberTypeException e) {
+			return 0;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getShort(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getShort(java.lang.String)
 	 */
-	public Short getShort(final String n) throws IlegalNumberTypeException {
-		return ParseNumber.getShort(getString(n));
+	public Short getShort(final String n) {
+		try {
+			return ParseNumber.getShort(getString(n));
+		} catch (IlegalNumberTypeException e) {
+			return 0;
+		}
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getString(int)
+	 * @see com.ozdevworx.dtype.DataHandler#getString(int)
 	 */
 	public String getString(final int i) {
 		return String.valueOf(getItem(i, true));
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#getString(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#getString(java.lang.String)
 	 */
 	public String getString(final String n) {
 		return String.valueOf(getItem(myKey.indexOf(fixCase(n)), true));
 	}
 
-//	/**
-//	 * @see com.ozdevworx.dtype.LabelledArray#hasData(java.lang.String)
-//	 */
-//	public boolean hasData(final String value){
-//		return myData.contains(value);
-//	}
-
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#hasElement(java.lang.String, java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#hasElement(java.lang.String, java.lang.String)
 	 */
 	public boolean hasElement(final String key, final String data){
 		boolean found = false;
@@ -382,35 +415,35 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#hasKey(int)
+	 * @see com.ozdevworx.dtype.DataHandler#hasKey(int)
 	 */
 	public boolean hasKey(final int index){
 		return myKey.size() > index;
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#hasKey(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#hasKey(java.lang.String)
 	 */
 	public boolean hasKey(final String value){
 		return myKey.contains(fixCase(value));
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#isEmpty()
+	 * @see com.ozdevworx.dtype.DataHandler#isEmpty()
 	 */
 	public boolean isEmpty() {
 		return myKey.isEmpty();
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#length()
+	 * @see com.ozdevworx.dtype.DataHandler#length()
 	 */
 	public int length() {
 		return myKey.size();
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#removeByIndex(int)
+	 * @see com.ozdevworx.dtype.DataHandler#removeByIndex(int)
 	 */
 	public void removeByIndex(final int i){
 		synchronized(myKey) {
@@ -421,7 +454,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#removeByKey(java.lang.String)
+	 * @see com.ozdevworx.dtype.DataHandler#removeByKey(java.lang.String)
 	 */
 	public void removeByKey(final String n){
 		final int index = myKey.indexOf(fixCase(n));
@@ -430,7 +463,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#setData(int, java.lang.Object)
+	 * @see com.ozdevworx.dtype.DataHandler#setData(int, java.lang.Object)
 	 */
 	public void setData(final int i, final Object d) {
 		if(length() >= i)
@@ -438,7 +471,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#setData(int, java.lang.String, java.lang.Object)
+	 * @see com.ozdevworx.dtype.DataHandler#setData(int, java.lang.String, java.lang.Object)
 	 */
 	public void setData(final int index, final String newKey, final Object newObj){
 		if(length() >= index){
@@ -450,7 +483,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#setData(java.lang.String, java.lang.Object)
+	 * @see com.ozdevworx.dtype.DataHandler#setData(java.lang.String, java.lang.Object)
 	 */
 	public void setData(final String n, final Object d) {
 		final int i = myKey.indexOf(fixCase(n));
@@ -461,7 +494,7 @@ public class KeyedList implements LabelledArray {
 	}
 
 	/**
-	 * @see com.ozdevworx.dtype.LabelledArray#setData(java.lang.String, java.lang.String, java.lang.Object)
+	 * @see com.ozdevworx.dtype.DataHandler#setData(java.lang.String, java.lang.String, java.lang.Object)
 	 */
 	public void setData(final String key, final String newKey, final Object newObj){
 		final int i = myKey.indexOf(fixCase(key));
@@ -476,13 +509,13 @@ public class KeyedList implements LabelledArray {
 
 
 	/**
-	 * Correct the CaSe for LabelledArray keys.<br />
+	 * Correct the CaSe for DataHandler keys.<br />
 	 * NOTE: we use <code>Locale.ENGLISH</code> as recommended
 	 * by the <code>java.util.Locale</code> documentation
 	 * to preserve the programatic sense of the keys name.
 	 * Particularly String wrappers and special characters.
 	 *
-	 * @param n A LabelledArray key of unknown character CaSe.
+	 * @param n A DataHandler key of unknown character CaSe.
 	 * @return A key matching our Database case restrictions (if any).
 	 */
 	protected String fixCase(final String n){

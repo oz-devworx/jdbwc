@@ -1,0 +1,28 @@
+<html>
+<head>
+</head>
+<body>
+MySQL database specific implementations and helper classes.
+<br />
+Classes from this package should adhere to the file naming and structure conventions for jdbwc database packages as they are usually accessed using reflection.
+<br />
+<br />
+A complete database package's classes must have the following names and implement the following infaces.
+<br />
+NOTE: The package classes are only accessed by the Driver via thier constructors and the interfaces they implement. There is no restriction on how they are implemented.<br />
+
+<ul>
+<li>DBConnectionImp MUST IMPLEMENT com.jdbwc.core.DBConnection</li>
+<li>SQLMetaGetaImp MUST IMPLEMENT com.jdbwc.util.SQLMetaGeta</li>
+<li>SQLResProcessorImp MUST IMPLEMENT com.jdbwc.util.SQLResProcessor</li>
+<li>SQLTypesImp MUST IMPLEMENT com.jdbwc.util.SQLTypes</li>
+<li>WCDatabaseMetaData MUST IMPLEMENT java.sql.DatabaseMetaData</li>
+</ul>
+
+Traditionally, JDBWC has its DatabaseMetaData split into 2 classes. 
+One for largely static data, the other for data required from the database. 
+This was done purely to make development easier and keep simmillar logic neatly grouped.
+<br />
+Any additional support classes needed to implement these interfaces should be located in the packages folder.
+</body>
+</html>

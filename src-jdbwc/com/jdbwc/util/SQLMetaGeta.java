@@ -17,64 +17,45 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core;
+package com.jdbwc.util;
 
 import java.sql.SQLException;
-import java.sql.Savepoint;
+
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
- * java.sql.Savepoint implementation.
+ * Provides access to the database specific meta organisers.<br />
+ * For ResultSetMetaData this is largely a fallback system or used for
+ * databases that are difficult to extract metadata from.<br />
+ * For ParameterMetaData this is the primary access point.
  *
  * @author Tim Gall
- * @version 2010-04-23
+ * @version 2010-05-31
  */
-public class WCSavepoint implements Savepoint {
+public interface SQLMetaGeta {
 
-	private int savepointId;
-	private final String savepointName;
-
+	/**
+	 * @param sql String - The query that triggered this method call.
+	 * @param columns ObjectArray - The columLabel to columnNames from the query.
+	 * @return SQLField[] of MetaData
+	 * @throws SQLException
+	 */
+	SQLField[] getResultSetMetaData(
+			String sql,
+			ObjectArray columns)
+	throws SQLException;
 
 	/**
 	 *
-	 */
-	protected WCSavepoint() {
-		generateId();
-		savepointName = generateName();
-	}
-
-	/**
-	 * @param name Name of the savepoint
+	 * @param tableNames
+	 * @param columns
+	 * @param params
+	 * @return array of SQLField MetaData
 	 * @throws SQLException
 	 */
-	protected WCSavepoint(String name) throws SQLException {
-		if(name==null || name.trim().isEmpty()){
-			throw new SQLException("Savepoint name must contain a value.");
-		}
-		generateId();
-		savepointName = name;
-	}
-
-	/**
-	 * @see java.sql.Savepoint#getSavepointId()
-	 */
-	@Override
-	public int getSavepointId() throws SQLException {
-		return savepointId;
-	}
-
-	/**
-	 * @see java.sql.Savepoint#getSavepointName()
-	 */
-	@Override
-	public String getSavepointName() throws SQLException {
-		return savepointName;
-	}
-
-	private String generateName(){
-		return "SP_" + savepointId;
-	}
-
-	private void generateId(){
-		savepointId = (int)java.lang.System.currentTimeMillis();
-	}
+	SQLField[] getParameterMetaData(
+			ObjectArray tableNames,
+			ObjectArray columns,
+			ObjectArray params)
+	throws SQLException;
 }

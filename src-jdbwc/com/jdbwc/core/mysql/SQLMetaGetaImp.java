@@ -17,7 +17,7 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core.util;
+package com.jdbwc.core.mysql;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,7 +26,9 @@ import java.util.List;
 import com.jdbwc.core.WCConnection;
 import com.jdbwc.core.WCResultSet;
 import com.jdbwc.core.WCStatement;
-import com.ozdevworx.dtype.DataHandler;
+import com.jdbwc.util.SQLField;
+import com.jdbwc.util.SQLUtils;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * Gets meta data from MySQL databases.
@@ -35,7 +37,7 @@ import com.ozdevworx.dtype.DataHandler;
  * @version 2008-05-29
  * @version 2010-04-27
  */
-public class MySQLMetaGeta {
+public class SQLMetaGetaImp implements com.jdbwc.util.SQLMetaGeta {
 
 	private transient WCConnection myConnection = null;
 
@@ -43,19 +45,17 @@ public class MySQLMetaGeta {
 	/**
 	 * Constructs a new instance of this.
 	 */
-	protected MySQLMetaGeta(WCConnection connection) {
+	public SQLMetaGetaImp(WCConnection connection) {
 		myConnection = connection;
 	}
 
 	/**
-	 * @param sql
-	 * @param columns
-	 * @return array of SQLField MetaData
-	 * @throws SQLException
+	 * @see com.jdbwc.util.SQLMetaGeta#getResultSetMetaData(java.lang.String, com.ozdevworx.dtype.ObjectArray)
 	 */
-	protected SQLField[] getResultSetMetaData(
+	@Override
+	public SQLField[] getResultSetMetaData(
 			String sql,
-			DataHandler columns)
+			ObjectArray columns)
 	throws SQLException{
 
 		if(myConnection.versionMeetsMinimum(5, 0, 0)){
@@ -66,17 +66,13 @@ public class MySQLMetaGeta {
 	}
 
 	/**
-	 *
-	 * @param tableNames
-	 * @param columns
-	 * @param params
-	 * @return array of SQLField MetaData
-	 * @throws SQLException
+	 * @see com.jdbwc.util.SQLMetaGeta#getParameterMetaData(com.ozdevworx.dtype.ObjectArray, com.ozdevworx.dtype.ObjectArray, com.ozdevworx.dtype.ObjectArray)
 	 */
-	protected SQLField[] getParameterMetaData(
-			DataHandler tableNames,
-			DataHandler columns,
-			DataHandler params)
+	@Override
+	public SQLField[] getParameterMetaData(
+			ObjectArray tableNames,
+			ObjectArray columns,
+			ObjectArray params)
 	throws SQLException{
 
 		SQLField[] paramMdFields = new SQLField[0];
@@ -105,7 +101,7 @@ public class MySQLMetaGeta {
 	 * @return an array of SQLField Objects
 	 * @throws SQLException
 	 */
-	private SQLField[] getRsMetaData(String sql, DataHandler columns) throws SQLException{
+	private SQLField[] getRsMetaData(String sql, ObjectArray columns) throws SQLException{
 
 		if(sql.isEmpty())
 			throw new SQLException("Could not determine the resultsets query to get metadata for.");
@@ -217,7 +213,7 @@ public class MySQLMetaGeta {
 
 				columnDefault = resultSet.getString("COLUMN_DEFAULT");
 				isNullable = resultSet.getBoolean("NULLABLE");
-				sqlType = MySQLTypes.mysqlNameToMysqlType(resultSet.getString("DATA_TYPE"));
+				sqlType = myConnection.nativeNameToNativeType(resultSet.getString("DATA_TYPE"));
 
 				try {
 					maxLength = resultSet.getInt("CHARACTER_MAXIMUM_LENGTH");
@@ -248,7 +244,6 @@ public class MySQLMetaGeta {
 
 
 				SQLField field = new SQLField(
-						myConnection.getDbType(),
 						catalogName,
 						schemaName,
 						tableName,
@@ -296,7 +291,7 @@ public class MySQLMetaGeta {
 	 * @return an array of SQLField Objects containing parameter metadata
 	 * @throws SQLException
 	 */
-	private SQLField[] getParamMetaData(SQLField[] paramMdFields, String tableName, DataHandler columns, DataHandler params) throws SQLException{
+	private SQLField[] getParamMetaData(SQLField[] paramMdFields, String tableName, ObjectArray columns, ObjectArray params) throws SQLException{
 
 //		SQLField[] paramMdFields = new SQLField[0];
 		final String nullable = "YES";
@@ -331,7 +326,6 @@ public class MySQLMetaGeta {
 					mode = params.getString(fieldName);
 
 					SQLField field = new SQLField(
-							myConnection.getDbType(),
 							fieldName,
 							typeName,
 							isNullable,
@@ -357,7 +351,6 @@ public class MySQLMetaGeta {
 					mode = params.getString(fieldName);
 
 					SQLField field = new SQLField(
-							myConnection.getDbType(),
 							fieldName,
 							typeName,
 							isNullable,

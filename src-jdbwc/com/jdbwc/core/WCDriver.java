@@ -42,6 +42,7 @@ import com.jdbwc.util.Util;
  * @version 2008-05-29
  * @version 2010-04-09 version 1.0.0-4beta
  * @version 2010-05-21 removed implements keyword from class declaration
+ * @version 2010-05-28 version 1.0.0-5beta
  */
 public class WCDriver {
 
@@ -51,7 +52,7 @@ public class WCDriver {
 	private static final int WC_MAJOR_VER = 1;
 	private static final int WC_MINOR_VER = 0;
 	private static final int WC_SUBMINOR_VER = 0;
-	private static final String WC_STATUS_VER = "-4";
+	private static final String WC_STATUS_VER = "-5";
 	private static final String WC_STATUS_NAME = "beta";
 	private static final String WC_VER_NAME = "JDBWC";
 
@@ -59,43 +60,45 @@ public class WCDriver {
 
 	private static final boolean JDBC_COMPLIANT = false;
 
-//	/* Acceptible URL prefixes */
-//	private static final String KEY_VID_DEFAULT = "jdbc:jdbwc://";
-//	private static final String KEY_VID_MYSQL = "jdbc:jdbwc:mysql//";
-//	private static final String KEY_VID_POSTGRESQL = "jdbc:jdbwc:postgresql//";
-
 	/* URL prefix parts */
 	private static final String KEY_VID_DEFAULT = "jdbc:jdbwc:";
 	/* databases. name must match package folder name */
 	protected static final String KEY_VID_MYSQL = "mysql";
 	protected static final String KEY_VID_POSTGRESQL = "postgresql";
 
+	/* database server connection types */
+	protected static final int ID_DEFAULT = 0;
+	protected static final int ID_MYSQL = 1;
+	protected static final int ID_POSTGRESQL = 2;
+
+
 	/* Acceptible URL keys */
-	protected static final String KEY_URL = "url";
-	protected static final String KEY_USER = "user";
-	protected static final String KEY_PASS = "password";
+
+	public static final String KEY_URL = "url";
+	public static final String KEY_USER = "user";
+	public static final String KEY_PASS = "password";
 
 	public static final String KEY_DB_VID = "dbType";
-	protected static final String KEY_DB_NAME = "databaseName";
-	protected static final String KEY_DB_USER = "databaseUser";
-	protected static final String KEY_DB_PASS = "databasePassword";
+	public static final String KEY_DB_NAME = "databaseName";
+	public static final String KEY_DB_USER = "databaseUser";
+	public static final String KEY_DB_PASS = "databasePassword";
 
-	protected static final String KEY_PROXY_URL = "proxyUrl";
+	public static final String KEY_PROXY_URL = "proxyUrl";
 
-	protected static final String KEY_NV_SSL = "nonVerifiedSSL";
-	protected static final String KEY_TIMEOUT = "timeout";
-	protected static final String KEY_USE_UA = "useDummyAgent";
+	public static final String KEY_NV_SSL = "nonVerifiedSSL";
+	public static final String KEY_TIMEOUT = "timeout";
+	public static final String KEY_USE_UA = "useDummyAgent";
 
-	protected static final String KEY_DEBUG = Util.TAG_DEBUG;
-	protected static final String KEY_DEBUG_LOG = "debugLogger";
-	protected static final String KEY_DEBUG_LEVEL = "debugLevel";
+	public static final String KEY_DEBUG = Util.TAG_DEBUG;
+	public static final String KEY_DEBUG_LOG = "debugLogger";
+	public static final String KEY_DEBUG_LEVEL = "debugLevel";
 
 	//--------------------------------------------------------- constructors
 
 	/**
 	 * Required constructor for Class.forName().newInstance()
 	 */
-	public WCDriver(){}
+	protected WCDriver(){}
 
 	//--------------------------------------------------------- public methods
 
@@ -127,11 +130,11 @@ public class WCDriver {
 		if(url != null && acceptsURL(url)){
 
 			//get the dbType
-			int dbType = Util.ID_DEFAULT;
+			int dbType = ID_DEFAULT;
 			if(url.startsWith(KEY_VID_DEFAULT.concat(KEY_VID_MYSQL))){
-				dbType = Util.ID_MYSQL;
+				dbType = ID_MYSQL;
 			}else if(url.startsWith(KEY_VID_DEFAULT.concat(KEY_VID_POSTGRESQL))){
-				dbType = Util.ID_POSTGRESQL;
+				dbType = ID_POSTGRESQL;
 			}
 
 			connection = getConnection(dbType, url, info);
@@ -192,15 +195,37 @@ public class WCDriver {
 		return getStaticVersion();
 	}
 
+	/**
+	 * Gets the package path based on the database type thats being used by
+	 * sibling java.sql.Connection's.
+	 *
+	 * @param dbType int - as defined in the com.jdbwc.util.Util class. ID_xxxx
+	 * @return The package path for use in reflection calls.
+	 */
+	public final String getDbPackagePath(int dbType) {
+		String packagePath = "com.jdbwc.core.";
+		switch (dbType){
+		case ID_POSTGRESQL:
+			packagePath += KEY_VID_POSTGRESQL;
+			break;
+		case ID_MYSQL:
+		case ID_DEFAULT:
+			packagePath += KEY_VID_MYSQL;
+			break;
+		}
+
+		return packagePath + ".";
+	}
+
 	//--------------------------------------------------------- private methods
 
 	private int getDbType(String typeName){
 		//get the dbType
-		int dbType = Util.ID_DEFAULT;
+		int dbType = ID_DEFAULT;
 		if(typeName.compareToIgnoreCase(KEY_VID_MYSQL) == 0){
-			dbType = Util.ID_MYSQL;
+			dbType = ID_MYSQL;
 		}else if(typeName.compareToIgnoreCase(KEY_VID_POSTGRESQL) == 0){
-			dbType = Util.ID_POSTGRESQL;
+			dbType = ID_POSTGRESQL;
 		}
 
 		return dbType;
@@ -337,7 +362,7 @@ public class WCDriver {
 		return connection;
 	}
 
-	private final static String getStaticVersion(){
+	private final String getStaticVersion(){
 		return new StringBuilder()
 			.append(WC_MAJOR_VER)
 			.append('.').append(WC_MINOR_VER)

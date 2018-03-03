@@ -19,7 +19,7 @@
  */
 package com.jdbwc.iface;
 
-import com.ozdevworx.dtype.DataHandler;
+import com.ozdevworx.dtype.ObjectArray;
 
 /**
  * Vendor based extension.<br />
@@ -42,5 +42,5 @@ public interface ResultSet extends java.sql.ResultSet {
 	 *
 	 * @param row The new row to add to this ResultSet.
 	 */
-	public void addRow(DataHandler row);
+	public void addRow(ObjectArray row);
 }
