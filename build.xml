@@ -23,21 +23,21 @@
 	For development, I recommend using eclipse [eclipse.org]
 	(or any IDE that supports Ant scripts, Java and PHP).
 	
-	Author: Tim Gall 2010-05-28 03:27 (+10 GMT)
+	Author: Tim Gall 2012-03-12 14:08 (+10 GMT)
 -->
 <project name="JDBWC - JDBC Driver" default="Build_all" basedir=".">
 
 	<description>
-		Ant build script for JDBWC v1.0.0-5beta
+		Ant build script for JDBWC v1.0.1-1rc JDK7
 	</description>
 
 	<!-- driver specs -->
 	<property name="driver.name" value="jdbwc" />
 	<property name="major.version" value="1" />
 	<property name="minor.version" value="0" />
-	<property name="subminor.version" value="0" />
-	<property name="status.version" value="-5" />
-	<property name="status.name" value="beta" />
+	<property name="subminor.version" value="1" />
+	<property name="status.version" value="-1" />
+	<property name="status.name" value="rc" />
 	<property name="jdbc.spec" value="3.0" />
 	<property name="jdbwc.builder" value="jdbwcdev" />
 
@@ -105,7 +105,7 @@
 			<flattenmapper />
 		</pathconvert>
 
-		<javac srcdir="${build.dir}/src-${driver.name}" destdir="${class.dir}/${driver.name}" deprecation="${compile.deprecation}" debug="${compile.debug}" fork="yes" compiler="modern">
+		<javac srcdir="${build.dir}/src-${driver.name}" destdir="${class.dir}/${driver.name}" deprecation="${compile.deprecation}" debug="${compile.debug}" fork="yes" compiler="modern" includeantruntime="false">
 			<classpath refid="driver.classpath" />
 		</javac>
 
@@ -144,7 +144,7 @@
 			<attribute name="Built-Date" value="${compile.date}" />
 		</manifest>
 
-		<javac destdir="${class.dir}/${datahandler.name}" deprecation="${compile.deprecation}" debug="${compile.debug}" fork="yes" compiler="modern" sourcepath="" srcdir="${build.dir}/src-${datahandler.name}" />
+		<javac destdir="${class.dir}/${datahandler.name}" deprecation="${compile.deprecation}" debug="${compile.debug}" fork="yes" compiler="modern" sourcepath="" srcdir="${build.dir}/src-${datahandler.name}" includeantruntime="false" />
 
 		<jar jarfile="${jar.dir}/${datahandler.name}.jar" basedir="${class.dir}/${datahandler.name}" includes="**/*.class,**/*.properties*,**/*.txt" excludes="${pack.excludes}" index="true" manifest="${meta.dir}/${datahandler.name}/MANIFEST.MF" />
 	</target>

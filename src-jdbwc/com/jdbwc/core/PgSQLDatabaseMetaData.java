@@ -17,19 +17,16 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core.postgresql;
+package com.jdbwc.core;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 
-import com.jdbwc.core.WCConnection;
-import com.jdbwc.core.WCResultSet;
-import com.jdbwc.core.WCStaticMetaData;
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * This MetaData class is designed for PostgreSql implementations.<br />
@@ -40,7 +37,7 @@ import com.ozdevworx.dtype.ObjectArray;
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
  */
-public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements java.sql.DatabaseMetaData {
+public final class PgSQLDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements java.sql.DatabaseMetaData {
 
 	/* DEVELOPER NOTE:
 	 * ***************
@@ -84,7 +81,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 
 
 
-	public WCDatabaseMetaData(final WCConnection connection) throws SQLException {
+	protected PgSQLDatabaseMetaData(final WCConnection connection) throws SQLException {
 		super(connection);
 	}
 
@@ -344,7 +341,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 //		final String[] typesSplit = myTabletypes.split(",");
 
 		for (final String element : myTabletypes) {
-			final ObjectArray aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+			final DataHandler aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 			aRow.addData("TABLE_TYPE", element);
 			res.addRow(aRow);
 		}
@@ -388,9 +385,9 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		 * the pgSQL type matches the JDBC Type (per spec)
 		 */
 		final WCResultSet res = new WCResultSet(myConnection);
-		ObjectArray aRow;
+		DataHandler aRow;
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "int2");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.SMALLINT));
 		aRow.addData(PRECISION, "5");
@@ -412,7 +409,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "int4");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "10");
@@ -434,7 +431,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "oid");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIGINT));
 		aRow.addData(PRECISION, "10");
@@ -456,7 +453,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "int8");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIGINT));
 		aRow.addData(PRECISION, "19");
@@ -478,7 +475,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "money");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "19");
@@ -500,7 +497,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "numeric");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.NUMERIC));
 		aRow.addData(PRECISION, "0");
@@ -522,7 +519,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "float4");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.REAL));
 		aRow.addData(PRECISION, "8");
@@ -544,7 +541,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "float8");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "17");
@@ -566,7 +563,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "char");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.CHAR));
 		aRow.addData(PRECISION, "1");
@@ -588,7 +585,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "bpchar");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.CHAR));
 		aRow.addData(PRECISION, "1");
@@ -610,7 +607,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "varchar");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "255");
@@ -636,7 +633,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		 * MySQL Type: VARBINARY (sliently converted to VARCHAR(M) BINARY) JDBC
 		 * Type: VARBINARY
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "text");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "65535");
@@ -658,7 +655,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "name");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "255");
@@ -680,7 +677,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "bytea");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.BINARY));
 		aRow.addData(PRECISION, Integer.toString(Integer.MAX_VALUE));
@@ -702,7 +699,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "bool");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIT));
 		aRow.addData(PRECISION, "1");
@@ -724,7 +721,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "bit");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.BIT));
 		aRow.addData(PRECISION, "1");
@@ -746,7 +743,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "date");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DATE));
 		aRow.addData(PRECISION, "13");
@@ -768,7 +765,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "time");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIME));
 		aRow.addData(PRECISION, "15");
@@ -790,7 +787,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "timetz");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIME));
 		aRow.addData(PRECISION, "15");
@@ -812,7 +809,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "timestamp");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIMESTAMP));
 		aRow.addData(PRECISION, "29");
@@ -834,7 +831,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "timestamptz");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "10");
@@ -856,7 +853,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "int");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "10");
@@ -878,7 +875,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "int unsigned");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "10");
@@ -903,7 +900,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * MySQL Type: MEDIUMINT JDBC Type: INTEGER
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "mediumint");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "7");
@@ -925,7 +922,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "mediumint unsigned");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.INTEGER));
 		aRow.addData(PRECISION, "8");
@@ -950,7 +947,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: SMALLINT JDBC Type: SMALLINT
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "smallint");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.SMALLINT));
 		aRow.addData(PRECISION, "5");
@@ -972,7 +969,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		res.addRow(aRow);
 
 
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "smallint unsigned");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.SMALLINT));
 		aRow.addData(PRECISION, "5");
@@ -998,7 +995,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		 * pgSQL Type: FLOAT JDBC Type: REAL (this is the SINGLE PERCISION
 		 * floating point type)
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "float");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.REAL));
 		aRow.addData(PRECISION, "10");
@@ -1023,7 +1020,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: DOUBLE JDBC Type: DOUBLE
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "double");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "17");
@@ -1048,7 +1045,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: DOUBLE PRECISION JDBC Type: DOUBLE
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "double precision");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "17");
@@ -1073,7 +1070,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: REAL (does not map to Types.REAL) JDBC Type: DOUBLE
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "real");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DOUBLE));
 		aRow.addData(PRECISION, "17");
@@ -1098,7 +1095,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: VARCHAR JDBC Type: VARCHAR
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "varchar");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "255");
@@ -1123,7 +1120,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: ENUM JDBC Type: VARCHAR
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "enum");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "65535");
@@ -1148,7 +1145,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: SET JDBC Type: VARCHAR
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "set");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.VARCHAR));
 		aRow.addData(PRECISION, "64");
@@ -1173,7 +1170,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: DATE JDBC Type: DATE
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "date");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.DATE));
 		aRow.addData(PRECISION, "0");
@@ -1198,7 +1195,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: TIME JDBC Type: TIME
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "time");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIME));
 		aRow.addData(PRECISION, "0");
@@ -1223,7 +1220,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: DATETIME JDBC Type: TIMESTAMP
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "datetime");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIMESTAMP));
 		aRow.addData(PRECISION, "0");
@@ -1248,7 +1245,7 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 		/*
 		 * pgSQL Type: TIMESTAMP JDBC Type: TIMESTAMP
 		 */
-		aRow = Util.getCaseSafeHandler(myConnection.getCaseSensitivity());
+		aRow = Util.getCaseSafeHandler(myConnection.myCaseSensitivity);
 		aRow.addData(NAME, "timestamp");
 		aRow.addData(TYPE, Integer.toString(java.sql.Types.TIMESTAMP));
 		aRow.addData(PRECISION, "0");
@@ -1854,6 +1851,18 @@ public final class WCDatabaseMetaData extends PgSQLDBMDFromInfoSchema implements
 	}
 
 	public boolean usesLocalFiles() throws SQLException {
+		return false;
+	}
+
+	@Override
+	public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+		// TODO implement me!
+		throw new NotImplemented("getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)");
+	}
+
+	@Override
+	public boolean generatedKeyAlwaysReturned() throws SQLException {
+		// TODO Auto-generated method stub
 		return false;
 	}
 

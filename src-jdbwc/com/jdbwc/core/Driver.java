@@ -20,6 +20,8 @@
 package com.jdbwc.core;
 
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.logging.Logger;
 
 /**
  * Required JDBC-API implementation for java.sql.Driver.<br />
@@ -53,5 +55,11 @@ public class Driver extends WCDriver implements java.sql.Driver {
 	 */
 	public Driver() throws SQLException {
 		super();
+	}
+
+	@Override
+	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

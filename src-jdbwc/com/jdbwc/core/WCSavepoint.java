@@ -37,7 +37,7 @@ public class WCSavepoint implements Savepoint {
 	/**
 	 *
 	 */
-	protected WCSavepoint() {
+	public WCSavepoint() {
 		generateId();
 		savepointName = generateName();
 	}
@@ -46,7 +46,7 @@ public class WCSavepoint implements Savepoint {
 	 * @param name Name of the savepoint
 	 * @throws SQLException
 	 */
-	protected WCSavepoint(String name) throws SQLException {
+	public WCSavepoint(String name) throws SQLException {
 		if(name==null || name.trim().isEmpty()){
 			throw new SQLException("Savepoint name must contain a value.");
 		}

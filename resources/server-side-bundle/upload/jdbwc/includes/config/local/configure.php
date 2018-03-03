@@ -24,19 +24,23 @@ if(!defined('WC_INDEX')){
 define('WC_USER', 'xxxxxxxxxxxxxx');
 define('WC_PASS', 'xxxxxxxxxxxxxx');
 
-define('WC_WSITE_DIR', '/'); // absolute web file path with trailing /
-define('WC_LOG_PATH', 'E:/PHP/phpDev/WC/jdbwc/includes/wc_logs/');// absolute path with trailing /
-define('WC_FILE_SESSIONS', 'E:/PHP/phpDev/WC/jdbwc/includes/sessions'); // absolute path without trailing /
-
+define('WC_WSITE_DIR', '/'); // absolute public web path (without domain part) with trailing /
 define('WC_STORE_SESSIONS', 'files'); //'files' or 'sqlite' (please make sure the one you use is a registered save handler in phpinfo())
 
 /* This affects JDBC date handling.
- * To set your timezone use an entry from the following chart:
- * http://php.net/manual/en/timezones.php
- * To use the servers timezone (assuming its set in php.ini)
- * change the value to an empty string. EG: define('WC_TZ', '');
- */
+* To set your timezone use an entry from the following chart:
+* http://php.net/manual/en/timezones.php
+* To use the servers timezone (assuming its set in php.ini)
+* change the value to an empty string. EG: define('WC_TZ', '');
+*/
 define('WC_TZ', 'Australia/Brisbane');
+
+
+/////////// THE REST SHOULDN'T REQUIRE ANY CHANGES /////////////
+
+// these 2 can be safely ignored unless you change the default directory locations
+define('WC_LOG_PATH', realpath('./includes/wc_logs') . '/');// absolute file path with trailing /
+define('WC_FILE_SESSIONS', realpath('./includes/sessions')); // absolute file path without trailing /
 
 $WC_SESS_LIMIT=0; //(int)max sessions. 0 to remove limits
 $WC_SESS_LIFE=14400;//(int)in seconds

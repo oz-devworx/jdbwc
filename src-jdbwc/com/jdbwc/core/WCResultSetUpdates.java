@@ -35,7 +35,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 
 import com.jdbwc.exceptions.NotImplemented;
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * NOTE: This class has not been implemented yet!!!<br />
@@ -55,8 +55,8 @@ public class WCResultSetUpdates {
 	protected transient int myPointer = -1;
 	protected transient int myDbType = 0;
 
-	public transient ObjectArray myRows;
-	protected transient ObjectArray myRow;
+	protected transient DataHandler myRows;
+	protected transient DataHandler myRow;
 //	protected transient int myRowLength = 0;
 	protected transient WCStatement myStatement = null;
 	protected transient WCConnection myConnection = null;

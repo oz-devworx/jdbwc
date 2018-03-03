@@ -17,7 +17,7 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core.mysql;
+package com.jdbwc.core;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -27,12 +27,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 
-import com.jdbwc.core.WCConnection;
-import com.jdbwc.core.WCResultSet;
-import com.jdbwc.core.WCStaticMetaData;
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * This MetaData class is designed for MySql implementations.<br />
@@ -47,7 +44,7 @@ import com.ozdevworx.dtype.ObjectArray;
  * @version 2008-05-29
  * @version 2010-04-30
  */
-public final class WCDatabaseMetaData extends MySQLDBMDFromInfoSchema implements java.sql.DatabaseMetaData {
+public final class MySQLDatabaseMetaData extends MySQLDBMDFromInfoSchema implements java.sql.DatabaseMetaData {
 
 	/* DEVELOPER NOTE:
 	 * ***************
@@ -209,7 +206,7 @@ public final class WCDatabaseMetaData extends MySQLDBMDFromInfoSchema implements
 	}
 
 
-	public WCDatabaseMetaData(final WCConnection connection) throws SQLException {
+	protected MySQLDatabaseMetaData(final WCConnection connection) throws SQLException {
 		super(connection);
 	}
 
@@ -468,7 +465,7 @@ public final class WCDatabaseMetaData extends MySQLDBMDFromInfoSchema implements
 		final WCResultSet res = new WCResultSet(myConnection, WCStaticMetaData.getTableTypes());
 
 		for (final String myTabletype : myTabletypes) {
-			final ObjectArray aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+			final DataHandler aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 			aRow.addData("TABLE_TYPE", myTabletype);
 			res.addRow(aRow);
 		}
@@ -577,7 +574,7 @@ public final class WCDatabaseMetaData extends MySQLDBMDFromInfoSchema implements
 		/*
 		 * MySQL Type: BIT (silently converted to TINYINT(1)) JDBC Type: BIT
 		 */
-		ObjectArray aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		DataHandler aRow = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		aRow.addData(NAME, "BIT");
 		aRow.addData(TYPE, java.sql.Types.TINYINT);
 		aRow.addData(PRECISION, 1);
@@ -2180,6 +2177,18 @@ public final class WCDatabaseMetaData extends MySQLDBMDFromInfoSchema implements
 	}
 
 	public boolean usesLocalFiles() throws SQLException {
+		return false;
+	}
+
+	@Override
+	public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+		// TODO implement me!
+		throw new NotImplemented("getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)");
+	}
+
+	@Override
+	public boolean generatedKeyAlwaysReturned() throws SQLException {
+		// TODO Auto-generated method stub
 		return false;
 	}
 

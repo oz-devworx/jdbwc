@@ -98,7 +98,7 @@ if ($authState==true) {
          * on the JDBC side */
       case 'cleanup':
 
-        if($_SESSION['DEBUG_MODE']=='true'){
+        if($_SESSION['DEBUG_MODE']===true){
           $timeTaken = microtime(true) - $_SESSION['workStart'];
 
           echo("--Serverside: Processing took: " . round($timeTaken, 4) . " seconds to complete.\n");
@@ -130,7 +130,7 @@ if ($authState==true) {
         break;
     }
   }
-  if($_SESSION['DEBUG_MODE']=='true') $_SESSION['memUse'][] = function_exists('memory_get_peak_usage') ? memory_get_peak_usage(true) : 0;
+  if($_SESSION['DEBUG_MODE']===true) $_SESSION['memUse'][] = function_exists('memory_get_peak_usage') ? memory_get_peak_usage(true) : 0;
 
 } else {
   /* just incase; better to inform user than not */

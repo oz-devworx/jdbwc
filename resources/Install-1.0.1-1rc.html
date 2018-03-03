@@ -33,7 +33,7 @@ td.text {text-align:left; padding:2px;}
 </head>
 <body>
 <h1>JDBWC - Installation</h1>
-<p>Document Revision: 1</p>
+<p>Document Revision: 2</p>
 <table width="100%" border="0" cellspacing="2" cellpadding="0" class="spec">
 	<tr>
 		<th colspan="2" class="head">Release Information</th>
@@ -48,7 +48,11 @@ td.text {text-align:left; padding:2px;}
 	</tr>
 	<tr>
 		<td class="tag">Version</td>
-		<td class="text">1.0.0-5beta</td>
+		<td class="text">1.0.1-1rc (Release Candidate)</td>
+	</tr>
+	<tr>
+		<td class="tag">Date (Y-M-D)</td>
+		<td class="text">2012-03-30</td>
 	</tr>
 	<tr>
 		<td class="tag">License</td>
@@ -95,22 +99,23 @@ td.text {text-align:left; padding:2px;}
 <p>JDBWC is an acronym for Java-Data-Base-Web-Connector. In essence, JDBWC is a Java JDBC Driver with its own server written in PHP. Ideally suited to Java Desktop applications that require JDBC access across wide area networks like the internet but do not wish to expose the remote database-server through the remote hosts firewall. EG: the database server does not need to be exposed to the internet at all.</p>
 <div class="head"><a name="require" id="require"></a>Requirements</div>
 <p><strong>Client-side:</strong> <br />
-	Java JRE &gt;= 1.6.0_20 (<em>you can also compile from source to suit your target JRE</em>)</p>
+	Java JRE &gt;= 1.7.0 (<em>you can also compile from source to suit your target JRE</em>)</p>
 <p><strong>Server-side: </strong><br />
 	Apache-Web-server &gt;= 1.3.41<br />
 	PHP &gt;= 5.1.x with MySQL &gt;= 5.x.x and/or PostgreSQL &gt;= 7.4.x</p>
 <p>If your using MySQL you should enable the 
 	PHP mysqli extension for full metadata functionality.<br />
-	The existence of the mysqli extension is determined on the server-side.</p>
+	The existence of the mysqli extension is determined by the driver on the server-side if it is enabled.</p>
 <p><strong>Supplied dependencies (licensed under an extended Apache-2 license)</strong><br />
-	<a href="http://hc.apache.org/index.html" target="_blank">HttpClient 4.0.1 (GA)</a> + dependencies</p>
+	<a href="http://hc.apache.org/index.html" target="_blank">HttpClient 4.1.3 (GA)</a> + dependencies</p>
 <ul>
-	<li> apache-mime4j-0.6.jar</li>
-	<li> commons-codec-1.3.jar</li>
+	<li>commons-codec-1.4.jar</li>
 	<li> commons-logging-1.1.1.jar</li>
-	<li> httpclient-4.0.1.jar</li>
-	<li> httpcore-4.0.1.jar</li>
-	<li> httpmime-4.0.1.jar</li>
+	<li> httpclient-4.1.3.jar	</li>
+	<li>httpclient-cache-4.1.3.jar</li>
+	<li> httpcore-4.1.4.jar</li>
+	<li> httpmime-4.1.3.jar<br />
+	</li>
 </ul>
 <div class="head"><a name="install" id="install"></a>Installation</div>
 <h2>Client-side (JDBC)</h2>
@@ -122,6 +127,8 @@ td.text {text-align:left; padding:2px;}
 	<ul>
 		<li>add &quot;jdbwc.jar&quot; to your applications classpath. If your app is an executable jar, you would usually include the file in your jar manifest's class-path using a relative path<br />
 			EG: <code>Class-Path: jdbwc-lib/jdbwc.jar or Class-Path: jdbwc.jar</code> depending on where you put the jar files in relation to your java app.</li>
+		<li><b>NOTE: </b>You will also need to add the other dependant files to your classpath. They are all contained in the lib folder (in the binary release and in the source release after building).<br />
+		If you dont want to add the dependencies to your applications &quot;Class-Path&quot;: Build the jar from source (using build.xml with ANT) and change <code>index=&quot;true&quot;</code> to <code>false</code> on line 128 of build.xml to have the jdbwc.jar add them to its own Class-Path (then you only need to include <code>jdbwc.jar</code> in your applications Class-Path). Although the Class-Path entries are present in the jars manifest for all build types, due to having <code>index</code> set to <code>true</code> they are ignored. Its a poorly documented (or was at the time of writing this doc) byproduct of having indexes enabled on jar manifest files. The upside of indexes are (apparently) slightly better performance. Its recommended to have ANT or some other automated program write your manifest files intead of doing it manually due to the line length limitation of manifest files. Line length is limited by bytes, not characters and is difficult to work out manually for long Class-Path entries since manifests use utf-8 encoding.</li>
 	</ul>
 	<li>If your app is not a packaged jar, you will need to organise updating the classpath via some other mechanism.</li>
 	<li>If your using an IDE, add the jars to your build path as user libs (<em>system libs are ok too but not necessary</em>).</li>
@@ -136,7 +143,7 @@ td.text {text-align:left; padding:2px;}
 	It only interacts with the JDBC portion and doesn't need to be maintained. <br />
 	It does maintain an event.log file that you may want to 
 	look at occasionally to see what's been happening on your server.<br />
-	The event.log can be invaluable for debugging, however any exceptions or errors encountered on 
+	The event.log can be invaluable for debugging, however most exceptions or errors encountered on 
 	the server will be thrown back to the JDBC driver as an SQL exception (or extension of).<br />
 	Most PHP warnings will only be logged, not relayed as they usually aren't critical and don't warrant halting the driver.<br />
 	SQL errors will contain the database servers original message with the offending SQL 
@@ -148,7 +155,8 @@ td.text {text-align:left; padding:2px;}
 </p>
 <h5>To setup the server-side part of this driver.</h5>
 <p><strong>NOTE:</strong> The folder: &quot;<code>jdbwc/includes/config/local</code>&quot; is for testing servers. Its supplied for convenience when developing. If it is present on your server, its configs will be used in preference to the production ones in: <code>jdbwc/includes/config</code>.<br />
-	<span style="color:red;">The &quot;<code>jdbwc/includes/config/local</code>&quot;  folder should _<u>NOT</u>_ be uploaded to production machines.</span><br />
+<span style="color:red;">The &quot;<code>jdbwc/includes/config/local</code>&quot;  folder should _<u>NOT</u>_ be uploaded to production machines.</span></p>
+<p><b>NEW:</b> The path settings have been simplified in this release for default folder locations of the &quot;<code>sessions</code>&quot; and &quot;<code>wc_logs</code>&quot; through the use of PHP's <code>realpath()</code> function. If you choose to use custom locations for these folders you will still need to edit these two paths.<br />
 </p>
 <ol>
 	<li>Upload the contents of the upload folder to your webserver.
@@ -189,9 +197,10 @@ td.text {text-align:left; padding:2px;}
 	Registering the driver requires a <code>ClassNotFoundException</code> handler, 
 	starting a new Connection requires an <code>SQLException</code> handler.</p>
 <p> See the example below.<br />
-	<strong>NOTE:</strong> SSL is highly recommended over sending sql in plaintext.<br />
+	<strong>NOTE:</strong> SSL is highly recommended over sending sql in plaintext. <b>A dedicated IP is required on the webserver</b> (localhost testing servers (EG: http://localhost/) are an exception to this rule.)<br />
 	v1.0.0.3 will only work with validated certs.<br />
-	v1.0.0.4 and v1.0.0.5 will work with validated and unvalidated/self-signed certs.<br />
+	v1.0.0.4 will work with validated and unvalidated/self-signed certs.<br />
+	v1.0.1.1rc builds on the functionality of v1.0.0.4beta.<br />
 	Un-validated/self-signed certs require the optional param: <code>nonVerifiedSSL = true</code></p>
 <fieldset>
 <legend>EXAMPLE</legend>
@@ -384,26 +393,22 @@ connection = DriverManager.getConnection(<strong>jdbcUrl</strong>, <strong>props
 	This is rarely required. Its for situations where the host server blocks the default HttpClient <code>User-Agent</code>. The server would need to have been configured to deliberately block the HttpClient user agent.<br />
 	OPTIONS: true, false (or not used. defaults to false)</p>
 <div class="head"><a name="new" id="new"></a>What's new?</div>
-<h5>Since v1.0.0-4beta</h5>
+<h5>Since v1.0.0.4beta</h5>
 <ul>
-	<li>Migrated database specific code into brand named packages. This makes the database types transparent to the driver and makes integration of more database types  easier and less error prone.</li>
-	<li>Migrated com.jdbwc.core.util package to com.jdbwc.util to consolidate utility classes.</li>
-	<li>The following improvements have also been ported to v1.0.0-4:
-		<ul>
-			<li>Fixed java.sql.Driver.getPropertyInfo() so it works properly with SQL Client software and exposes all parameters accepted by the driver.</li>
-			<li>Dropped the version number from the compiled data-handler.jar's name to eliminate the need to update classpaths if the package changes.</li>
-			<li>Added better ResultSetMetadata support for the mysql extension. The mysqli extension has always had good support.</li>
-			<li>Added a variable to expose improved sql extensions to the driver so the appropriate processing can take place. MySQLi is currently the only improved extension Im aware of.</li>
-		</ul>
-	</li>
-	<li>For better backwards compatibility with the old v1.0.0-2_x releases, the new DataHandler package has been remodelled to be more like the old package as far as interface and method naming goes. The DataHandler interface extends the lightweight interface used by the driver.</li>
+	<li>Communication layer changed from being powered by Apache-HttpClient 4.0.1 to Apache-HttpClient 4.1.3.</li>
+	<li>Changed httpClient connection-manager to threadsafe which fixed an error (java.lang.IllegalStateException: Connection pool shut down) from intermitently occurring when using the driver with a threaded application.</li>
+	<li>Added support for new Java JRE 1.7.x java.sql methods to allow compiling with a jre7 runtime.</li>
+	<li>Fixed a serverside bug that triggered a fatal error in the class <code>MySqli</code> on PHP 5.2.13
+		(and possibly other versions below PHP 5.3.x).</li>
+	<li>Simplified the (server-side) default folder paths for &quot;<code>sessions</code>&quot; and &quot;<code>wc_logs</code>&quot; through the use of PHP's <code>realpath()</code> function.</li>
+	<li>Fixed a major bug that refused connections for domains using a <code>www.</code> subdomain. Now any subdomain is ok to use. I suspect this was a workaround remnant of the earliest versions of this driver that used the old (quite limited) communications backend.</li>
 </ul>
 <div class="head"><a name="limits" id="limits"></a>Limitations</div>
 <ul>
 	<li>JDBWC is aimed at JDBC 3/4 specifications with a few limitations (<em>also see the other limitations and <a href="#todo">TODO</a>'s</em>).</li>
 	<li>No support for some of the newer JDBC 3 and 4 data-types.</li>
 	<li>Data sizes of queries should be kept at a reasonable size. This applies to sending and receiving. Sending is limited to the $_POST limit set on the server (32MB is a common size for the post limit, but it could be much larger depending on your web servers configuration). Receiving is limited by the amount of free memory on the machine running the Driver (and the JRE running the driver). JDBWC caches the entire resultset/s from a query while it is open (this isnt so much of a problem as most modern machines have ample RAM and can fallback to pagefile. Falling back to pagefile would reduce performance. &lt; 10MB is a safe size).</li>
-	<li>Connection Limits. In early versions &lt;= v1.0.0-3 multiple connections caused issues. Version v1.0.0-4 and v1.0.0-5 seem OK with multiple connections, but be carefull if latency or high error rates are an issue, as you could potentially  find things happening out of order. EG: a delete query sent after a select query, could end up getting to the server first, in which case your select query would probably not be correct based on the order it was sent. Much like un-synchonized Java code can in certain circumstances. For now, I would recommend using single connections when communicating across large unknown networks like the internet unless they are consistently reliable. This limitation is planned to be resolved in a future release by using a manual synchronization system for queries. See the <a href="#todo">TODO</a>'s for more information.</li>
+	<li>Connection Limits. In early versions &lt;= v1.0.0-3 multiple connections caused issues. Version v1.0.0-4 seems OK with multiple connections, but be carefull if latency or high error rates are an issue, as you could potentially  find things happening out of order. EG: a delete query sent after a select query, could end up getting to the server first, in which case your select query would probably not be correct based on the order it was sent. Much like un-synchonized Java code can in certain circumstances. For now, I would recommend using single connections when communicating across large unknown networks like the internet unless they are consistently reliable. This limitation is planned to be resolved in a future release by using a manual synchronization system for queries. See the <a href="#todo">TODO</a>'s for more information.</li>
 	<li>Also see <a href="#issues">Known Issues</a>.</li>
 </ul>
 <div class="head"><a name="issues" id="issues"></a>Known issues</div>
@@ -416,8 +421,9 @@ connection = DriverManager.getConnection(<strong>jdbcUrl</strong>, <strong>props
 <p><strong>NOTE:</strong> Its <u>strongly</u> advised to use an SSL connection when communicating across a network or the internet as you will be sending raw sql. To correctly install SSL your web-server <u>must have a dedicated IP</u>.</p>
 <div class="head"><a name="todo" id="todo"></a>TODO</div>
 <ul>
-	<li>Fix SQuirreL SQL Client not returning valid row data. This should be done before this version is released.</li>
-	<li>Synchronize query processing: Add a unique key to each statement for the purpose of processing results in the same order they were sent; So if a required query has not responded, this will also give the driver the ability to detect it and resend the lost query if required. It will also make the prospect of threading queries more feasable,  which would in turn provide a good controlled base for limiting the amount of active statements, gracefully timing out from the client side, and more control when cancelling and closing  statements. This single TODO will most likely be the entire focus of a new version/code-branch when it gets implemented and may be broken down into multiple development steps.</li>
+	<li>The main focus for the next release will be restructuring database specific code into brand specific packages. This is to make further database integration faster and easier. This has been started in the 1.0.0.5beta branch (<i>currently available from svn repository</i>) but didnt seem to work well with SQL clients for some unknown reason so this version extends on v1.0.0.4beta instead. Most of the improvements from v1.0.0.5beta were back ported to the v1.0.0.4beta version (<i>excluding the file restructuring</i>). A later version may be updated with the file restructuring changes if/when I have time and motivation to do so.</li>
+	<li>Add a unique key to each statement for the purpose of processing results in the same order they were sent. If a required query has not responded, this will also give the driver the ability to detect it and resend the lost query if required. This is an important aspect for wide area networks and data relaying (particularly latent networks or/and those with high error rates). 
+		It will also make the prospect of threading queries more feasable,  which would in turn provide a good controlled base for limiting the amount of active statements, gracefully timing out from the client side, cancelling and closing  statements. This single TODO will most likely be the entire focus of a new version/code-branch when it gets implemented.</li>
 	<li>Add more database support (EG: any database that can be easily accessed from PHP).</li>
 	<li>Finish PreparedStatement (<em>almost done</em>), 
 		CallableStatement, ParameterMetaData (<em>almost done</em>) and anything else not implemented yet.</li>
@@ -434,7 +440,7 @@ connection = DriverManager.getConnection(<strong>jdbcUrl</strong>, <strong>props
 	NOTE:</strong> <code>NotImplemented</code> exceptions are not bugs. They are features that have not been fully implemented yet and will vary for each release. This technique of dealing with unfinished areas is part of the JDBC specification for drivers [<a href="http://java.sun.com/products/jdbc/driverdevs.html" target="_blank">http://java.sun.com/products/jdbc/driverdevs.html</a>].</p>
 <p> If you would like to see a particular feature implemented, please make a feature request at: <a href="http://sourceforge.net/tracker/?group_id=233279&amp;atid=1089230" target="_blank">http://sourceforge.net/tracker/?group_id=233279&amp;atid=1089230</a></p>
 <div class="copy">
-	<p>Copyright &copy;2008 Tim Gall, All rights reserved.</p>
+	<p>Copyright &copy;2008-2012 Tim Gall, All rights reserved.</p>
 	<p><strong>LEGAL FOOTNOTES:</strong><br />
 		Java is a trademark of Sun Microsystems Inc. (Also see: Oracle Corporation)<br />
 		MySql is a trademark of MySql AB. (Also see: Oracle Corporation)<br />

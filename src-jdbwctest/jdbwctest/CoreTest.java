@@ -37,7 +37,7 @@ import java.util.Date;
 import java.util.Properties;
 
 /**
- * This class is designed for JDBWC-1.0.0-4beta.<br />
+ * This class is designed for JDBWC-1.0.1-1rc.<br />
  * You will need the jdbwc-lib folder (which includes the jdbwc.jar and its dependencies).<br />
  * If you dont have them, get a copy here:
  * <a href="http://jdbwc.sourceforge.net">http://jdbwc.sourceforge.net</a><br />

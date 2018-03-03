@@ -112,12 +112,14 @@ class DbMysqli extends DbCore{
   }
 
   /**
-   * List tables in this database
+   * List tables in this database.
+   * Updated: 2012-03-11 Removed empty $databaseName placeholder
+   * that was causing errors in PHP 5.2.13 (and possibly other versions < 5.3
    *
    * @param mixed $databaseName is ignored.
    * @return A single column ResultSet.
    */
-  function list_tables($databaseName = ''){
+  function list_tables($databaseName){
     return $this->query('SHOW TABLES;');
   }
 

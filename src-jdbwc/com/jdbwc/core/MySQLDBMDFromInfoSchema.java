@@ -17,37 +17,39 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core.postgresql;
+package com.jdbwc.core;
+
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
-import com.jdbwc.core.WCConnection;
-import com.jdbwc.core.WCStatement;
-import com.jdbwc.core.WCResultSet;
-import com.jdbwc.core.WCStaticMetaData;
-import com.jdbwc.core.WCDriverPropertiesInfo;
-
+import com.jdbwc.core.util.ConditionKeyWord;
+import com.jdbwc.core.util.MySQLTypes;
 import com.jdbwc.exceptions.NotImplemented;
-import com.jdbwc.util.SQLCondition;
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
- * This MetaData class is designed for PostgreSQL implementations
- * greater than 7.4.x.<br />
+ * This MetaData class is designed for MySql implementations
+ * that use the INFORMATION_SCHEMA metadatabase.<br />
  * <br />
  * Moved all methods that use INFORMATION_SCHEMA into this class
- * to seperate the query logic from largely Static Data and to
+ * to seperate the query logic from MySQLDatabaseMetaData and to
  * make Driver maintenance and development a little easier.<br />
- *
+ * <br />
+ * The important thing to note is that MySql INFORMATION_SCHEMA tables
+ * refer to the databases as schemas, when in fact they are commonly known as catalogs.
+ * This is a very important factor to make this driver work with SQL clients.
+ * <br />
+ * Whenever a metadata query requests a schema, we give it NULL,
+ * and for catalog we give it the INFORMATION_SCHEMA's schema.
+ * This is a very important difference between MySql and most other transactional databases.
  *
  * @author Tim Gall (Oz-DevWorX)
  * @version 2008-05-29
- * @version 2010-05-18
+ * @version 2010-04-27
  */
-public class PgSQLDBMDFromInfoSchema {
+public class MySQLDBMDFromInfoSchema {
 
 	/* DEVELOPER NOTE:
 	 * ***************
@@ -61,16 +63,25 @@ public class PgSQLDBMDFromInfoSchema {
 
 	private final boolean hasReferentialConstraintsView;
 
-	/** PostgreSQL Table types */
-	protected static final String[] myTabletypes =
-	{"TABLE","VIEW","INDEX","SEQUENCE","SYSTEM TABLE",
-		"SYSTEM TOAST TABLE","SYSTEM TOAST INDEX",
-		"SYSTEM VIEW","SYSTEM INDEX","TEMPORARY TABLE","TEMPORARY INDEX"};
+	/** Known Table types supported by the MySQL database server */
+	protected static final String[] myTabletypes = {
+		//Limited to NON-SYSTEM MySql Types
+		"TABLE","VIEW","LOCAL TEMPORARY"};
+
+		//Known MySql Types
+		//"BASE TABLE","BASE VIEW","SYSTEM TABLE","SYSTEM VIEW","TEMPORARY TABLE","TEMPORARY"};
+
+		//Standard JDBC types
+		//"TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM"};
 
 
-	protected PgSQLDBMDFromInfoSchema(WCConnection connection) throws SQLException{
+
+
+
+
+	protected MySQLDBMDFromInfoSchema(WCConnection connection) throws SQLException{
 		myConnection = connection;
-		hasReferentialConstraintsView = myConnection.versionMeetsMinimum(7, 4, 0);
+		hasReferentialConstraintsView = myConnection.versionMeetsMinimum(5, 1, 10);
 	}
 
 	/**
@@ -133,36 +144,7 @@ public class PgSQLDBMDFromInfoSchema {
 			String attributeNamePattern
 	) throws SQLException {
 
-//		TYPE_CAT //String => type catalog (may be null)
-//		TYPE_SCHEM //String => type schema (may be null)
-//		TYPE_NAME //String => type name
-//		ATTR_NAME //String => attribute name
-//		DATA_TYPE //int => attribute type SQL type from java.sql.Types
-//		ATTR_TYPE_NAME //String => Data source dependent type name. For a UDT, the type name is fully qualified. For a REF, the type name is fully qualified and represents the target type of the reference type.
-//		ATTR_SIZE //int => column size. For char or date types this is the maximum number of characters; for numeric or decimal types this is precision.
-//		DECIMAL_DIGITS //int => the number of fractional digits. Null is returned for data types where DECIMAL_DIGITS is not applicable.
-//		NUM_PREC_RADIX //int => Radix (typically either 10 or 2)
-//		NULLABLE //int => whether NULL is allowed
-////		attributeNoNulls - might not allow NULL values
-////		attributeNullable - definitely allows NULL values
-////		attributeNullableUnknown - nullability unknown
-//		REMARKS //String => comment describing column (may be null)
-//		ATTR_DEF //String => default value (may be null)
-//		SQL_DATA_TYPE //int => unused
-//		SQL_DATETIME_SUB //int => unused
-//		CHAR_OCTET_LENGTH //int => for char types the maximum number of bytes in the column
-//		ORDINAL_POSITION //int => index of the attribute in the UDT (starting at 1)
-//		IS_NULLABLE //String => ISO rules are used to determine the nullability for a attribute.
-////		YES --- if the attribute can include NULLs
-////		NO --- if the attribute cannot include NULLs
-////		empty string --- if the nullability for the attribute is unknown
-//		SCOPE_CATALOG //String => catalog of table that is the scope of a reference attribute (null if DATA_TYPE isn't REF)
-//		SCOPE_SCHEMA //String => schema of table that is the scope of a reference attribute (null if DATA_TYPE isn't REF)
-//		SCOPE_TABLE //String => table name that is the scope of a reference attribute (null if the DATA_TYPE isn't REF)
-//		SOURCE_DATA_TYPE //short => source type of a distinct type or user-generated Ref type,SQL type from java.sql.Types (null if DATA_TYPE isn't DISTINCT or user-generated REF)
-
-		// TODO implement me!
-		throw new NotImplemented("getAttributes(...)");
+		return new WCResultSet(myConnection, WCStaticMetaData.getAttributes());
 	}
 
 	/**
@@ -218,6 +200,7 @@ public class PgSQLDBMDFromInfoSchema {
      */
 	public ResultSet getBestRowIdentifier(String catalog, String schema,
 			String table, int scope, boolean nullable) throws SQLException {
+
 		// TODO implement me!
 		throw new NotImplemented("getBestRowIdentifier(...)");
 	}
@@ -231,15 +214,21 @@ public class PgSQLDBMDFromInfoSchema {
      *	<LI><B>TABLE_CAT</B> String => catalog name
      *  </OL>
      *
+     *  <b>NOTE:</b> This is one of the key areas to make this driver work with SQL clients.
+     *  For MySql, always return the schema in place of the catalog.
+     *  Also see {@link #getSchemas(String catalog, String schemaPattern)} for more information on this subject.
+     *
      * @return a <code>ResultSet</code> object in which each row has a
      *         single <code>String</code> column that is a catalog name
      * @exception SQLException if a database access error occurs
      */
 	public ResultSet getCatalogs() throws SQLException {
 		WCResultSet res;
-		String procSql = new StringBuilder("select distinct ")
-			.append("table_catalog as table_cat ")
-			.append("from information_schema.tables;")
+		StringBuilder sqlBuild = new StringBuilder(100);
+		String procSql = sqlBuild.append("SELECT ")
+			.append("SCHEMA_NAME AS TABLE_CAT ")
+			.append("FROM INFORMATION_SCHEMA.SCHEMATA ")
+			.append("ORDER BY TABLE_CAT;")
 			.toString();
 
 		WCStatement procStmnt = myConnection.createInternalStatement();
@@ -250,7 +239,6 @@ public class PgSQLDBMDFromInfoSchema {
 		}
 		res.addMetaData(WCStaticMetaData.getCatalogs());
 
-//		return new WCResultSet(myConnection, WCStaticMetaData.getCatalogs());
 		return res;
 	}
 
@@ -309,37 +297,31 @@ public class PgSQLDBMDFromInfoSchema {
 	throws SQLException {
 		WCResultSet res;
 
-		if("*".equals(columnNamePattern)){
-			columnNamePattern = "%";
-		}
 
-		StringBuilder sqlBuilder = new StringBuilder("select ")
-		.append("table_catalog as table_cat, ")// string => table catalog (may be null)
-		.append("table_schema as table_schem, ")// string => table schema (may be null)
-		.append("table_name, ")// string => table name
-		.append("column_name, ")// string => column name
-		.append("grantor, ")// string => grantor of access (may be null)
-		.append("grantee, ")// string => grantee of access
-		.append("privilege_type as privilege, ")// String => name of access (SELECT, INSERT, UPDATE, REFRENCES, ...)
-		.append("is_grantable ")// string => "YES" if grantee is permitted to grant to others; "NO" if not; null if unknown
-		.append("from information_schema.column_privileges ");
+		StringBuilder sqlBuilder = new StringBuilder("SELECT ")
+		.append("TABLE_SCHEMA AS TABLE_CAT, ")// String => table catalog (may be null)
+		.append("'' AS TABLE_SCHEM, ")// String => table schema (may be null)
+		.append("TABLE_NAME, ")// String => table name
+		.append("COLUMN_NAME, ")// String => column name
+		.append("NULL AS GRANTOR, ")// String => grantor of access (may be null)
+		.append("GRANTEE, ")// String => grantee of access
+		.append("PRIVILEGE_TYPE AS PRIVILEGE, ")// String => name of access (SELECT, INSERT, UPDATE, REFRENCES, ...)
+		.append("IS_GRANTABLE ")// String => "YES" if grantee is permitted to grant to others; "NO" if not; null if unknown
+		.append("FROM INFORMATION_SCHEMA.COLUMN_PRIVILEGES ");
 
-		sqlBuilder.append("where table_name = '").append(table).append("' ");
-		sqlBuilder.append("and column_name like '").append(columnNamePattern).append("' ");
-
+		ConditionKeyWord condition = new ConditionKeyWord();
 
 		if("".equals(catalog)){
-			sqlBuilder.append("and (table_catalog IS NULL or table_catalog = '') ");
+			sqlBuilder.append(condition.getKeyWord() + "(TABLE_SCHEMA IS NULL OR TABLE_SCHEMA = '') ");
 		}else if(catalog!=null){
-			sqlBuilder.append("and table_catalog = '").append(catalog).append("' ");
-		}
-		if("".equals(schema)){
-			sqlBuilder.append("and (table_schema IS NULL or table_schema = '') ");
-		}else if(schema!=null){
-			sqlBuilder.append("and table_schema = '").append(schema).append("' ");
+			sqlBuilder.append(condition.getKeyWord() + "TABLE_SCHEMA = '").append(catalog).append("' ");
 		}
 
-		sqlBuilder.append("order by column_name, privilege_type;");
+		sqlBuilder.append(condition.getKeyWord() + "TABLE_NAME = '").append(table).append("' ");
+		sqlBuilder.append(condition.getKeyWord() + "COLUMN_NAME LIKE '").append(columnNamePattern).append("' ");
+
+
+		sqlBuilder.append("ORDER BY COLUMN_NAME, PRIVILEGE_TYPE;");
 
 		WCStatement sqlStmnt = myConnection.createInternalStatement();
 		if(sqlStmnt.execute(sqlBuilder.toString())){
@@ -449,37 +431,40 @@ public class PgSQLDBMDFromInfoSchema {
 			columnNamePattern = "%";
 		}
 
-		StringBuilder procSql = new StringBuilder("select ")
-			.append("table_catalog as table_cat, ")// String => table catalog (may be null)
-			.append("table_schema as table_schem, ")// String => table schema (may be null)
-			.append("table_name, ")// String => table name
-			.append("column_name, ")// String => column name
-			.append("udt_name as data_type, ")// int => SQL type from java.sql.Types
-			.append("udt_name as type_name, ")// String => Data source dependent type name, for a UDT the type name is fully qualified
-			.append("case when character_maximum_length>"+Integer.MAX_VALUE+" then "+Integer.MAX_VALUE+" else case when character_maximum_length is NULL then numeric_precision else character_maximum_length end end as column_size, ")// int => column size.
-			.append("0 as buffer_length, ")// is not used.
-			.append("case when numeric_scale is NULL then 0 else numeric_scale end as decimal_digits, ")// int => the number of fractional digits. Null is returned for data types where DECIMAL_DIGITS is not applicable.
-			.append("case when numeric_precision_radix is NULL then 0 else numeric_precision_radix end as num_prec_radix, ")// int => Radix (typically either 10 or 2)
-			.append("case when is_nullable like 'YES' then '"+DatabaseMetaData.attributeNullable+"' when is_nullable like 'NO' then '"+DatabaseMetaData.attributeNoNulls+"' else '"+DatabaseMetaData.attributeNullableUnknown+"' end as nullable, ")// int => is NULL allowed.
+
+		StringBuilder procSql = new StringBuilder(1750);
+		procSql.append("SELECT ")
+			.append("TABLE_SCHEMA AS TABLE_CAT, ")// String => table catalog (may be null)
+			.append("NULL AS TABLE_SCHEM, ")// String => table schema (may be null)
+			.append("TABLE_NAME, ")// String => table name
+			.append("COLUMN_NAME, ")// String => column name
+			.append("DATA_TYPE, ")// int => SQL type from java.sql.Types
+			.append("UCASE(DATA_TYPE) AS TYPE_NAME, ")// String => Data source dependent type name, for a UDT the type name is fully qualified
+			//data is for an int column, so we have to reduce large values to Integer.MAX_VALUE
+			.append("CASE WHEN CHARACTER_MAXIMUM_LENGTH>"+Integer.MAX_VALUE+" THEN "+Integer.MAX_VALUE+" ELSE CASE WHEN CHARACTER_MAXIMUM_LENGTH IS NULL THEN NUMERIC_PRECISION ELSE CHARACTER_MAXIMUM_LENGTH END END AS COLUMN_SIZE, ")// int => column size.
+			.append("65535 AS BUFFER_LENGTH, ")// is not used.
+			.append("IF(NUMERIC_SCALE IS NULL, 0, NUMERIC_SCALE) AS DECIMAL_DIGITS, ")// int => the number of fractional digits. Null is returned for data types where DECIMAL_DIGITS is not applicable.
+			.append("10 AS NUM_PREC_RADIX, ")// int => Radix (typically either 10 or 2)
+			.append("CASE WHEN IS_NULLABLE='YES' THEN '"+DatabaseMetaData.attributeNullable+"' WHEN IS_NULLABLE='NO' THEN '"+DatabaseMetaData.attributeNoNulls+"' ELSE '"+DatabaseMetaData.attributeNullableUnknown+"' END AS NULLABLE, ")// int => is NULL allowed.
 			//columnNoNulls - might not allow NULL values
 			//columnNullable - definitely allows NULL values
 			//columnNullableUnknown - nullability unknown
-			.append("null as remarks, ")// String => comment describing column (may be null)
-			.append("column_default as column_def, ")// String => default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be null)
-			.append("0 as sql_data_type, ")// int => unused
-			.append("0 as sql_datetime_sub, ")// int => unused
-			.append("case when character_octet_length>"+Integer.MAX_VALUE+" then "+Integer.MAX_VALUE+" when character_octet_length is NULL then 0 else character_octet_length end as char_octet_length, ")// int => for char types the maximum number of bytes in the column
-			.append("ordinal_position, ")// int => index of column in table (starting at 1)
-			.append("is_nullable, ")// String => ISO rules are used to determine the nullability for a column.
+			.append("COLUMN_COMMENT AS REMARKS, ")// String => comment describing column (may be null)
+			.append("IF((IS_NULLABLE='NO' AND COLUMN_DEFAULT IS NULL), '', COLUMN_DEFAULT) AS COLUMN_DEF, ")// String => default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be null)
+			.append("0 AS SQL_DATA_TYPE, ")// int => unused
+			.append("0 AS SQL_DATETIME_SUB, ")// int => unused
+			//data is for an int column, so we have to reduce large values to Integer.MAX_VALUE
+			.append("CASE WHEN CHARACTER_OCTET_LENGTH>"+Integer.MAX_VALUE+" THEN "+Integer.MAX_VALUE+" WHEN CHARACTER_OCTET_LENGTH IS NULL THEN 0 ELSE CHARACTER_OCTET_LENGTH END AS CHAR_OCTET_LENGTH, ")// int => for char types the maximum number of bytes in the column
+			.append("ORDINAL_POSITION, ")// int => index of column in table (starting at 1)
+			.append("IS_NULLABLE, ")// String => ISO rules are used to determine the nullability for a column.
 			//YES --- if the parameter can include NULLs
 			//NO --- if the parameter cannot include NULLs
 			//empty string --- if the nullability for the parameter is unknown
-			.append("NULL as scope_catalog, ")// String => catalog of table that is the scope of a reference attribute (null if DATA_TYPE isn't REF)
-			.append("NULL as scope_schema, ")// String => schema of table that is the scope of a reference attribute (null if the DATA_TYPE isn't REF)
-			.append("NULL as scope_table, ")// String => table name that this the scope of a reference attribure (null if the DATA_TYPE isn't REF)
-			.append("NULL as source_data_type, ")// short => source type of a distinct type or user-generated Ref type, SQL type from java.sql.Types (null if DATA_TYPE isn't DISTINCT or user-generated REF)
-
-			.append("case when column_default like 'nextval(%\\:\\:regclass)' then 'YES' else 'NO' end as is_autoincrement ")// String => Indicates whether this column is auto incremented
+			.append("NULL AS SCOPE_CATALOG, ")// String => catalog of table that is the scope of a reference attribute (null if DATA_TYPE isn't REF)
+			.append("NULL AS SCOPE_SCHEMA, ")// String => schema of table that is the scope of a reference attribute (null if the DATA_TYPE isn't REF)
+			.append("NULL AS SCOPE_TABLE, ")// String => table name that this the scope of a reference attribure (null if the DATA_TYPE isn't REF)
+			.append("NULL AS SOURCE_DATA_TYPE, ")// short => source type of a distinct type or user-generated Ref type, SQL type from java.sql.Types (null if DATA_TYPE isn't DISTINCT or user-generated REF)
+			.append("IF(EXTRA LIKE '%auto_increment%', 'YES', 'NO') AS IS_AUTOINCREMENT ")// String => Indicates whether this column is auto incremented
 			//YES --- if the column is auto incremented
 			//NO --- if the column is not auto incremented
 			//empty string --- if it cannot be determined whether the column is auto incremented parameter is unknown
@@ -489,20 +474,23 @@ public class PgSQLDBMDFromInfoSchema {
 			//For datetime datatypes, this is the length in characters of the String representation (assuming the maximum allowed precision of the fractional seconds component).
 			//For binary data, this is the length in bytes.
 			//For the ROWID datatype, this is the length in bytes. Null is returned for data types where the column size is not applicable.
-			.append("from information_schema.columns ");
+			.append("FROM INFORMATION_SCHEMA.COLUMNS ");
 
 
-		procSql.append("where table_name like '").append(tableNamePattern).append("' ");
-		procSql.append("and column_name like '").append(columnNamePattern).append("' ");
+		ConditionKeyWord condition = new ConditionKeyWord();
 
-		if(catalog!=null){
-			procSql.append("and table_catalog = '").append(catalog).append("' ");
-		}
-		if(schemaPattern!=null){
-			procSql.append("and table_schema like '").append(schemaPattern).append("' ");
+		if("".equals(catalog)){
+			procSql.append(condition.getKeyWord() + "(TABLE_SCHEMA IS NULL OR TABLE_SCHEMA = '') ");
+		}else if(catalog!=null){
+			procSql.append(condition.getKeyWord() + "TABLE_SCHEMA = '").append(catalog).append("' ");
 		}
 
-		procSql.append("order by table_catalog, table_schema, table_name, ordinal_position;");
+		procSql.append(condition.getKeyWord() + "TABLE_NAME LIKE '").append(tableNamePattern).append("' ");
+		procSql.append(condition.getKeyWord() + "COLUMN_NAME LIKE '").append(columnNamePattern).append("' ");
+
+
+
+		procSql.append("ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION;");
 
 
 		WCStatement procStmnt = myConnection.createInternalStatement();
@@ -510,13 +498,13 @@ public class PgSQLDBMDFromInfoSchema {
 			res = procStmnt.getResultSet();
 			for (int i = 0; i < res.myRows.length(); i++) {
 				/* work some magic on the resultset */
-				ObjectArray resTmp = (ObjectArray) res.myRows.getObject(i);
-				String dtype = resTmp.getString("data_type");
-				resTmp.setData("data_type", myConnection.nativeNameToJdbcType(dtype));
+				DataHandler resTmp = (DataHandler) res.myRows.getObject(i);
+				String dtype = resTmp.getString("DATA_TYPE");
+				resTmp.setData("DATA_TYPE", MySQLTypes.mysqlNameToJdbcType(dtype));
 
-				dtype = resTmp.getString("column_size");
+				dtype = resTmp.getString("COLUMN_SIZE");
 				if(dtype==null || dtype.isEmpty())
-					resTmp.setData("column_size", 0);
+					resTmp.setData("COLUMN_SIZE", 0);
 
 				res.myRows.setData(i, resTmp);
 			}
@@ -628,8 +616,8 @@ public class PgSQLDBMDFromInfoSchema {
      * @see java.sql.Connection
      */
 	public int getDefaultTransactionIsolation() throws SQLException {
-		// PostgreSQL default level
-		return WCConnection.TRANSACTION_READ_COMMITTED;
+		// MySQL default level
+		return WCConnection.TRANSACTION_REPEATABLE_READ;
 	}
 
 	/**
@@ -683,13 +671,14 @@ public class PgSQLDBMDFromInfoSchema {
 	 */
 	public ResultSet getExportedKeys(String catalog, String schema, String table)
 	throws SQLException {
-		ResultSet res;
+		WCResultSet res;
+
 
 		StringBuilder sqlBuilder = new StringBuilder("SELECT ")
-			.append("A.CONSTRAINT_SCHEMA AS PKTABLE_CAT, ")
-			.append("NULL AS PKTABLE_SCHEM, ")
-			.append("A.TABLE_NAME AS PKTABLE_NAME, ")
-			.append("A.COLUMN_NAME AS PKCOLUMN_NAME, ")
+			.append("A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT, ")
+			.append("'' AS PKTABLE_SCHEM, ")
+			.append("A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, ")
+			.append("A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, ")
 			.append("A.TABLE_SCHEMA AS FKTABLE_CAT, ")
 			.append("NULL AS FKTABLE_SCHEM, ")
 			.append("A.TABLE_NAME AS FKTABLE_NAME, ")
@@ -700,37 +689,37 @@ public class PgSQLDBMDFromInfoSchema {
 			.append("A.CONSTRAINT_NAME AS FK_NAME, ")
 			.append("(SELECT CONSTRAINT_NAME ")
 			.append(" FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS ")
-			.append(" WHERE TABLE_SCHEMA = CONSTRAINT_SCHEMA ")
-//			.append(" AND TABLE_NAME = REFERENCED_TABLE_NAME ")
+			.append(" WHERE TABLE_SCHEMA = REFERENCED_TABLE_SCHEMA ")
+			.append(" AND TABLE_NAME = A.REFERENCED_TABLE_NAME ")
 			.append(" AND CONSTRAINT_TYPE IN('UNIQUE','PRIMARY KEY') LIMIT 1) ")
 			.append("AS PK_NAME, ")
 			.append(DatabaseMetaData.importedKeyNotDeferrable).append(" AS DEFERRABILITY ")
 
-			.append("FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE A ")
-			.append("JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS B ")
-			.append("USING(TABLE_SCHEMA, TABLE_NAME, CONSTRAINT_NAME) ")
+			.append("FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS B ")
+			.append("LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE A ")
+			.append("ON(B.TABLE_SCHEMA=A.TABLE_SCHEMA AND B.TABLE_NAME=A.TABLE_NAME AND B.CONSTRAINT_NAME=A.CONSTRAINT_NAME) ")
 
 			.append(generateOptionalRefContraintsJoin())
 
 			.append("WHERE B.CONSTRAINT_TYPE = 'FOREIGN KEY' ")
-			.append("AND A.TABLE_NAME LIKE '").append(table).append("' ");
+			.append("AND A.REFERENCED_TABLE_NAME = '").append(table).append("' ");
 
-		if(catalog!=null){
-			sqlBuilder.append("AND A.CONSTRAINT_CATALOG LIKE '").append(catalog).append("' ");
-		}
-		if(schema!=null){
-			sqlBuilder.append("AND A.CONSTRAINT_SCHEMA LIKE '").append(schema).append("' ");
+		if("".equals(catalog)){
+			sqlBuilder.append("	AND (A.REFERENCED_TABLE_SCHEMA IS NULL OR A.REFERENCED_TABLE_SCHEMA = '') ");
+		}else if(catalog!=null){
+			sqlBuilder.append("AND A.REFERENCED_TABLE_SCHEMA = '").append(catalog).append("' ");
 		}
 
 		sqlBuilder.append("ORDER BY A.TABLE_SCHEMA, A.TABLE_NAME, A.ORDINAL_POSITION;");
 
 
-		Statement sqlStmnt = myConnection.createStatement();
+		WCStatement sqlStmnt = myConnection.createInternalStatement();
 		if(sqlStmnt.execute(sqlBuilder.toString())){
 			res = sqlStmnt.getResultSet();
 		}else{
 			res = new WCResultSet(myConnection);
 		}
+		res.addMetaData(WCStaticMetaData.getImportedExportedKeys());
 
 		return res;
 	}
@@ -810,8 +799,9 @@ public class PgSQLDBMDFromInfoSchema {
 	public ResultSet getFunctionColumns(String catalog, String schemaPattern,
 			String functionNamePattern, String columnNamePattern)
 	throws SQLException {
+
 		// TODO implement me!
-		throw new NotImplemented();
+		throw new NotImplemented("getFunctionColumns(...)");
 	}
 
 	/**
@@ -863,33 +853,34 @@ public class PgSQLDBMDFromInfoSchema {
      * @since 1.6
      */
 	public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-		ResultSet res;
+		WCResultSet res;
+
 		//
 		// FIXME: FUNCTION_TYPE should return a real result.
 		//
 		StringBuilder sqlBuilder = new StringBuilder("SELECT ")
-			.append("ROUTINE_CATALOG AS FUNCTION_CAT, ")
-			.append("ROUTINE_SCHEMA AS FUNCTION_SCHEM, ")
+			.append("ROUTINE_SCHEMA AS FUNCTION_CAT, ")
+			.append("'' AS FUNCTION_SCHEM, ")
 			.append("ROUTINE_NAME AS FUNCTION_NAME, ")
 			.append("ROUTINE_COMMENT AS REMARKS, ")
 			.append(DatabaseMetaData.functionResultUnknown).append(" AS FUNCTION_TYPE, ")
 			.append("SPECIFIC_NAME ")
 			.append("FROM INFORMATION_SCHEMA.ROUTINES ")
 			.append("WHERE ROUTINE_TYPE = 'FUNCTION' ");
-		if(catalog!=null){
-			sqlBuilder.append("	AND ROUTINE_CATALOG = '").append(catalog).append("' ");
+
+		if("".equals(catalog)){
+			sqlBuilder.append("	AND (ROUTINE_SCHEMA IS NULL OR ROUTINE_SCHEMA = '') ");
+		}else if(catalog!=null){
+			sqlBuilder.append("	AND ROUTINE_SCHEMA = '").append(catalog).append("' ");
 		}
 
-		if(schemaPattern!=null){
-			sqlBuilder.append("	AND ROUTINE_SCHEMA LIKE '").append(schemaPattern).append("' ");
-		}
 		if(functionNamePattern!=null){
 			sqlBuilder.append("	AND ROUTINE_NAME LIKE '").append(functionNamePattern).append("' ");
 		}
 
-		sqlBuilder.append("ORDER BY ROUTINE_CATALOG, ROUTINE_SCHEMA, ROUTINE_NAME, SPECIFIC_NAME;");
+		sqlBuilder.append("ORDER BY ROUTINE_SCHEMA, ROUTINE_NAME, SPECIFIC_NAME;");
 
-		Statement sqlStmnt = myConnection.createStatement();
+		WCStatement sqlStmnt = myConnection.createInternalStatement();
 		if(sqlStmnt.execute(sqlBuilder.toString())){
 			res = sqlStmnt.getResultSet();
 		}else{
@@ -897,6 +888,12 @@ public class PgSQLDBMDFromInfoSchema {
 		}
 
 		return res;
+	}
+
+	public String getIdentifierQuoteString() throws SQLException {
+		return "`";
+		//return "\"";
+		//return " ";
 	}
 
 	/**
@@ -950,54 +947,54 @@ public class PgSQLDBMDFromInfoSchema {
 	 */
 	public ResultSet getImportedKeys(String catalog, String schema, String table)
 	throws SQLException {
-		ResultSet res;
+		WCResultSet res;
 
-		StringBuilder sqlBuilder = new StringBuilder("select ")
-			.append("a.constraint_schema as pktable_cat, ")
-			.append("a.table_schema as pktable_schem, ")
-			.append("a.table_name as pktable_name, ")
-			.append("a.column_name as pkcolumn_name, ")
-			.append("a.table_schema as fktable_cat, ")
-			.append("NULL as fktable_schem, ")
-			.append("a.table_name as fktable_name, ")
-			.append("a.column_name as fkcolumn_name, ")
-			.append("a.ordinal_position as key_seq, ")
-			.append(generateUpdateRuleClause()).append(" as update_rule, ")
-			.append(generateDeleteRuleClause()).append(" as delete_rule, ")
-			.append("a.constraint_name as fk_name, ")
-			.append("(select constraint_name ")
-			.append(" from information_schema.table_constraints ")
-			.append(" where table_schema = constraint_schema ")
-//			.append(" and a.referenced_table_name = table_name ")
-			.append(" and constraint_type in('UNIQUE','PRIMARY KEY') limit 1) ")
-			.append("as pk_name,")
+
+		StringBuilder sqlBuilder = new StringBuilder("SELECT ")
+			.append("A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT, ")
+			.append("'' AS PKTABLE_SCHEM, ")
+			.append("A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, ")
+			.append("A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, ")
+			.append("A.TABLE_SCHEMA AS FKTABLE_CAT, ")
+			.append("NULL AS FKTABLE_SCHEM, ")
+			.append("A.TABLE_NAME AS FKTABLE_NAME, ")
+			.append("A.COLUMN_NAME AS FKCOLUMN_NAME, ")
+			.append("A.ORDINAL_POSITION AS KEY_SEQ, ")
+			.append(generateUpdateRuleClause()).append(" AS UPDATE_RULE, ")
+			.append(generateDeleteRuleClause()).append(" AS DELETE_RULE, ")
+			.append("A.CONSTRAINT_NAME AS FK_NAME, ")
+			.append("(SELECT CONSTRAINT_NAME ")
+			.append(" FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS ")
+			.append(" WHERE TABLE_SCHEMA = REFERENCED_TABLE_SCHEMA ")
+			.append(" AND TABLE_NAME = A.REFERENCED_TABLE_NAME ")
+			.append(" AND CONSTRAINT_TYPE IN('UNIQUE','PRIMARY KEY') LIMIT 1) ")
+			.append("AS PK_NAME,")
 			.append(DatabaseMetaData.importedKeyNotDeferrable).append(" AS DEFERRABILITY ")
 
-			.append("from information_schema.key_column_usage a ")
-			.append("left join information_schema.table_constraints b ")
-			.append("using(constraint_name, table_name) ")
+			.append("FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS B ")
+			.append("LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE A ")
+			.append("USING(CONSTRAINT_NAME, TABLE_NAME) ")
 			.append(generateOptionalRefContraintsJoin())
 
-			.append("where b.constraint_type like 'FOREIGN KEY' ")
-			.append("and a.table_name = '").append(table).append("' ")
-			.append("and a.table_schema is not null ");
+			.append("WHERE B.CONSTRAINT_TYPE LIKE 'FOREIGN KEY' ")
+			.append("AND B.TABLE_NAME = '").append(table).append("' ");
 
-		if(catalog!=null){
-			sqlBuilder.append("and a.table_schema = '").append(catalog).append("' ");
+		if("".equals(catalog)){
+			sqlBuilder.append("	AND (A.TABLE_SCHEMA IS NULL OR A.TABLE_SCHEMA = '') ");
+		}else if(catalog!=null){
+			sqlBuilder.append("AND A.TABLE_SCHEMA = '").append(schema).append("' ");
 		}
-//		if(schema!=null){
-//			sqlBuilder.append("and a.table_schema = '").append(schema).append("' ");
-//		}
 
-		sqlBuilder.append("order by a.table_schema, a.table_name, a.ordinal_position;");
+		sqlBuilder.append("ORDER BY A.REFERENCED_TABLE_SCHEMA, A.REFERENCED_TABLE_NAME, A.ORDINAL_POSITION;");
 
 
-		Statement sqlStmnt = myConnection.createStatement();
+		WCStatement sqlStmnt = myConnection.createInternalStatement();
 		if(sqlStmnt.execute(sqlBuilder.toString())){
 			res = sqlStmnt.getResultSet();
 		}else{
 			res = new WCResultSet(myConnection);
 		}
+		res.addMetaData(WCStaticMetaData.getImportedExportedKeys());
 
 		return res;
 	}
@@ -1043,48 +1040,37 @@ public class PgSQLDBMDFromInfoSchema {
 	throws SQLException {
 		WCResultSet res;
 
-		StringBuilder sqlBuilder = new StringBuilder("SELECT ")
 
+		StringBuilder sqlBuilder = new StringBuilder(300);
+		sqlBuilder.append("SELECT ")
+			.append("TABLE_SCHEMA AS TABLE_CAT, ")
+			.append("NULL AS TABLE_SCHEM, ")
+			.append("TABLE_NAME, ")
+			.append("IF(NON_UNIQUE = '0', 'false', 'true') AS NON_UNIQUE, ")
+			.append("NULL AS INDEX_QUALIFIER, ")
+			.append("INDEX_NAME, ")
+			.append(DatabaseMetaData.tableIndexOther).append(" AS TYPE, ")
+			.append("SEQ_IN_INDEX AS ORDINAL_POSITION, ")
+			.append("COLUMN_NAME, ")
+			.append("COLLATION AS ASC_OR_DESC, ")
+			.append("CARDINALITY, ")
+			.append("0 AS PAGES, ")
+			.append("NULL AS FILTER_CONDITION ")
 
-			.append("current_database() as table_cat, ")
-			.append("pgsui.schemaname as table_schem, ")
-			.append("pgsui.relname as table_name, ")
-			.append("not pgi.indisunique as non_unique, ")
-			.append("pgsui.schemaname as index_qualifier, ")
-			.append("pgsui.indexrelname as index_name, ")
-			.append(DatabaseMetaData.tableIndexOther).append(" as type, ")
-			.append("pga.attnum as ordinal_position, ")
-			.append("pga.attname as column_name, ")
-			.append("'A' as asc_or_desc, ")
-			.append("pgc.relpages as cardinality, ")
-			.append("pgc.relpages as pages, ")
-			.append("NULL as filter_condition ")
+			.append("FROM INFORMATION_SCHEMA.STATISTICS ")
+			.append("WHERE TABLE_NAME = '").append(table).append("' ");
 
-			.append("from pg_stat_user_indexes pgsui, ")
-			.append("pg_index pgi, ")
-			.append("pg_class pgc, ")
-			.append("pg_attribute pga ")
-
-			.append("where pgsui.relname LIKE '").append(table).append("' ")
-			.append("and pgsui.indexrelid = pgi.indexrelid ")
-			.append("and pgsui.indexrelid = pgc.oid ")
-			.append("and pgsui.indexrelid = pga.attrelid ")
-//			.append("and pgi.indisprimary = 'f' ")
-			;
-
-		if (schema!=null) {
-			sqlBuilder.append("and schemaname like '").append(schema).append("' ");
-		}
-
-		if (catalog!=null) {
-			sqlBuilder.append("and current_database() = '").append(catalog).append("' ");
+		if("".equals(catalog)){
+			sqlBuilder.append("	AND (TABLE_SCHEMA IS NULL OR TABLE_SCHEMA = '') ");
+		}else if (catalog!=null) {
+			sqlBuilder.append("AND TABLE_SCHEMA = '").append(catalog).append("' ");
 		}
 
 		if (unique) {
-			sqlBuilder.append("and pgi.indisunique = 'f' ");
+			sqlBuilder.append("AND NON_UNIQUE=0 ");
 		}
 
-		sqlBuilder.append("order by not pgi.indisunique, pgsui.indexrelname, pga.attnum;");
+		sqlBuilder.append("ORDER BY NON_UNIQUE, INDEX_NAME, SEQ_IN_INDEX");
 
 		WCStatement sqlStmnt = myConnection.createInternalStatement();
 		if(sqlStmnt.execute(sqlBuilder.toString())){
@@ -1120,31 +1106,27 @@ public class PgSQLDBMDFromInfoSchema {
 	public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
 		WCResultSet res;
 
-		StringBuilder sqlBuilder = new StringBuilder("select ")
 
-		.append("tc.constraint_catalog as table_cat, ")// String => table catalog (may be null)
-		.append("tc.constraint_schema as table_schem, ")// String => table schema (may be null)
-		.append("tc.table_name, ")// String => table name
-		.append("kcu.column_name, ")// String => column name
-		.append("kcu.ordinal_position as key_seq, ")// short => sequence number within primary key( a value of 1 represents the first column of the primary key, a value of 2 would represent the second column within the primary key).
-		.append("tc.constraint_type as pk_name ")// String => primary key name (may be null)
+		StringBuilder sqlBuilder = new StringBuilder(250);
+		sqlBuilder.append("SELECT ")
+		.append("CONSTRAINT_SCHEMA AS TABLE_CAT, ")// String => table catalog (may be null)
+		.append("NULL AS TABLE_SCHEM, ")// String => table schema (may be null)
+		.append("TABLE_NAME, ")// String => table name
+		.append("COLUMN_NAME, ")// String => column name
+		.append("ORDINAL_POSITION AS KEY_SEQ, ")// short => sequence number within primary key( a value of 1 represents the first column of the primary key, a value of 2 would represent the second column within the primary key).
+		.append("CONSTRAINT_NAME AS PK_NAME ")// String => primary key name (may be null)
 
-		.append("from information_schema.table_constraints tc ")
-		.append(" left join information_schema.key_column_usage kcu ")
-		.append(" using(constraint_name) ")
+		.append("FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE ")
+		.append("WHERE TABLE_NAME = '").append(table).append("' ")
+		.append("AND CONSTRAINT_NAME = 'PRIMARY' ");
 
-		.append(" where tc.table_name = '").append(table).append("' ")
-		.append(" and tc.constraint_type like 'PRIMARY KEY' ");
-
-		if(catalog!=null){
-			sqlBuilder.append("	and tc.constraint_catalog = '").append(catalog).append("' ");
+		if("".equals(catalog)){
+			sqlBuilder.append("	AND (CONSTRAINT_SCHEMA IS NULL OR CONSTRAINT_SCHEMA = '') ");
+		}else if(catalog!=null){
+			sqlBuilder.append("	AND CONSTRAINT_SCHEMA = '").append(catalog).append("' ");
 		}
 
-		if(schema!=null){
-			sqlBuilder.append("	and tc.constraint_schema = '").append(schema).append("' ");
-		}
-
-		sqlBuilder.append("order by kcu.column_name;");
+		sqlBuilder.append("ORDER BY COLUMN_NAME;");
 
 		WCStatement sqlStmnt = myConnection.createInternalStatement();
 		if(sqlStmnt.execute(sqlBuilder.toString())){
@@ -1252,6 +1234,7 @@ public class PgSQLDBMDFromInfoSchema {
 	public ResultSet getProcedureColumns(String catalog, String schemaPattern,
 			String procedureNamePattern, String columnNamePattern)
 	throws SQLException {
+
 		// TODO implement me!
 		throw new NotImplemented("getProcedureColumns(...)");
 	}
@@ -1263,7 +1246,7 @@ public class PgSQLDBMDFromInfoSchema {
      * @exception SQLException if a database access error occurs
      */
 	public String getProcedureTerm() throws SQLException {
-		return "function";// PgSql
+		return "PROCEDURE";//MySQL
 	}
 
 	/**
@@ -1314,29 +1297,35 @@ public class PgSQLDBMDFromInfoSchema {
      */
 	public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
 		WCResultSet res;
-		//
-		// FIXME: PROCEDURE_TYPE should return a real result.
-		//
-		StringBuilder procSql = new StringBuilder("select ")
-			.append("routine_schema as procedure_cat, ")
-			.append("NULL as procedure_schem, ")
-			.append("routine_name as procedure_name, ")
-			.append("null as remarks, ")
-			.append(DatabaseMetaData.procedureResultUnknown).append(" as procedure_type, ")
-			.append("specific_name ")
-			.append("from information_schema.routines ")
-			.append("where routine_type = '").append(getProcedureTerm()).append("' ");
-		if(catalog!=null){
-			procSql.append("and routine_catalog = '").append(catalog).append("' ");
-		}
-//		if(schemaPattern!=null){
-//			procSql.append("and routine_schema like '").append(schemaPattern).append("' ");
-//		}
-		if(procedureNamePattern!=null){
-			procSql.append("and routine_name like '").append(procedureNamePattern).append("' ");
+
+		StringBuilder procSql = new StringBuilder(250);
+		procSql.append("SELECT ")
+			.append("ROUTINE_SCHEMA AS PROCEDURE_CAT, ")
+			.append("NULL AS PROCEDURE_SCHEM, ")
+			.append("ROUTINE_NAME AS PROCEDURE_NAME, ")
+
+			.append("NULL AS reserved1, ")//required by jdbc specs
+			.append("NULL AS reserved2, ")//required by jdbc specs
+			.append("NULL AS reserved3, ")//required by jdbc specs
+
+			.append("ROUTINE_COMMENT AS REMARKS, ")
+			.append(DatabaseMetaData.procedureResultUnknown).append(" AS PROCEDURE_TYPE, ")//best left unknown for now
+			.append("SPECIFIC_NAME ")
+			.append("FROM INFORMATION_SCHEMA.ROUTINES ")
+			.append("WHERE ROUTINE_TYPE = '").append(getProcedureTerm()).append("' ");
+
+
+		if("".equals(catalog)){
+			procSql.append("AND ROUTINE_SCHEMA IS NULL OR ROUTINE_SCHEMA = '' ");
+		}else if(catalog!=null){
+			procSql.append("AND ROUTINE_SCHEMA LIKE '").append(catalog).append("' ");
 		}
 
-		procSql.append("order by routine_catalog, routine_schema, routine_name, specific_name;");
+		if(procedureNamePattern!=null){
+			procSql.append("AND ROUTINE_NAME LIKE '").append(procedureNamePattern).append("' ");
+		}
+
+		procSql.append("ORDER BY ROUTINE_SCHEMA, ROUTINE_NAME, SPECIFIC_NAME;");
 
 		WCStatement procStmnt = myConnection.createInternalStatement();
 		if(procStmnt.execute(procSql.toString())){
@@ -1380,6 +1369,12 @@ public class PgSQLDBMDFromInfoSchema {
      *  <LI><B>TABLE_CATALOG</B> String => catalog name (may be <code>null</code>)
      *  </OL>
      *
+     *  <b>NOTE:</b> MySQL doesn't use schemas. This can be a very confusing subject
+     *  as theres places in the information_schems table for schemas and they contain the database names.
+     *  However in database terms the schema names are actually the catalog names
+     *  therefore we return an empty resulset from here instead of retrieving anything.<br />
+     *  To explain this further see {@link #getCatalogs}
+     *
      *
      * @param catalog a catalog name; must match the catalog name as it is stored
      * in the database;"" retrieves those without a catalog; null means catalog
@@ -1394,34 +1389,34 @@ public class PgSQLDBMDFromInfoSchema {
      * @since 1.6
      */
 	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-		WCResultSet res;
-		StringBuilder sql = new StringBuilder("select ")
-		.append("schema_name as table_schem, ")// String => schema name
-		.append("catalog_name as table_catalog ")// String => catalog name (may be null)
-		.append("from information_schema.schemata ");
 
-		SQLCondition condition = new SQLCondition();
+//		WCResultSet res;
+//
+//		StringBuilder sql = new StringBuilder("SELECT ")
+//		.append("null AS TABLE_SCHEM, ")// String => schema name
+//		.append("SCHEMA_NAME AS TABLE_CATALOG ")// String => catalog name (may be null)
+//		.append("FROM INFORMATION_SCHEMA.SCHEMATA ");
+//
+//		if("".equals(catalog)){
+//			sql.append("WHERE (TABLE_SCHEMA = 'NULL' OR TABLE_SCHEMA = '') ");
+//		}else if(catalog!=null){
+//			sql.append("WHERE SCHEMA_NAME LIKE '").append(catalog).append("' ");
+//		}
+//
+//		sql.append("ORDER BY SCHEMA_NAME;");
+//
+//
+//		WCStatement sqlStmnt = myConnection.createInternalStatement();
+//		if(sqlStmnt.execute(sql.toString())){
+//			res = sqlStmnt.getResultSet();
+//		}else{
+//			res = new WCResultSet(myConnection);
+//		}
+//		res.addMetaData(WCStaticMetaData.getSchemas());
 
-		if(catalog!=null){
-			sql.append(condition.getKeyWord() + "catalog_name = '").append(catalog).append("' ");
-		}
-		if(schemaPattern!=null){
-			sql.append(condition.getKeyWord() + "schema_name like '").append(schemaPattern).append("' ");
-		}
-
-		sql.append("order by catalog_name, schema_name;");
-
-		WCStatement sqlStmnt = myConnection.createInternalStatement();
-		if(sqlStmnt.execute(sql.toString())){
-			res = sqlStmnt.getResultSet();
-		}else{
-			res = new WCResultSet(myConnection);
-		}
-		res.addMetaData(WCStaticMetaData.getSchemas());
+		WCResultSet res = new WCResultSet(myConnection, WCStaticMetaData.getSchemas());
 
 		return res;
-
-//		return new WCResultSet(myConnection, WCStaticMetaData.getSchemas());
 	}
 
 	/**
@@ -1470,35 +1465,46 @@ public class PgSQLDBMDFromInfoSchema {
      * @exception SQLException if a database access error occurs
      * @see DatabaseMetaData#getSearchStringEscape
      */
-	public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
+	public ResultSet getTables(String catalog, String schemaPattern,
+			String tableNamePattern, String[] types)
 	throws SQLException {
 		WCResultSet res;
 
-		StringBuilder sql = new StringBuilder("select ")
-		.append("table_catalog as table_cat, ")// String => table catalog (may be null)
-		.append("table_schema as table_schem, ")//  String => table schema (may be null)
-		.append("table_name, ")//  String => table name
-		.append("case when table_type = 'BASE TABLE' then 'TABLE' else table_type end as table_type, ")//  String => table type. Typical types are "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
-		.append("NULL as remarks, ")//  String => explanatory comment on the table
-		.append("user_defined_type_catalog as type_cat, ")//  String => the types catalog (may be null)
-		.append("user_defined_type_schema as type_schem, ")//  String => the types schema (may be null)
-		.append("user_defined_type_name as type_name, ")//  String => type name (may be null)
-		.append("self_referencing_column_name as self_referencing_col_name, ")//  String => name of the designated "identifier" column of a typed table (may be null)
-		.append("reference_generation as ref_generation ")//  String => specifies how values in SELF_REFERENCING_COL_NAME are created. Values are "SYSTEM", "USER", "DERIVED". (may be null)
+		//TODO: guard for null tableNamePattern
+		if("*".equals(schemaPattern)){
+			schemaPattern = "%";
+		}
+		if("*".equals(tableNamePattern)){
+			tableNamePattern = "%";
+		}
 
-		.append("from information_schema.tables ");
 
-		SQLCondition condition = new SQLCondition();
+		StringBuilder sql = new StringBuilder(750);
+		sql.append("SELECT ")
+		.append("TABLE_SCHEMA AS TABLE_CAT, ")// String => table catalog (may be null)
+		.append("NULL AS TABLE_SCHEM, ")//  String => table schema (may be null)
+		.append("TABLE_NAME, ")//  String => table name
+		.append("CASE WHEN TABLE_TYPE='BASE TABLE' THEN 'TABLE' WHEN TABLE_TYPE='BASE VIEW' THEN 'VIEW' WHEN TABLE_TYPE='TEMPORARY TABLE' THEN 'LOCAL TEMPORARY' ELSE TABLE_TYPE END AS TABLE_TYPE, ")//  String => table type. Typical types are "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
+		.append("TABLE_COMMENT AS REMARKS, ")//  String => explanatory comment on the table
+		.append("NULL AS TYPE_CAT, ")//  String => the types catalog (may be null)
+		.append("NULL AS TYPE_SCHEM, ")//  String => the types schema (may be null)
+		.append("NULL AS TYPE_NAME, ")//  String => type name (may be null)
+		.append("NULL AS SELF_REFERENCING_COL_NAME, ")//  String => name of the designated "identifier" column of a typed table (may be null)
+		.append("NULL AS REF_GENERATION ")//  String => specifies how values in SELF_REFERENCING_COL_NAME are created. Values are "SYSTEM", "USER", "DERIVED". (may be null)
+
+		.append("FROM INFORMATION_SCHEMA.TABLES ");
+
+		ConditionKeyWord condition = new ConditionKeyWord();
+
+		if("".equals(catalog)){
+			sql.append(condition.getKeyWord() + "(TABLE_SCHEMA IS NULL OR TABLE_SCHEMA = '') ");
+		}else if(catalog!=null){
+			sql.append(condition.getKeyWord() + "TABLE_SCHEMA LIKE '").append(catalog).append("' ");
+		}
+
 
 		if(tableNamePattern!=null){
-			sql.append(condition.getKeyWord() + "table_name like '").append(tableNamePattern).append("' ");
-		}
-
-		if(catalog!=null){
-			sql.append(condition.getKeyWord() + "table_catalog = '").append(catalog).append("' ");
-		}
-		if(schemaPattern!=null){
-			sql.append(condition.getKeyWord() + "table_schema like '").append(schemaPattern).append("' ");
+			sql.append(condition.getKeyWord() + "TABLE_NAME LIKE '").append(tableNamePattern).append("' ");
 		}
 
 		if(types!=null && types.length > 0){
@@ -1507,11 +1513,13 @@ public class PgSQLDBMDFromInfoSchema {
 				if(i > 0){
 					sql.append(" OR ");
 				}
-				sql.append("table_type like '").append(getSQLType(types[i])).append("' ");
+				sql.append("TABLE_TYPE LIKE '").append(types[i]).append("' OR ");
+				sql.append("TABLE_TYPE LIKE '").append(getSQLType(types[i])).append("' ");
 			}
 			sql.append(") ");
 		}
-		sql.append("order by table_type, table_catalog, table_schema, table_name;");
+		sql.append("ORDER BY TABLE_TYPE, TABLE_SCHEMA, TABLE_NAME;");
+
 
 
 		WCStatement sqlStmnt = myConnection.createInternalStatement();
@@ -1559,26 +1567,31 @@ public class PgSQLDBMDFromInfoSchema {
 	throws SQLException {
 		WCResultSet res;
 
-		StringBuilder sqlBuilder = new StringBuilder("select ")
-		.append("table_catalog as table_cat, ")
-		.append("table_schema as table_schem, ")
-		.append("table_name, ")
-		.append("grantor, ")
-		.append("grantee, ")
-		.append("privilege_type as privilege, ")
-		.append("is_grantable ")
-		.append("from information_schema.table_privileges ");
 
-		sqlBuilder.append("where table_name like '").append(tableNamePattern).append("' ");
+		StringBuilder sqlBuilder = new StringBuilder(200);
+		sqlBuilder.append("SELECT ")
+		.append("TABLE_SCHEMA AS TABLE_CAT, ")// String => table catalog (may be null)
+		.append("'' AS TABLE_SCHEM, ")// String => table schema (may be null)
+		.append("TABLE_NAME, ")// String => table name
+		.append("NULL AS GRANTOR, ")// String => grantor of access (may be null)
+		.append("GRANTEE, ")// String => grantee of access
+		.append("PRIVILEGE_TYPE AS PRIVILEGE, ")// String => name of access (SELECT, INSERT, UPDATE, REFRENCES, ...)
+		.append("IS_GRANTABLE ")// String => "YES" if grantee is permitted to grant to others; "NO" if not; null if unknown
+		.append("FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ");
 
-		if(catalog!=null){
-			sqlBuilder.append("and table_schema = '").append(catalog).append("' ");
+
+		ConditionKeyWord condition = new ConditionKeyWord();
+
+		if("".equals(catalog)){
+			sqlBuilder.append(condition.getKeyWord() + "(TABLE_SCHEMA IS NULL OR TABLE_SCHEMA = '') ");
+		}else if(catalog!=null){
+			sqlBuilder.append(condition.getKeyWord() + "TABLE_SCHEMA = '").append(catalog).append("' ");
 		}
-		if(schemaPattern!=null){
-			sqlBuilder.append("and table_schema like '").append(schemaPattern).append("' ");
-		}
 
-		sqlBuilder.append("order by table_catalog, table_schema, table_name, privilege_type;");
+		sqlBuilder.append(condition.getKeyWord() + "TABLE_NAME LIKE '").append(tableNamePattern).append("' ");
+
+
+		sqlBuilder.append("ORDER BY TABLE_SCHEMA, TABLE_NAME, PRIVILEGE_TYPE;");
 
 		WCStatement sqlStmnt = myConnection.createInternalStatement();
 		if(sqlStmnt.execute(sqlBuilder.toString())){
@@ -1642,8 +1655,8 @@ public class PgSQLDBMDFromInfoSchema {
      */
 	public ResultSet getUDTs(String catalog, String schemaPattern,
 			String typeNamePattern, int[] types) throws SQLException {
-		// TODO implement me!
-		throw new NotImplemented("getUDTs(...)");
+
+		return new WCResultSet(myConnection, WCStaticMetaData.getUDTs());
 	}
 
 	/**
@@ -1697,28 +1710,62 @@ public class PgSQLDBMDFromInfoSchema {
 
 	//------------------------------------------------------ private methods
 
+//	/**
+//	 * JDBC types:<br />
+//	 * "TABLE", "VIEW",	"SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".<br />
+//	 * <br />
+//	 * Known MySQL Types:<br />
+//	 * "BASE TABLE", "BASE VIEW" ,"SYSTEM TABLE", "SYSTEM VIEW", "TEMPORARY TABLE", "TEMPORARY", "LOCAL TEMPORARY"
+//	 *
+//	 * @param sqlType MySQL Type
+//	 * @return JDBC Type
+//	 */
+//	private String getJDBCType(String sqlType){
+//		String jdbcType = sqlType;
+//
+//		if("BASE TABLE".equalsIgnoreCase(jdbcType))
+//			jdbcType = "TABLE";
+//		else if("TEMPORARY".equalsIgnoreCase(jdbcType))
+//			jdbcType = "LOCAL TEMPORARY";
+//		else if("BASE VIEW".equalsIgnoreCase(jdbcType))
+//			jdbcType = "VIEW";
+//
+//		return jdbcType;
+//	}
+
 	/**
-	 * @param sqlType JDBC Type name
-	 * @return PgSQL Type name
+	 * JDBC types:<br />
+	 * "TABLE", "VIEW",	"SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".<br />
+	 * <br />
+	 * Known MySQL Types:<br />
+	 * "BASE TABLE", "BASE VIEW" ,"SYSTEM TABLE", "SYSTEM VIEW", "TEMPORARY TABLE", "TEMPORARY", "LOCAL TEMPORARY"
+	 *
+	 * @param sqlType JDBC Type
+	 * @return MySQL Type
 	 */
 	private String getSQLType(String sqlType){
 		String jdbcType = sqlType;
 
 		if("TABLE".equalsIgnoreCase(jdbcType))
 			jdbcType = "BASE TABLE";
+		else if("TEMPORARY".equalsIgnoreCase(jdbcType))
+			jdbcType = "LOCAL TEMPORARY";
+		else if("VIEW".equalsIgnoreCase(jdbcType))
+			jdbcType = "BASE VIEW";
 
 		return jdbcType;
 	}
 
+
 	/* NOTES:
-	 * The following 3 private methods were copied from MySQL-Connector/J
+	 * The following 3 private methods were derived from MySQL-Connector/J
 	 * and modified to suit this Driver.
 	 */
 	private String generateOptionalRefContraintsJoin() {
 		return ((hasReferentialConstraintsView) ? "LEFT JOIN "
 				+ "INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS R "
 				+ " ON (B.TABLE_SCHEMA = R.CONSTRAINT_SCHEMA "
-//				+ "  AND B.TABLE_NAME = R.TABLE_NAME "
+				+ "  AND B.TABLE_NAME = R.TABLE_NAME "
 				+ "  AND B.CONSTRAINT_NAME = R.CONSTRAINT_NAME) " : "");
 	}
 

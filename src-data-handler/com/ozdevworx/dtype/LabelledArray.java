@@ -19,6 +19,7 @@
  */
 package com.ozdevworx.dtype;
 
+import com.ozdevworx.dtype.impl.IlegalNumberTypeException;
 
 /**
  * <b style="color:red;">IMPORTANT NOTE:</b> implementations should be synchronised.<br /><br />
@@ -31,11 +32,10 @@ package com.ozdevworx.dtype;
  * @author Tim Gall (Oz-DevWorX)
  * @version 1.0.0-7
  * @version 1.0.0-8
- * @version 1.0.0-9
  */
-public interface DataHandler {
+public interface LabelledArray {
 
-	static final String VERSION = "1.0.0-9";
+	static final String VERSION = "1.0.0-8";
 	/**
 	 * Adds Elements to this DataHandler Object.<br />
 	 * If the key is null or the equivalent of,
@@ -88,12 +88,88 @@ public interface DataHandler {
 	boolean hasElement(String key, String data);
 
 	/**
+	 *
+	 * @param key The keys name to locate
+	 * @param data The data to find a match for
+	 * @return The data Object at key location (or null if none found)
+	 */
+	Object getObjectByElement(final String key, final String data);
+
+	/**
+	 *
+	 * @param key The keys name to locate
+	 * @param data The data to find a match for
+	 * @return The Objects index at key location (or -1 if none found)
+	 */
+	int getIndexByElement(final String key, final String data);
+
+	/**
+	 * Alias function for getObject(int i)
+	 *
+	 * @param i int - keys index
+	 * @return a data Object based on its key index i
+	 */
+	Object getData(int i);
+
+	/**
+	 * Alias function for getObject(String n)
+	 *
+	 * @param n String - key name
+	 * @return a data Object based on its keys name n
+	 */
+	Object getData(String n);
+
+	/**
 	 * Get a keys index in this set from its name String
 	 *
 	 * @param n String - keys name
 	 * @return The keys index.
 	 */
 	int getIndex(String n);
+
+	/**
+	 * Get all key indexes in this set from a key name String.
+	 *
+	 * @param n String - key name
+	 * @return int[] with the matching key-indexes in this DataHandler matching n (keyName)
+	 */
+	int[] getIndexes(String n);
+
+	/**
+	 * Get the value at index i as a Double or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param i The columns index to seek.
+	 * @return Double value located at column index i.
+	 * @throws IlegalNumberTypeException if value at i is not a Double.
+	 */
+	double getDouble(int i) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at name n as a Double or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param n The columns name to seek.
+	 * @return Double value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not a Double.
+	 */
+	double getDouble(String n) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at index i as an Integer or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param i The columns index to seek.
+	 * @return Integer value located at column index i.
+	 * @throws IlegalNumberTypeException if value at i is not an Integer.
+	 */
+	int getInt(int i) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at name n as an Integer or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param n The columns name to seek.
+	 * @return Integer value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not an Integer.
+	 */
+	int getInt(String n) throws IlegalNumberTypeException;
 
 	/**
 	 * Get the keys name at index i.
@@ -126,6 +202,24 @@ public interface DataHandler {
 	String getString(String n);
 
 	/**
+	 * Get the value at index i as a Float or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param i The columns index to seek.
+	 * @return Float value located at column i.
+	 * @throws IlegalNumberTypeException if value at i is not a Float.
+	 */
+	float getFloat(int i) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at name n as a Float or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param n The columns name to seek.
+	 * @return Float value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not a Float.
+	 */
+	float getFloat(String n) throws IlegalNumberTypeException;
+
+	/**
 	 * Get the Object at column index i.
 	 *
 	 * @param i The columns index to seek.
@@ -140,6 +234,42 @@ public interface DataHandler {
 	 * @return Object located at column name n.
 	 */
 	Object getObject(String n);
+
+	/**
+	 * Get the value at index i as a Long or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param i The columns index to seek.
+	 * @return Long value located at column i.
+	 * @throws IlegalNumberTypeException if value at i is not a Long.
+	 */
+	long getLong(int i) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at name n as a Long or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param n The columns name to seek.
+	 * @return Long value located at column name n.
+	 * @throws IlegalNumberTypeException if value at i is not a Long.
+	 */
+	long getLong(String n) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at index i as a Short or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param i The columns index to seek.
+	 * @return Short value located at column i.
+	 * @throws IlegalNumberTypeException if value at i is not a Short.
+	 */
+	Short getShort(int i) throws IlegalNumberTypeException;
+
+	/**
+	 * Get the value at name n as a Short or throw an error if the data is not valid for this java Type.
+	 *
+	 * @param n The columns name to seek.
+	 * @return Short value located at column name n.
+	 * @throws IlegalNumberTypeException if value at n is not a Short.
+	 */
+	Short getShort(String n) throws IlegalNumberTypeException;
 
 	/**
 	 * Determines if this DataHandler contains Elements.
@@ -185,6 +315,18 @@ public interface DataHandler {
 	void setData(int i, Object d);
 
 	/**
+	 * Update the Element at name key with a new key and new data
+	 * or add a new Element if name key doesnt exist.<br /><br />
+	 * NOTE:<br />
+	 * Use <code>addData(String n, Object d)</code> to add new data or data with duplicate keys to this DataHandler.
+	 *
+	 * @param key The first Element with name matching key.
+	 * @param newKey the new key for the Element.
+	 * @param newObj the Data to update the Element with.
+	 */
+	void setData(String key, String newKey, Object newObj);
+
+	/**
 	 * Update the Element at index with a new key and new data.<br />
 	 * No action is taken if index is greater than this DataHandlers size.
 	 *
@@ -193,4 +335,5 @@ public interface DataHandler {
 	 * @param newObj the Data to update the Element with.
 	 */
 	void setData(int index, String newKey, Object newObj);
+
 }

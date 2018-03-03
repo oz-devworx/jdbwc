@@ -20,7 +20,7 @@
 package com.jdbwc.core;
 
 
-import com.jdbwc.util.SQLField;
+import com.jdbwc.core.util.SQLField;
 
 /**
  * A static metadata producer.

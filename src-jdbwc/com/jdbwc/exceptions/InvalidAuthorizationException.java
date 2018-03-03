@@ -19,13 +19,6 @@
  */
 package com.jdbwc.exceptions;
 
-/**
- * Handles Authorisation Exceptions sent from the JDBWC server.<br />
- * Triggers could be invalid host credentials or invalid database credentials.
- *
- * @author Tim Gall
- * @version 2010-04-17
- */
 public class InvalidAuthorizationException extends ServerSideException {
 
 	/**

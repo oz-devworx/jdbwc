@@ -17,14 +17,15 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.util;
+package com.jdbwc.core.util;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.ozdevworx.dtype.ObjectArray;
+import com.jdbwc.util.Util;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * Utility methods used by the core driver classes
@@ -68,7 +69,7 @@ public final class SQLUtils {
 	 *
 	 * @param newField a new Field to add to the result sieldSet.
 	 */
-	public static SQLField[] rebuildFieldSet(SQLField newField, SQLField[] myFieldSet){
+	protected static SQLField[] rebuildFieldSet(SQLField newField, SQLField[] myFieldSet){
 		SQLField[] rebuiltSet = new SQLField[myFieldSet.length+1];
 
 		System.arraycopy(myFieldSet, 0, rebuiltSet, 0, myFieldSet.length);
@@ -84,7 +85,7 @@ public final class SQLUtils {
 	 * @param myFieldSet
 	 * @return array of SQLField MetaData
 	 */
-	public static SQLField[] rebuildFieldSet(SQLField[] newFields, SQLField[] myFieldSet){
+	protected static SQLField[] rebuildFieldSet(SQLField[] newFields, SQLField[] myFieldSet){
 		SQLField[] rebuiltSet = new SQLField[myFieldSet.length+newFields.length];
 
 		System.arraycopy(myFieldSet, 0, rebuiltSet, 0, myFieldSet.length);
@@ -102,7 +103,7 @@ public final class SQLUtils {
 	 * @return An array without empty indexes.
 	 */
 	protected static String[] removeBlanks(String[] sqlStringArray){
-		ObjectArray tempArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		DataHandler tempArray = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		for(int size = 0; size < sqlStringArray.length; size++){
 			if(!"".equals(sqlStringArray[size].trim())){
 				tempArray.addData(size+"", sqlStringArray[size]);

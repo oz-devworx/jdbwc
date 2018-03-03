@@ -35,7 +35,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 import com.ozdevworx.dtype.impl.ObjectList;
 
 
@@ -46,7 +46,7 @@ import com.ozdevworx.dtype.impl.ObjectList;
  * @version 2008-05-29
  * @version 2010-04-10
  * @version 2010-04-17
- * @version 2010-04-28 changed the ObjectArray implementation
+ * @version 2010-04-28 changed the DataHandler implementation
  */
 public final class Util {
 
@@ -62,11 +62,16 @@ public final class Util {
 	public static final String TAG_DEBUG = "debug";
 
 
-	/** ObjectArray implementation used by this driver */
+	/** DataHandler implementation used by this driver */
 	public static final String DT_IMPL_VER = ObjectList.class + " " + ObjectList.VERSION;
 
 	/** Dummy User-Agent. Rarely needed */
 	public static final String CUSTOM_AGENT = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3 (.NET CLR 3.5.30729)";
+
+	/* database server connection types */
+	public static final int ID_DEFAULT = 0;
+	public static final int ID_MYSQL = 1;
+	public static final int ID_POSTGRESQL = 2;
 
 	public static final int CASE_LOWER = -1;
 	public static final int CASE_UPPER = 1;
@@ -230,10 +235,10 @@ public final class Util {
 	}
 
 	/**
-	 * @param input ObjectArray
+	 * @param input DataHandler
 	 * @return A UrlEncodedFormEntity of NameValuePair's representing the input param
 	 */
-	public static HttpEntity prepareForWeb(final ObjectArray input){
+	public static HttpEntity prepareForWeb(final DataHandler input){
 
 		List <NameValuePair> nvpData = new ArrayList <NameValuePair>();
 
@@ -261,19 +266,19 @@ public final class Util {
 	}
 
 	/**
-	 * ObjectArray Factory method.<br />
+	 * DataHandler Factory method.<br />
 	 * <br />
-	 * Get a ObjectArray object with keys matching the required caseType
-	 * to satisfy various database collation requirements.<br />
+	 * Get a DataHandler object with keys matching the required caseType
+	 * to satisfy various database engine requirements.<br />
 	 * <br />
-	 * All ObjectArray objects used by this driver come from this method,
-	 * making the use of different ObjectArray implementations very simple.
+	 * All DataHandler objects used by this driver come from this method,
+	 * making the use of different DataHandler implementations very simple.
 	 *
 	 * @param caseType One of <code>Util.CASE_LOWER, Util.CASE_UPPER, Util.CASE_MIXED</code>
-	 * @return A new ObjectArray object with keys forced to caseType
+	 * @return A new DataHandler object with keys forced to caseType
 	 */
-	public static ObjectArray getCaseSafeHandler(final int caseType){
-		ObjectArray output;
+	public static DataHandler getCaseSafeHandler(final int caseType){
+		DataHandler output;
 		switch(caseType){
 		case CASE_LOWER:
 			output = new ObjectList(true);

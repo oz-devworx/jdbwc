@@ -40,7 +40,7 @@ function wc_compress_output($buffer) {
       $compress_me = 'deflate';
     }
 
-    if($compress_me!=FALSE){
+    if($compress_me!==FALSE){
       header('Vary: Accept-Encoding', TRUE);
       header('Content-Encoding: ' . $compress_me, TRUE);
       header('Content-Length: ' . strlen($buffer), TRUE); // keep-alive trigger

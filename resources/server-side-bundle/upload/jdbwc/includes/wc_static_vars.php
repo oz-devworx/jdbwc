@@ -9,6 +9,7 @@
  * @author Tim Gall
  * @version 2007-10-01
  * @version 2010-03-27 16:10 (+10 GMT)
+ * @version 2012-03-11 Updated class DbMysqli:list_tables
  * @copyright (C) 2008 Oz-DevWorX (Tim Gall)
  */
 
@@ -18,7 +19,7 @@ if(!defined('WC_INDEX')){
   exit();
 }
 
-define('WC_VERSION', '1.0.0-4rc1');
+define('WC_VERSION', '1.0.1-1rc');
 define('WC_ERROR', 'ERROR# ');
 define('WC_AUTH', 'jdbwcAuth');
 define('WC_ACTION', 'jdbwcAction');

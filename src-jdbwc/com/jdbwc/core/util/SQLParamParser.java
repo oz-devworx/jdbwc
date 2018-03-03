@@ -17,9 +17,8 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.util;
+package com.jdbwc.core.util;
 
-import java.lang.reflect.Constructor;
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,7 +27,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.jdbwc.core.WCConnection;
-import com.ozdevworx.dtype.ObjectArray;
+import com.jdbwc.util.Util;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * This class is designed to parse a variety of SQL Strings into table and parameter variables suitable for building ParameterMetaData from.<br />
@@ -175,7 +175,7 @@ public class SQLParamParser {
 		return paramCount;
 	}
 
-	public static String populateParams(ObjectArray prepStatement) throws SQLException{
+	public static String populateParams(DataHandler prepStatement) throws SQLException{
 		String sql = prepStatement.getString(0);
 		StringBuilder rebuiltSql = new StringBuilder();
 		int paramCount = countParams(sql);
@@ -209,19 +209,19 @@ public class SQLParamParser {
 
 
 	private transient SQLField[] myFieldSet = new SQLField[0];
-	private transient ObjectArray myColumns = null;
-	private transient ObjectArray myAliases = null;
-	private transient ObjectArray myTables = null;
+	private transient DataHandler myColumns = null;
+	private transient DataHandler myAliases = null;
+	private transient DataHandler myTables = null;
 
-	private transient ObjectArray myResultsOrder = null;
-	private transient ObjectArray myParams = null;
+	private transient DataHandler myResultsOrder = null;
+	private transient DataHandler myParams = null;
 
 	/** number of Parameter markers in SQL statement */
 	private transient int myParamCount = 0;
 	/** the type of query thats being examined */
 	private transient int myQueryType = 0;
 
-//	private transient int myDbType = 0;
+	private transient int myDbType = 0;
 
 	/* Somewhere to store the sql parts once thier split.
 	 * Out vars will be handled differently;
@@ -241,11 +241,11 @@ public class SQLParamParser {
 	 * for the sqlString parameter.
 	 *
 	 * @param connection Database Connection
-	 * @param prepStatement A ObjectArray containing a valid SQL String at the first index,
+	 * @param prepStatement A DataHandler containing a valid SQL String at the first index,
 	 * parameters in the remaining indexes.
 	 * @throws SQLException if the connection or sqlString are not valid for this Constructor.
 	 */
-	public SQLParamParser(WCConnection connection, ObjectArray prepStatement) throws SQLException {
+	public SQLParamParser(WCConnection connection, DataHandler prepStatement) throws SQLException {
 		processPreparedStatement(prepStatement.getString(0));
 		buildMetaData(connection);
 	}
@@ -255,12 +255,12 @@ public class SQLParamParser {
 	 * for the sqlString parameter.
 	 *
 	 * @param connection Database Connection
-	 * @param callableStatement A ObjectArray containing a valid SQL CALL String at the first index,
+	 * @param callableStatement A DataHandler containing a valid SQL CALL String at the first index,
 	 * parameters in the remaining indexes.
 	 * @param isCallable boolean to signify the fieldSet should be built for a CallableStatement.
 	 * @throws SQLException if the connection or sqlString are not valid for this Constructor.
 	 */
-	public SQLParamParser(WCConnection connection, ObjectArray callableStatement, boolean isCallable) throws SQLException {
+	public SQLParamParser(WCConnection connection, DataHandler callableStatement, boolean isCallable) throws SQLException {
 		processCallableStatement(callableStatement.getString(0));
 		buildMetaData(connection);
 	}
@@ -278,18 +278,19 @@ public class SQLParamParser {
 	 * the metaData info from the database
 	 */
 	private void buildMetaData(WCConnection connection) throws SQLException{
+		myDbType = connection.getDbType();
+		switch(myDbType){
+		case Util.ID_POSTGRESQL:
+			PgSQLMetaGeta pgMg = new PgSQLMetaGeta(connection);
+			myFieldSet = pgMg.getParameterMetaData(myTables, myColumns, myParams);
+			break;
 
-		// using reflection, get the correct class for the database type thats in use
-		try {
-			Class<?> metaClass = Class.forName(connection.getDbPackagePath() + "SQLMetaGetaImp");
+		case Util.ID_MYSQL:
+		case Util.ID_DEFAULT:
+			MySQLMetaGeta myMg = new MySQLMetaGeta(connection);
+			myFieldSet = myMg.getParameterMetaData(myTables, myColumns, myParams);
 
-            Constructor<?> ct = metaClass.getConstructor(new Class[]{connection.getClass()});
-
-            SQLMetaGeta metaG = (SQLMetaGeta)ct.newInstance(new Object[]{connection});
-            myFieldSet = metaG.getParameterMetaData(myTables, myColumns, myParams);
-
-		} catch (Throwable e) {
-			throw new SQLException("Could not construct a SQLMetaGeta Object", e);
+			break;
 		}
 
 //		for(int tIdx = 0; tIdx < myTables.length(); tIdx++){
@@ -350,10 +351,10 @@ public class SQLParamParser {
 		return workArea;
 	}
 
-	private ObjectArray findParamNamesInString(String entries){
+	private DataHandler findParamNamesInString(String entries){
 		String paramName = "";
 		String workArea = entries;
-		ObjectArray results = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		DataHandler results = Util.getCaseSafeHandler(Util.CASE_MIXED);
 
 		String[] myFields = SQLUtils.removeBlanks(myFieldSeperator.split(SQLUtils.stripWhiteSpace(workArea)));
 
@@ -362,7 +363,7 @@ public class SQLParamParser {
 				String[] paramNameNAlias = myValSplitter.split(myFields[mf]);
 				paramName = paramNameNAlias[0].trim();
 
-				ObjectArray colVals = getColumnName(paramName);
+				DataHandler colVals = getColumnName(paramName);
 				results.addData(colVals.getKey(0), colVals.getString(0));
 			}
 		}
@@ -409,7 +410,7 @@ public class SQLParamParser {
 		return queryType;
 	}
 
-	private ObjectArray findTablesInString(String entries){
+	private DataHandler findTablesInString(String entries){
 
 		/* find joins and make the table names visible to the rest of this method */
 		String workingArea = entries;
@@ -423,7 +424,7 @@ public class SQLParamParser {
 		}
 
 
-		ObjectArray results = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		DataHandler results = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		Matcher matcher = myFieldSeperator.matcher(workingArea);
 		String[] myFields = {};
 		if(matcher.find()){
@@ -452,7 +453,7 @@ public class SQLParamParser {
 //				System.err.println("OK: The Joins conditional part was found and removed!");
 			}
 
-			ObjectArray nameNAlias = getTableName(tableName);
+			DataHandler nameNAlias = getTableName(tableName);
 			tableName = nameNAlias.getKey(0);
 			tableAlias = nameNAlias.getString(0);
 
@@ -461,8 +462,8 @@ public class SQLParamParser {
 		return results;
 	}
 
-	private ObjectArray getColumnName(String name){
-		ObjectArray cleanName = Util.getCaseSafeHandler(Util.CASE_MIXED);
+	private DataHandler getColumnName(String name){
+		DataHandler cleanName = Util.getCaseSafeHandler(Util.CASE_MIXED);
 
 		String workArea = name.trim();
 		String fieldName;
@@ -490,8 +491,8 @@ public class SQLParamParser {
 		return cleanName;
 	}
 
-	private ObjectArray getTableName(String name){
-		ObjectArray cleanName = Util.getCaseSafeHandler(Util.CASE_MIXED);
+	private DataHandler getTableName(String name){
+		DataHandler cleanName = Util.getCaseSafeHandler(Util.CASE_MIXED);
 
 		String workArea = name.trim();
 		String tableName = workArea;
@@ -521,11 +522,11 @@ public class SQLParamParser {
 	 * Organise the data weve compiled so far into a coherent state so we can
 	 * fetch some metaData for our param markers.
 	 *
-	 * @param tableSet ObjectArray of tables in the query.
-	 * @param columnSet ObjectArray of parameter-column names in the query.
+	 * @param tableSet DataHandler of tables in the query.
+	 * @param columnSet DataHandler of parameter-column names in the query.
 	 * @throws SQLException
 	 */
-	private void organiseSqlParts(ObjectArray tableSet, ObjectArray paramSet) throws SQLException{
+	private void organiseSqlParts(DataHandler tableSet, DataHandler paramSet) throws SQLException{
 		myTables = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		myColumns = Util.getCaseSafeHandler(Util.CASE_MIXED);
 		myAliases = Util.getCaseSafeHandler(Util.CASE_MIXED);
@@ -574,8 +575,8 @@ public class SQLParamParser {
 	 * @throws SQLException
 	 */
 	private void processCommonSql(String input) throws SQLException{
-		ObjectArray tableSet = Util.getCaseSafeHandler(Util.CASE_MIXED);
-		ObjectArray paramSet = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		DataHandler tableSet = Util.getCaseSafeHandler(Util.CASE_MIXED);
+		DataHandler paramSet = Util.getCaseSafeHandler(Util.CASE_MIXED);
 
 		String partTables;
 		String partColumns;

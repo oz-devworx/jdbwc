@@ -22,10 +22,10 @@ package com.jdbwc.core;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 
+import com.jdbwc.core.util.SQLField;
+import com.jdbwc.core.util.SQLParamParser;
 import com.jdbwc.exceptions.NotImplemented;
-import com.jdbwc.util.SQLField;
-import com.jdbwc.util.SQLParamParser;
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * Looks after getting ParameterMetaData for prepared statements.
@@ -41,11 +41,9 @@ public class WCParameterMetaData implements ParameterMetaData {
 	/**
 	 * Constructs a new instance of this.<br />
 	 */
-	protected WCParameterMetaData(WCConnection connection, ObjectArray prepStatement) throws SQLException {
+	protected WCParameterMetaData(WCConnection connection, DataHandler prepStatement) throws SQLException {
 		SQLParamParser prepStatment = new SQLParamParser(connection, prepStatement);
 		myFields = prepStatment.getFields();
-
-		myFields = connection.updateFields(myFields);
 	}
 
 	/**

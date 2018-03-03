@@ -17,36 +17,31 @@
  * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
  * ********************************************************************
  */
-package com.jdbwc.core;
-
-import java.sql.SQLException;
+package com.jdbwc.core.util;
 
 /**
- * Connection implementation helper for database specific requirements.<br />
+ * Simple class for getting condition keywords 'WHERE' and 'AND'
+ * in the correct order. Allows for more flexibility with metadata query building.
  *
  * @author Tim Gall
- * @version 31/05/2010
+ * @version 18/05/2010
  */
-public interface DBConnection {
+public class ConditionKeyWord {
 
-	boolean getAutoCommit(WCStatement statement) throws SQLException;
+	private boolean usedWhere;
+
+	public ConditionKeyWord(){
+		usedWhere = false;
+	}
 
 	/**
 	 *
-	 * @return int. One of:
-	 * <ul>
-	 * <li>-1 = lowercase</li>
-	 * <li> 0 = mixed-case</li>
-	 * <li> 1 = uppercase</li>
-	 * </ul>
+	 * @return SQL keyword 'WHERE' or 'AND' in the correct order and quantity.
 	 */
-	int getCaseSensitivity();
+	public String getKeyWord(){
+		String ret = usedWhere ? "AND " : "WHERE ";
+		usedWhere = true;
+		return ret;
+	}
 
-	String getTransactionIsolation(WCStatement statement) throws SQLException;
-
-	void setAutoCommit(WCStatement statement, boolean autoCommit) throws SQLException;
-
-	void setReadOnly(WCStatement statement, boolean readOnly) throws SQLException;
-
-	void setTransactionIsolation(WCStatement statement, String levelName) throws SQLException;
 }

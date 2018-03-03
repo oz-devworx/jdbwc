@@ -43,7 +43,7 @@ import java.util.Map;
 
 import com.jdbwc.exceptions.NotImplemented;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * NOTE: This is only mostly just a skeleton and has not been fully implemented yet!!!
@@ -60,7 +60,7 @@ public class WCCallableStatement extends WCPreparedStatement implements Callable
 	private transient StringBuilder myBatchStatement = null;
 
 	/** stores parepared statements that are being built */
-	private transient ObjectArray myCallStatement = null;
+	private transient DataHandler myCallStatement = null;
 
 	/**
 	 * Constructs a new instance of this.<br />
@@ -1158,6 +1158,30 @@ public class WCCallableStatement extends WCPreparedStatement implements Callable
 	public <T> T unwrap(Class<T> iface) throws SQLException {
 //		TODO: implement me!
 		throw new NotImplemented();
+	}
+
+	@Override
+	public void closeOnCompletion() throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public boolean isCloseOnCompletion() throws SQLException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

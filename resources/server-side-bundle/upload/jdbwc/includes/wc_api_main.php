@@ -83,7 +83,7 @@ if(session_start()){
     }
     LogWriter::write(session_name() . '=' . session_id() . ' | Handler=' . WC_STORE_SESSIONS, 'SESSION-STARTED');
     $_SESSION['DEBUG_MODE'] = (isset($_POST[WC_DEBUG_TAG]) && $_POST[WC_DEBUG_TAG]=='true') ? true:false;
-    if($_SESSION['DEBUG_MODE']=='true') $wc_startTime = microtime(true);
+    if($_SESSION['DEBUG_MODE']===true) $wc_startTime = microtime(true);
   }
 }
 
@@ -178,7 +178,7 @@ if ($requested_database != null && count($requested_database) == 3) {
     }
 
 
-    if($_SESSION['DEBUG_MODE']=='true'){
+    if($_SESSION['DEBUG_MODE']===true){
       $_SESSION['workStart'] = $wc_startTime;
       $_SESSION['memUse'] = array();
     }

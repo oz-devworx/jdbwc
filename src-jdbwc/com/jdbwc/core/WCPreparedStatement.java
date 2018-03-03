@@ -42,10 +42,10 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+import com.jdbwc.core.util.SQLParamParser;
 import com.jdbwc.exceptions.NotImplemented;
-import com.jdbwc.util.SQLParamParser;
 import com.jdbwc.util.Util;
-import com.ozdevworx.dtype.ObjectArray;
+import com.ozdevworx.dtype.DataHandler;
 
 /**
  * Handles PreparedStatement's for this driver.
@@ -61,7 +61,7 @@ public class WCPreparedStatement extends WCStatement implements PreparedStatemen
 	private transient StringBuilder myBatchStatement = null;
 
 	/** stores prepared statements that are being built */
-	private transient ObjectArray myPrepStatement = null;
+	private transient DataHandler myPrepStatement = null;
 
 	/**
 	 * Constructs a new instance of this.<br />
