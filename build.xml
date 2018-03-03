@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+/* ********************************************************************
+ * Copyright (C) 2010 Oz-DevWorX (Tim Gall)
+ * ********************************************************************
+ * This file is part of JDBWC.
+ *
+ * JDBWC is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JDBWC is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
+ * ********************************************************************
+ */
+
+	For development, I recommend using eclipse 
+	(or any IDE that supports Ant scripts, Java and PHP).
+	
+	Author: Tim Gall 2010-04-18 02:36 (+10 GMT)
+-->
+<project name="JDBWC - JDBC Driver" default="build_all" basedir=".">
+
+	<description>
+		Ant build script for JDBWC v1.0.0-3beta
+	</description>
+
+	<!-- driver specs -->
+	<property name="driver.name" value="jdbwc" />
+	<property name="major.version" value="1" />
+	<property name="minor.version" value="0" />
+	<property name="subminor.version" value="0" />
+	<property name="status.version" value="-3" />
+	<property name="status.name" value="beta" />
+	<property name="jdbc.spec" value="3.0" />
+	<property name="jdbwc.builder" value="jdbwcdev" />
+
+	<property name="full.version" value="${major.version}.${minor.version}.${subminor.version}${status.version}${status.name}" />
+
+	<!-- directories. Most are managed by the build script (including creation) -->
+	<property name="build.dir" value="." />
+	<property name="dist.dir" value="DISTRIBUTION" />
+
+	<property name="depend.dir" value="${build.dir}/dependencies" />
+	<property name="class.dir" value="${build.dir}/JDBC_BUILD" />
+	<property name="meta.dir" value="${build.dir}/JDBC_BUILD/META-INF" />
+	<property name="jar.dir" value="${build.dir}/${dist.dir}/jdbwc-lib" />
+	<property name="docs.dir" value="${build.dir}/${dist.dir}/javadocs" />
+	<property name="resources.dir" value="${build.dir}/resources" />
+
+	<!-- related package names -->
+	<property name="datahandler.name" value="data-handler" />
+	<property name="datahandler.version" value="1.0.0.7" />
+	<property name="test.name" value="jdbwctest" />
+
+	<!-- server-side PHP bundle name -->
+	<property name="serverside.name" value="server-side-bundle" />
+
+	<!-- compiler directives -->
+	<property name="compile.debug" value="off" />
+	<property name="compile.deprecation" value="off" />
+
+	<!-- things to eclude from packs and copies -->
+	<property name="pack.excludes" value="**/.svn,*.*~,*.nbattrs,*.old" />
+
+	<!-- classpath -->
+	<path id="driver.classpath">
+		<fileset dir="${build.dir}/${jar.dir}/">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!-- ================================ Runnable tasks =================================== -->
+
+	<target name="build_all" depends="clean,dist,serverside,test,javadoc" description="Builds the complete DISTRIBUTION set." />
+
+	<target name="build_all_nodoc" depends="clean,dist,serverside,test" description="Builds the DISTRIBUTION set without javadocs." />
+
+
+
+	<target name="dist" depends="compile,copy" description="Builds driver with dependencies and binary .jar files.">
+		<mkdir dir="${meta.dir}/${driver.name}" />
+
+		<manifest file="${meta.dir}/${driver.name}/MANIFEST.MF">
+			<attribute name="Built-By" value="${jdbwc.builder}" />
+			<attribute name="Class-Path" value="${datahandler.name}-${datahandler.version}.jar commons-codec-1.3.jar commons-logging-1.1.1.jar commons-httpclient-3.1.jar" />
+
+			<section name="common">
+				<attribute name="Specification-Title" value="JDBC" />
+				<attribute name="Specification-Version" value="${jdbc.spec}" />
+				<attribute name="Specification-Vendor" value="Sun Microsystems Inc." />
+				<attribute name="Implementation-Title" value="${driver.name}" />
+				<attribute name="Implementation-Version" value="${full.version}" />
+				<attribute name="Implementation-Vendor-Id" value="com.jdbwc" />
+				<attribute name="Implementation-Vendor" value="Oz-DevWorX" />
+			</section>
+		</manifest>
+
+		<jar jarfile="${jar.dir}/${driver.name}.jar" basedir="${class.dir}/${driver.name}" includes="**/*.class,**/*.properties*,**/*.txt" excludes="${pack.excludes}" index="true" manifest="${meta.dir}/${driver.name}/MANIFEST.MF" />
+	</target>
+
+
+	<!-- compile Driver and create binary .jar file in DISTRIBUTION/jdbwc-lib -->
+	<target name="compile" depends="compile.depends,copy">
+		<mkdir dir="${class.dir}/${driver.name}" />
+
+		<javac srcdir="${build.dir}/src-${driver.name}" destdir="${class.dir}/${driver.name}" deprecation="${compile.deprecation}" debug="${compile.debug}" fork="yes" compiler="modern">
+			<classpath refid="driver.classpath" />
+		</javac>
+
+	</target>
+
+
+	<!-- compile datahandler and create binary .jar file and copy dependencies to DISTRIBUTION/jdbwc-lib -->
+	<target name="compile.depends" depends="clean">
+		<delete dir="${meta.dir}/${datahandler.name}" includeEmptyDirs="true" />
+		<delete dir="${class.dir}/${datahandler.name}" includeEmptyDirs="true" />
+
+		<mkdir dir="${class.dir}/${datahandler.name}" />
+		<mkdir dir="${meta.dir}/${datahandler.name}" />
+		<mkdir dir="${jar.dir}" />
+
+		<manifest file="${meta.dir}/${datahandler.name}/MANIFEST.MF">
+			<attribute name="Built-By" value="${jdbwc.builder}" />
+		</manifest>
+
+		<javac destdir="${class.dir}/${datahandler.name}" deprecation="${compile.deprecation}" debug="${compile.debug}" fork="yes" compiler="modern" sourcepath="" srcdir="${build.dir}/src-${datahandler.name}" />
+
+		<jar jarfile="${jar.dir}/${datahandler.name}-${datahandler.version}.jar" basedir="${class.dir}/${datahandler.name}" includes="**/*.class,**/*.properties*,**/*.txt" excludes="${pack.excludes}" index="true" manifest="${meta.dir}/${datahandler.name}/MANIFEST.MF" />
+	</target>
+
+
+	<!-- zip the test package -->
+	<target name="test" description="Zip the test package">
+		<delete dir="${meta.dir}/${test.name}" includeEmptyDirs="true" />
+
+		<mkdir dir="${meta.dir}/${test.name}" />
+
+		<manifest file="${meta.dir}/${test.name}/MANIFEST.MF">
+			<attribute name="Built-By" value="${jdbwc.builder}" />
+			<attribute name="Class-Path" value="jdbwc-lib/${driver.name}.jar" />
+		</manifest>
+
+
+		<mkdir dir="${build.dir}/${dist.dir}" />
+
+		<zip destfile="${build.dir}/${dist.dir}/${test.name}.zip" whenempty="fail">
+			<zipfileset dir="${meta.dir}/${test.name}" includes="**/*" excludes="${pack.excludes}" />
+			<zipfileset dir="${build.dir}/src-${test.name}" includes="**/*" excludes="${pack.excludes}" />
+		</zip>
+
+		<!--
+		<delete dir="${class.dir}/${test.name}" includeEmptyDirs="true" />
+		<mkdir dir="${class.dir}/${test.name}" />
+		
+		<javac destdir="${class.dir}/${test.name}" deprecation="${compile.deprecation}" debug="${compile.debug}" fork="yes" compiler="modern" sourcepath="" srcdir="${build.dir}/src-${test.name}">
+			<classpath refid="driver.classpath" />
+		</javac>
+
+		<jar jarfile="${build.dir}/${dist.dir}/${test.name}.jar" basedir="${class.dir}/${test.name}" includes="**/*.class,**/*.properties*,**/*.txt" excludes="${pack.excludes}" index="true" manifest="${meta.dir}/${test.name}/MANIFEST.MF" />
+    -->
+	</target>
+
+
+	<!-- Project Documentation -->
+	<target name="javadoc" depends="compile.depends,copy" description="Project documentation">
+		<delete dir="${docs.dir}" includeEmptyDirs="true" />
+		<mkdir dir="${docs.dir}" />
+
+		<javadoc sourcepath="${build.dir}/src-${datahandler.name}" destdir="${docs.dir}/${datahandler.name}" packagenames="*" author="true" protected="true" version="true" doctitle="&lt;h1&gt;${datahandler.name}-${datahandler.version}&lt;/h1&gt;" windowtitle="${datahandler.name}" />
+		<javadoc sourcepath="${build.dir}/src-${driver.name}" destdir="${docs.dir}/${driver.name}" packagenames="*" author="true" protected="true" version="true" doctitle="&lt;h1&gt;${driver.name}-${full.version}&lt;/h1&gt;" windowtitle="${driver.name}">
+			<classpath refid="driver.classpath" />
+		</javadoc>
+	</target>
+
+
+	<!-- Clean build and distribution areas -->
+	<target name="clean">
+		<delete dir="${build.dir}/${dist.dir}" includeEmptyDirs="true" />
+		<delete dir="${class.dir}" includeEmptyDirs="true" />
+	</target>
+
+
+	<!-- copy dependencies and main README to DISTRIBUTION area -->
+	<target name="copy">
+		<mkdir dir="${jar.dir}" />
+
+		<!-- dependencies -->
+		<copy todir="${jar.dir}" filtering="false">
+			<fileset dir="${depend.dir}" excludes="${pack.excludes}">
+				<patternset id="dojar">
+					<include name="**/*.jar*" />
+				</patternset>
+			</fileset>
+		</copy>
+		<!-- docs for main package -->
+		<copy todir="${build.dir}/${dist.dir}" filtering="false">
+			<!-- jdbwc docs -->
+			<fileset dir="${resources.dir}" excludes="${pack.excludes}">
+				<patternset id="dodoc">
+					<include name="*.html" />
+					<include name="*.txt" />
+				</patternset>
+			</fileset>
+			<!-- licenses for dependencies -->
+			<fileset dir="${depend.dir}" excludes="${pack.excludes}">
+				<patternset id="dodepdoc">
+					<include name="*.txt" />
+				</patternset>
+			</fileset>
+		</copy>
+	</target>
+
+
+	<!-- zip server-side files and place in DISTRIBUTION folder -->
+	<target name="serverside" description="Zip the serverside PHP bundle">
+		<delete file="${build.dir}/${dist.dir}/${serverside.name}.zip" />
+		<mkdir dir="${build.dir}/${dist.dir}" />
+
+		<zip destfile="${build.dir}/${dist.dir}/${serverside.name}.zip" whenempty="fail">
+			<zipfileset dir="${resources.dir}" includes="**/*" excludes="${pack.excludes},*.html,*.txt" />
+		</zip>
+	</target>
+
+</project>

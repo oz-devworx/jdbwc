@@ -1,0 +1,486 @@
+﻿
+  JDBWC - Installation
+
+Document Revision: 1
+
+Release Information
+Project 	JDBWC
+Version 	1.0.0-3beta
+License 	GNU GPLv3 http://www.gnu.org/licenses/
+Web 	http://sourceforge.net/projects/jdbwc
+Support 	https://sourceforge.net/projects/jdbwc/support
+
+Contents
+
+    * Introduction <#intro>
+    * Requirements <#require>
+    * Installation <#install>
+    * Basic Use <#use>
+    * Connection Parameters in detail <#params>
+    * Whats new? <#new>
+    * Limitations <#limits>
+    * TODO <#todo>
+    * Known issues <#issues>
+    * Reporting Bugs <#bugs>
+
+Introduction
+
+This document requires you have some knowledge of web-servers and the
+Java programming language (and ideally JDBC). Its beyond the scope of
+this document to explain these subjects in great detail.
+
+Throughout this document there are some descriptive terms that may be
+unclear. Their meanings are clarified below.
+
+*Client Side: *
+the Java JDBC part of the JDBWC Driver.
+Also referred to as _JDBC_ (/Java DataBase Connector/).
+
+*Server-Side: *
+the PHP side (/with a web-server and one or more database-server/s/).
+Also referred to as _WC_ (/Web Connector/).
+
+*Upstream: *
+data going from the Client-side to the Server-side.
+
+*Downstream: *
+data going from the Server-side to the Client-side.
+
+
+    Description
+
+JDBWC is an acronym for Java-Data-Base-Web-Connector. In essence, JDBWC
+is a Java JDBC Driver with its own server written in PHP. Ideally suited
+to Java Desktop applications that require JDBC access across wide area
+networks like the internet but do not wish to expose the remote
+database-server through the remote hosts firewall. EG: the database
+server does not need to be exposed to the internet at all.
+
+Requirements
+
+*Client-side:*
+Java JRE >= 1.6.0_19 (/you can also compile from source to suit your
+target JRE/)
+
+*Server-side: *
+Apache-Web-server >= 1.3.41
+PHP >= 5.1.x with MySQL >= 5.x.x and/or PostgreSQL >= 7.4.x
+
+If your using MySQL you should enable the PHP mysqli extension for full
+metadata functionality.
+The existence of the mysqli extension is determined on the server-side.
+
+*Supplied dependencies (licensed under the Apache-2 license)*
+Commons-HttpClient 3.1 <http://hc.apache.org/httpclient-3.x/index.html>
+
+    * commons-codec-1.3.jar
+    * commons-httpclient-3.1.jar
+    * commons-logging-1.1.1.jar
+
+Installation
+
+
+    Client-side (JDBC)
+
+   1. Unpack the compressed download if you got it from the releases area.
+      The latest version should also be on the SourceForge SVN server
+      (/as of 2010-04-15/); Always check the branches first.
+   2. Copy the "|jdbwc-lib|" folder containing "|jdbwc.jar|" and
+      dependencies to a location relative to your Java application files.
+          * add "jdbwc.jar" to your applications classpath. If your app
+            is an executable jar, you would usually include the file in
+            your jar manifest's class-path using a relative path
+            EG: |Class-Path: jdbwc-lib/jdbwc.jar or Class-Path:
+            jdbwc.jar| depending on where you put the jar files in
+            relation to your java app.
+   3. If your app is not a packaged jar, you will need to organise
+      updating the classpath via some other mechanism.
+   4. If your using an IDE, add the jars to your build path as user libs
+      (/system libs are ok too but not necessary/).
+
+
+      Notes:
+
+IDE's usually require all of the jars in the build path.
+For apps, the required jdbwc dependencies will be added to your
+classpath by jdbwc.jar
+
+------------------------------------------------------------------------
+
+
+    Server-side (WC)
+
+
+      Notes:
+
+Once the Server-side portion is installed and configs are set you can
+forget about it. It only interacts with the JDBC portion and doesn't
+need to be maintained.
+It does maintain an event.log file that you may want to look at
+occasionally to see what's been happening on your server.
+The event.log can be invaluable for debugging, however any exceptions or
+errors encountered on the server will be thrown back to the JDBC driver
+as an SQL exception (or extension of).
+Most PHP warnings will only be logged, not relayed as they usually
+aren't critical and don't warrant halting the driver.
+SQL errors will contain the database servers original message with the
+offending SQL query below that. The usual java exception trail will
+follow. It will also be logged in the servers event log as an SQL-ERROR.
+
+
+        Back to the installation:
+
+In the distribution package you will find a zip file called
+|server-side-bundle.zip|.
+It contains some optional testing files which are explained in the
+README inside the zip.
+
+
+          To setup the server-side part of this driver.
+
+*NOTE:* The folder: "|jdbwc/includes/config/local|" is for testing
+servers and is not needed for servers with a registered domain name. Its
+supplied for convenience when developing.
+The "|jdbwc/includes/config/local|" folder should __NOT__ be uploaded to
+production machines.
+
+   1. Upload the contents of the upload folder to your webserver.
+          * They can be uploaded to the public root dir or any subfolder.
+          * EG: |http://yourserver.ext/*jdbwc*|,
+            |http://yourserver.ext/subfolder/anotherfolder/*jdbwc*|
+   2. Edit the file: "|jdbwc/includes/config/configure.php|"
+          * Put in a username and password (create new ones).
+          * Edit the paths and settings to suit your preferences and server.
+   3. Edit the file: "|jdbwc/includes/config/databases.php|"
+          * Put in the details for the databases you want access to.
+          * If there's more than one, follow the directions in the
+            comment to add multiple databases.
+          * The database user must have full permissions (excluding
+            grant perms).
+   4. You will need to give the /.log/ files in:
+      "|jdbwc/includes/wc_logs|" full write permissions.
+      You will also need to give the folder: "|jdbwc/includes/sessions|"
+      full write permissions and
+      the "|jdbwc/includes/sessions/phpsess.db|" (sqlite database) write
+      permissions if you chose sqlite as the session handler (in the
+      |configure.php| file).
+
+That's about it.
+See the bundled |jdbwctest.zip| file in the distribution folder for
+details on how to setup your java class/s to use the jdbwc.jar (JDBC
+driver). Look in the |connect()| method for some examples.
+
+Basic Use
+
+Also have a look at the test class in the file |jdbwctest.zip| (included
+in the distribution).
+
+There are a number of optional connection parameters you can use to fine
+tune the connection.
+The list of optional params may change between different releases
+depending on additional functionality supported by the driver.
+See the section on Connection Parameters in detail <#params> for more info.
+
+JDBWC is a JDBC Driver, so the standard JDBC syntax applies for general use.
+
+To start a JDBC connection using JDBWC you need to register the driver
+with the JRE's DriverManager and then start a new JDBC connection using
+a JDBWC specific URL.
+The required url syntax and parameters are demonstrated in the example.
+
+Parameters (/everything after the ?/) can be in any order.
+Registering the driver requires a |ClassNotFoundException| handler,
+starting a new Connection requires an |SQLException| handler.
+
+See the example below.
+*NOTE:* SSL is highly recommended over sending sql in plaintext.
+v1.0.0.3 will only work with validated certs.
+
+EXAMPLE
+
+private java.sql.Connection connect() {
+
+	*java.sql.Connection connection = null;*
+	try {
+		*/* register the JDBWC Driver with the Java DriverManager */*
+		*Class.forName("com.jdbwc.core.Driver");*
+
+		final String wcDataBase = "uname_jdbwctest";
+		final String wcUser = "xxxxxxxxxxxxxxx";
+		final String wcPass = "xxxxxxxxxxxxxxx";
+
+		final int port = 80;
+		final String httUrlStr = "http://localhost/";
+		final String user = "xxxxxxxxxxxxxxx";
+		final String pass = "xxxxxxxxxxxxxxx";
+
+		/* *********************************
+		 * Starting a connection via a url *
+		 * *********************************/
+//		final String jdbwcUrlStr = "jdbc:jdbwc:mysql//"
+//			+ httUrlStr
+//			+ "?port=" + port
+//			+ "&databaseName=" + wcDataBase
+//			+ "&databaseUser=" + wcUser
+//			+ "&databasePassword=" + wcPass;
+//
+//		/* initialise a new JDBC Connection using the JDBWC Driver package */
+//		*connection = DriverManager.getConnection(jdbwcUrlStr, user, pass);*
+
+		/* ****************************************
+		 * Using a Propeties object (recommended) *
+		 * ****************************************/
+		//final String jdbwcUrlStr = "jdbc:jdbwc:postgresql//";
+		final String jdbwcUrlStr = "jdbc:jdbwc:mysql//";
+
+		Properties props = new Properties();
+		props.put("url", httUrlStr);
+		props.put("port", String.valueOf(port));
+
+		props.put("user", user);
+		props.put("password", pass);
+		props.put("databaseName", wcDataBase);
+		props.put("databaseUser", wcUser);
+		props.put("databasePassword", wcPass);
+
+		/* *****************************
+		 * OPTIONAL PARAMETERS:
+		 * *****************************/
+
+		props.put("debug", "true");//OPTIONS: true, false (or not used. defaults to false)
+		props.put("debugLogger", "SimpleLog");//OPTIONS: SimpleLog, Jdk14Logger, Log4JLogger
+		props.put("debugLevel", "0");//OPTIONS: [0-3] 0=informative,2=good for connection debugging/* Dummy User-Agent (only required in rare situations where hosts block the default Apache HttpClient User-Agent). */
+		props.put("useDummyAgent", "false");//OPTIONS: true, false (or not used. defaults to false)
+
+		*connection = DriverManager.getConnection(jdbwcUrlStr, props);*
+
+	} catch (ClassNotFoundException e) {
+		e.printStackTrace();
+	} catch (SQLException e) {
+		e.printStackTrace();
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+	*return connection;*
+}
+
+Connection Parameters in detail
+
+
+    Driver URLs
+
+
+          Use only one of:
+
+    * jdbc:jdbwc://
+    * jdbc:jdbwc:mysql//
+    * jdbc:jdbwc:postgresql//
+
+
+          What they do:
+
+|jdbc:jdbwc://|
+Requests a default connection from JDBWC. The default is MySql.
+
+|jdbc:jdbwc:mysql//|
+Requests a MySql connection from JDBWC.
+
+|jdbc:jdbwc:postgresql//|
+Requests a PostgreSql connection from JDBWC.
+
+------------------------------------------------------------------------
+
+
+    Required properties
+
+
+          Use all of:
+
+    * url
+    * port
+    * user
+    * password
+    * databaseName
+    * databaseUser
+    * databasePassword
+
+
+          What they do:
+
+|url|
+The website URL containing the JDBWC server-side PHP bundle.
+The url must start with a protocol (http or https) and have a trialing /
+EG: |https://mydomain.ext/myfolder/myotherfolder/|
+The JDBWC driver will append |jdbwc/index.php| to the end of this URL
+before requesting a connection from the server.
+
+|port|
+The port number the web-server responds to. In this release, only
+standard ports can be used.
+80 is standard for http requests
+443 is standard for https
+
+|user|
+The user name you specified in the server-side |configure.php| file.
+
+|password|
+The password you specified in the server-side |configure.php| file.
+
+|databaseName|
+One of the database names you specified in the server-side
+|databases.php| file.
+
+|databaseUser|
+One of the database user-names you specified in the server-side
+|databases.php| file.
+
+|databasePassword|
+One of the database passwords you specified in the server-side
+|databases.php| file.
+
+------------------------------------------------------------------------
+
+
+    Optional properties
+
+
+          Use or omit any of:
+
+    * debug
+    * debugLogger
+    * debugLevel
+    * useDummyAgent
+
+
+          What they do:
+
+|debug|
+Turns debugging on or off. Its off by default. The other |debugXX|
+options will only take effect if this option is set to |true|.
+OPTIONS: true, false (or not used. defaults to false)
+
+|debugLogger|
+The type of logger to use for logging. Although there are 3 options,
+_only SimpleLog will work with this release_. To find out more about the
+logger see: http://hc.apache.org/httpclient-3.x/logging.html
+OPTIONS: SimpleLog, Jdk14Logger, Log4JLogger
+
+|debugLevel|
+Debugging level:
+0 JDBWC informative/debugging,
+1 JDBWC debugging,
+2 JDBWC debugging and Enable header wire + context logging - Best for
+Debugging,
+3 JDBWC debugging and Enable full wire + context logging.
+OPTIONS: [0-3]
+
+|useDummyAgent|
+This is rarely required. Its for situations where the host server blocks
+the default HttpClient |User-Agent|. The server would need to have been
+configured to deliberately block the HttpClient user agent.
+OPTIONS: true, false (or not used. defaults to false)
+
+Whats new?
+
+
+          Since v1.0.0.2_2beta
+
+    * Replaced the server-side with a new OOP based PHP5 system.
+    * Removed reliance on Apache authentication and replaced it with a
+      driver based authentication system. Makes installation and
+      management easier. Authentication encryption is based on a
+      randomised SHA256 hash (+ 16 MD5 chars). 1 for the username, 1 for
+      the password and one for the db-credentials.
+    * Improved session handling. Server-side session can be stored as
+      files or sqlite.
+    * Added server-side logging.
+    * Improved server-side error handling.
+    * Added optional connection parameters:
+          o debugLogger
+          o debugLevel
+          o useDummyAgent
+    * Implemented debugging in JDBC side.
+    * Added 4 debug levels.
+    * Replaced the old cumbersome exception handler with a lightweight
+      system tailored to suit this driver.
+    * Updated drivers javadocs.
+    * Fixed the Postgres |ParameterMetaData| functionality for
+      |PreparedStatement|.
+    * Fixed a bug in |Driver.getPropertyInfo()|
+    * Minor fixes to DatabaseMetadata (query) classes for MySql and
+      PostgreSql 8.x.x.
+    * Improved JDBWC test class.
+          o Replaced hardcoded database names with a class variable.
+          o Increased use of |ResultsetMetaData|.
+          o Implemented |ParameterMetaData| testing.
+          o Implemented the new optional parameters in |connect()| method.
+    * Added deprecated annotations to deprecated methods in the
+      implementation (/for methods deprecated from the JDBC specs/).
+
+Limitations
+
+    * JDBWC is aimed at JDBC 3 specifications with a few limitations
+      (/see the other limitations and TODO <#todo>'s/).
+    * No support for newer JDBC 3 or 4 data-types.
+    * Shared IP's don't agree with the driver. Dedicated IP's are fine.
+    * Non-transparent proxy servers _may_ cause the remote-host to
+      become unreachable by the driver.
+    * Only standard http ports can be used. They are 80 and 443.
+    * Also see Known Issues <#issues>.
+
+TODO
+
+    * Finish PreparedStatement (/almost done/), CallableStatement,
+      ParameterMetaData (/almost done/) and anything else not
+      implemented yet.
+    * Implement support for some of the newer JDBC 3 and 4 data types.
+    * Implement support for the streamable data types (/Its do 'able but
+      isn't an immediate priority/).
+    * JUnit tests (/not the highest priority at this point/).
+
+Known issues
+
+    * Shared IP's don't agree with the driver (or previous versions).
+      Localhost testing servers or production servers on the same
+      machine as the driver aren't usually a problem.
+    * Fatal errors on the JDBWC server-side (like fatal PHP errors,
+      fatal Apache errors, etc) aren't relayed back to the driver
+      because PHP will cause an immediate halt with no chance to
+      recover. The only way to currently find these errors is by
+      checking your web-servers error log (/not the JDBWC error log/).
+      This subject is explained in detail in the PHP manual. Needless to
+      say the WC side of the driver is thoroughly tested before official
+      releases are made available to ensure this doesn't happen; however
+      given the amount of different os/apache/php setups its not
+      possible to test on all platforms. At least 3 variations
+      (os/apache/php - version, build, cofiguration) are used during WC
+      testing.
+
+*NOTE:* Its _strongly_ advised to use an SSL connection when
+communicating across a network or the internet as you will be sending
+raw sql. To correctly install SSL your web-server _must have a dedicated
+IP_.
+
+Reporting Bugs
+
+If you notice any, please report them in the projects bug-tracking area
+at: http://sourceforge.net/tracker/?group_id=233279&atid=1089227
+
+_Please_ be specific with bug reports so they can be properly attended
+to. Vague reports will not be attended to unless the error is quite obvious.
+Include some code or a description of the conditions you encountered the
+bug in so it can be reproduced. The more detail, the higher the chance
+of it being fixed quickly.
+
+*
+NOTE:* |NotImplemented| exceptions are not bugs. They are features that
+have not been fully implemented yet and will vary for each release. This
+technique of dealing with unfinished areas is part of the JDBC
+specification for drivers
+[http://java.sun.com/products/jdbc/driverdevs.html].
+
+If you would like to see a particular feature implemented, please make a
+feature request at:
+http://sourceforge.net/tracker/?group_id=233279&atid=1089230
+
+Copyright ©2008 Tim Gall, All rights reserved

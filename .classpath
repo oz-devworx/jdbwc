@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src-jdbwctest"/>
+	<classpathentry kind="src" path="src-jdbwc"/>
+	<classpathentry kind="src" path="src-data-handler"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/jdbwc31s"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
