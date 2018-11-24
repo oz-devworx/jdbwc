@@ -1,0 +1,43 @@
+**********************************************************************
+* Id: RELEASE_NOTES.txt
+* Subject: JDBWC 1.0.0.2_2-beta
+* Author: Tim Gall (Oz-DevWorX)
+* Date: 2008-10-30 15:04 (+10 GMT)
+* Simple-Description: Java JDBC Driver - Release Notes
+* Copyright (C) 2008 Tim Gall (Oz-DevWorX)
+* JDBWC is Released under the GNU General Public License
+* ********************************************************************
+* This file is part of JDBWC.
+*
+* You should have received a copy of the GNU General Public License
+* along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
+**********************************************************************
+
+>> See the CHANGE_LOG for detailed information on changes.
+
+This is a complete rebuild of JDBWC.
+
+This release includes mainly fixes to existing functionality.
+The main areas are:
+  * ResultSet.getBoolean(...)
+  * ResultSet.getDate(...)
+  * ResultSet.getTime(...)
+  * ResultSet.getTimestamp(...)
+  * Connection.isClosed()
+  * Creating a connection with a properties file.
+
+
+    Connection Propetrty keys:
+    ==========================
+    * url               (website url EG: https://somedomain.com/admin/ 
+                         [In this case, the "admin" folder 
+                         at https://somedomain.com
+                         should contain the 'web' folder "jdbwc"])
+	* port              (server port number. https is usually 443 
+	                     and plain-text is usually 80)
+	* user              (apache username for 'web' folder "jdbwc")
+	* password          (apache password for 'web' folder "jdbwc")
+	* databaseName      (Database name)
+	* databaseUser      (Database username)
+	* databasePassword  (Database password)
+

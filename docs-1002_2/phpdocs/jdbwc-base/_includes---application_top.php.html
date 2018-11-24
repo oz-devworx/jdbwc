@@ -1,0 +1,158 @@
+<html>
+<head>
+<title>Docs for page application_top.php</title>
+<link rel="stylesheet" type="text/css" href="../media/style.css">
+</head>
+<body>
+
+<table border="0" cellspacing="0" cellpadding="0" height="48" width="100%">
+  <tr>
+    <td class="header_top">jdbwc-base</td>
+  </tr>
+  <tr><td class="header_line"><img src="../media/empty.png" width="1" height="1" border="0" alt=""  /></td></tr>
+  <tr>
+    <td class="header_menu">
+        
+                                                                                                
+                                                                                                                                                      		  [ <a href="../classtrees_jdbwc-base.html" class="menu">class tree: jdbwc-base</a> ]
+		  [ <a href="../elementindex_jdbwc-base.html" class="menu">index: jdbwc-base</a> ]
+		  	    [ <a href="../elementindex.html" class="menu">all elements</a> ]
+    </td>
+  </tr>
+  <tr><td class="header_line"><img src="../media/empty.png" width="1" height="1" border="0" alt=""  /></td></tr>
+</table>
+
+<table width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="200" class="menu">
+      <b>Packages:</b><br />
+              <a href="../li_default.html">default</a><br />
+              <a href="../li_jdbwc.html">jdbwc</a><br />
+              <a href="../li_jdbwc-auxillary.html">jdbwc-auxillary</a><br />
+              <a href="../li_jdbwc-base.html">jdbwc-base</a><br />
+              <a href="../li_jdbwc-config.html">jdbwc-config</a><br />
+              <a href="../li_jdbwc-config-local.html">jdbwc-config-local</a><br />
+              <a href="../li_jdbwc-db.html">jdbwc-db</a><br />
+              <a href="../li_jdbwc-db-mysql.html">jdbwc-db-mysql</a><br />
+              <a href="../li_jdbwc-db-mysqli.html">jdbwc-db-mysqli</a><br />
+              <a href="../li_jdbwc-db-postgresql.html">jdbwc-db-postgresql</a><br />
+            <br /><br />
+                        <b>Files:</b><br />
+      	  <div class="package">
+			<a href="../jdbwc-base/_includes---actions.php.html">		actions.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---application_top.php.html">		application_top.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---functions---coreApi.php.html">		coreApi.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---functions---edge_accelerator.php.html">		edge_accelerator.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---functions---sessions.php.html">		sessions.php
+		</a><br>
+	  </div><br />
+      
+      
+                </td>
+    <td>
+      <table cellpadding="10" cellspacing="0" width="100%" border="0"><tr><td valign="top">
+
+<h1>Procedural File: application_top.php</h1>
+Source Location: /includes/application_top.php<br /><br />
+
+<br>
+<br>
+
+
+<h2>Page Details:</h2>
+Remote JDBC Driver to local-database gateway.<br /><br /><p>This script is designed to communicate with a remote desktop application.  Its purpose is to handle database access requests from the remote desktop portion of this Driver.</p><p>Allows the use of a http or https connection to access databases remotely  whilst still maintaining localhost restrictions on the database daemon.</p><p>Connections to this script are established using apache jakarta.commons for java.</p><p>Apache webserver Credentials are required to access this scripts parent folder.  Additional private credentials are required to access the database.</p><p>Released under the GNU General Public License</p><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>author:</b>&nbsp;&nbsp;</td><td>Tim Gall</td>
+  </tr>
+  <tr>
+    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>(C) 2008 Oz-DevWorX (Tim Gall)</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+<h4>Includes:</h4>
+<div class="tags">
+require(<a href="../jdbwc-config/_includes---config---configure.php.html">'includes/config/configure.php'</a>) [line 52]<br />
+require(<a href="../default/_includes---static_vars.php.html">WC_PRI_INC.'static_vars.php'</a>) [line 80]<br />
+require(<a href="../jdbwc-base/_includes---functions---coreApi.php.html">WC_PRI_INC.'functions/coreApi.php'</a>) [line 81]<br />
+require(<a href="../jdbwc-base/_includes---functions---sessions.php.html">WC_PRI_INC.'functions/sessions.php'</a>) [line 96]<br />
+require(WC_PRI_INC.WC_DATABASES) [line 82]<br />
+require(<a href="../jdbwc-config-local/_includes---config---local---configure.php.html">'includes/config/local/configure.php'</a>) [line 50]<br />
+require(<a href="../jdbwc-auxillary/_includes---classes---logger.php.html">WC_PRI_INC.'classes/logger.php'</a>) [line 91]<br />
+require(<a href="../jdbwc-db/_includes---functions---database_core.php.html">WC_PRI_INC.'functions/database_core.php'</a>) [line 92]<br />
+require_once(<a href="../jdbwc-base/_includes---functions---edge_accelerator.php.html">'includes/functions/edge_accelerator.php'</a>) [line 47]<br />
+</div>
+<br /><br />
+<br /><br />
+  <hr />
+	<a name="definePAGE_PARSE_START_TIME"></a>
+	<h3>PAGE_PARSE_START_TIME <span class="smalllinenumber">[line 71]</span></h3>
+	<div class="tags">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>PAGE_PARSE_START_TIME = microtime()</code>
+    </td></tr></table>
+    </td></tr></table>
+
+        <br />
+		</div>
+	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+  <hr />
+	<a name="defineWC_DB"></a>
+	<h3>WC_DB <span class="smalllinenumber">[line 86]</span></h3>
+	<div class="tags">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>WC_DB = $requested_database['wc_database']</code>
+    </td></tr></table>
+    </td></tr></table>
+
+        <br />
+		</div>
+	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+  <hr />
+	<a name="defineWC_DB_PASSWORD"></a>
+	<h3>WC_DB_PASSWORD <span class="smalllinenumber">[line 88]</span></h3>
+	<div class="tags">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>WC_DB_PASSWORD = $requested_database['wc_password']</code>
+    </td></tr></table>
+    </td></tr></table>
+
+        <br />
+		</div>
+	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+  <hr />
+	<a name="defineWC_DB_USERNAME"></a>
+	<h3>WC_DB_USERNAME <span class="smalllinenumber">[line 87]</span></h3>
+	<div class="tags">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>WC_DB_USERNAME = $requested_database['wc_user']</code>
+    </td></tr></table>
+    </td></tr></table>
+
+        <br />
+		</div>
+	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+<br />
+
+        <div class="credit">
+		    <hr />
+		    Documentation generated on Mon, 19 Jan 2009 12:30:44 +1100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.1</a>
+	      </div>
+      </td></tr></table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

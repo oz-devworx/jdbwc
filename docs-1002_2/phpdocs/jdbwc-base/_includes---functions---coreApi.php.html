@@ -1,0 +1,259 @@
+<html>
+<head>
+<title>Docs for page coreApi.php</title>
+<link rel="stylesheet" type="text/css" href="../media/style.css">
+</head>
+<body>
+
+<table border="0" cellspacing="0" cellpadding="0" height="48" width="100%">
+  <tr>
+    <td class="header_top">jdbwc-base</td>
+  </tr>
+  <tr><td class="header_line"><img src="../media/empty.png" width="1" height="1" border="0" alt=""  /></td></tr>
+  <tr>
+    <td class="header_menu">
+        
+                                                                                                
+                                                                                                                                                      		  [ <a href="../classtrees_jdbwc-base.html" class="menu">class tree: jdbwc-base</a> ]
+		  [ <a href="../elementindex_jdbwc-base.html" class="menu">index: jdbwc-base</a> ]
+		  	    [ <a href="../elementindex.html" class="menu">all elements</a> ]
+    </td>
+  </tr>
+  <tr><td class="header_line"><img src="../media/empty.png" width="1" height="1" border="0" alt=""  /></td></tr>
+</table>
+
+<table width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="200" class="menu">
+      <b>Packages:</b><br />
+              <a href="../li_default.html">default</a><br />
+              <a href="../li_jdbwc.html">jdbwc</a><br />
+              <a href="../li_jdbwc-auxillary.html">jdbwc-auxillary</a><br />
+              <a href="../li_jdbwc-base.html">jdbwc-base</a><br />
+              <a href="../li_jdbwc-config.html">jdbwc-config</a><br />
+              <a href="../li_jdbwc-config-local.html">jdbwc-config-local</a><br />
+              <a href="../li_jdbwc-db.html">jdbwc-db</a><br />
+              <a href="../li_jdbwc-db-mysql.html">jdbwc-db-mysql</a><br />
+              <a href="../li_jdbwc-db-mysqli.html">jdbwc-db-mysqli</a><br />
+              <a href="../li_jdbwc-db-postgresql.html">jdbwc-db-postgresql</a><br />
+            <br /><br />
+                        <b>Files:</b><br />
+      	  <div class="package">
+			<a href="../jdbwc-base/_includes---actions.php.html">		actions.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---application_top.php.html">		application_top.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---functions---coreApi.php.html">		coreApi.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---functions---edge_accelerator.php.html">		edge_accelerator.php
+		</a><br>
+			<a href="../jdbwc-base/_includes---functions---sessions.php.html">		sessions.php
+		</a><br>
+	  </div><br />
+      
+      
+                </td>
+    <td>
+      <table cellpadding="10" cellspacing="0" width="100%" border="0"><tr><td valign="top">
+
+<h1>Procedural File: coreApi.php</h1>
+Source Location: /includes/functions/coreApi.php<br /><br />
+
+<br>
+<br>
+
+
+<h2>Page Details:</h2>
+Functions that provide much of our core functionality.<br /><br /><p>Released under the GNU General Public License</p><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>author:</b>&nbsp;&nbsp;</td><td>Tim Gall</td>
+  </tr>
+  <tr>
+    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>(C) 2008 Oz-DevWorX (Tim Gall)</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+<br /><br />
+<br /><br />
+<br />
+  <hr />
+	<a name="functionwcBuildCSV"></a>
+	<h3>wcBuildCSV <span class="smalllinenumber">[line 93]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>An wcBuildCSV(
+mixed $sqlQuery, mixed $cvsRowCnt)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcBuildCSV()  rawResult is in standard .CSV format as a String.<br /><br /><p>This is the formatting specifications  for what we need to return to the requesting interface  as plaintext echo'd on the output page.</p><p>&quot;,&quot; seperates entries   	&quot;\n&quot; seperates rows   	&quot;\n\n&quot; seperates files</p><p>EXISTING TEXT SHOULD BE HANDLED LIKE SO:   	&quot;\n&quot; should be replaced with &quot;__NL_&quot;       &quot;,&quot; should be replaced with &quot;__CA_&quot;</p><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>return:</b>&nbsp;&nbsp;</td><td>SQL query as a .csv String</td>
+  </tr>
+</table>
+</div>
+    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$sqlQuery</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$cvsRowCnt</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcCleanUp"></a>
+	<h3>wcCleanUp <span class="smalllinenumber">[line 208]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcCleanUp(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcCleanUp()  Cleanup and output debug info if WC_DEBUG_MODE=='true'  else attemp to silently close the connection.<br /><br />    <br /><br />
+	
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcFinaliseVal"></a>
+	<h3>wcFinaliseVal <span class="smalllinenumber">[line 137]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>string wcFinaliseVal(
+mixed $value)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		finaliseValue().<br /><br /><br /><p>== evaluates spaces and null's as true.<br />  === only evaluates null's as true.<br />  This allows us to accurately represent null's  and empty values on the JDBC side.</p><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$value</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcFindDataBase"></a>
+	<h3>wcFindDataBase <span class="smalllinenumber">[line 55]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>array wcFindDataBase(
+mixed $credentials, mixed $database_array)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcFindDataBase()<br /><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$credentials</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$database_array</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcGetIP"></a>
+	<h3>wcGetIP <span class="smalllinenumber">[line 179]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>string wcGetIP(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcGetIP()  Gets the IP address of the client machine  connecting to this script library.<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>return:</b>&nbsp;&nbsp;</td><td>- a dot notation IP address</td>
+  </tr>
+</table>
+</div>
+    <br /><br />
+	
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcKillConnection"></a>
+	<h3>wcKillConnection <span class="smalllinenumber">[line 40]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcKillConnection(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcKillConnection()  Terminate the current session and any handles relating to it.<br /><br />    <br /><br />
+	
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcPrepCSVString"></a>
+	<h3>wcPrepCSVString <span class="smalllinenumber">[line 154]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>string wcPrepCSVString(
+mixed $inputStr)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcPrepCSVString()  Prepare a String or Object for ouput as .CSV text.<br /><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$inputStr</b>&nbsp;&nbsp;</td>
+        <td>to prepare for cvs output</td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+
+        <div class="credit">
+		    <hr />
+		    Documentation generated on Mon, 19 Jan 2009 12:30:45 +1100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.1</a>
+	      </div>
+      </td></tr></table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

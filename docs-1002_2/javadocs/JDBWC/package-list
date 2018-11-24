@@ -1,0 +1,6 @@
+com.jdbwc.core
+com.jdbwc.core.util
+com.jdbwc.exceptions
+com.jdbwc.iface
+com.jdbwc.util
+jdbwctest

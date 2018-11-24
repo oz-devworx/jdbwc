@@ -1,0 +1,346 @@
+<html>
+<head>
+<title>Docs for page database_core.php</title>
+<link rel="stylesheet" type="text/css" href="../media/style.css">
+</head>
+<body>
+
+<table border="0" cellspacing="0" cellpadding="0" height="48" width="100%">
+  <tr>
+    <td class="header_top">jdbwc-db</td>
+  </tr>
+  <tr><td class="header_line"><img src="../media/empty.png" width="1" height="1" border="0" alt=""  /></td></tr>
+  <tr>
+    <td class="header_menu">
+        
+                                                                                                                                                            
+                                                                                          		  [ <a href="../classtrees_jdbwc-db.html" class="menu">class tree: jdbwc-db</a> ]
+		  [ <a href="../elementindex_jdbwc-db.html" class="menu">index: jdbwc-db</a> ]
+		  	    [ <a href="../elementindex.html" class="menu">all elements</a> ]
+    </td>
+  </tr>
+  <tr><td class="header_line"><img src="../media/empty.png" width="1" height="1" border="0" alt=""  /></td></tr>
+</table>
+
+<table width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="200" class="menu">
+      <b>Packages:</b><br />
+              <a href="../li_default.html">default</a><br />
+              <a href="../li_jdbwc.html">jdbwc</a><br />
+              <a href="../li_jdbwc-auxillary.html">jdbwc-auxillary</a><br />
+              <a href="../li_jdbwc-base.html">jdbwc-base</a><br />
+              <a href="../li_jdbwc-config.html">jdbwc-config</a><br />
+              <a href="../li_jdbwc-config-local.html">jdbwc-config-local</a><br />
+              <a href="../li_jdbwc-db.html">jdbwc-db</a><br />
+              <a href="../li_jdbwc-db-mysql.html">jdbwc-db-mysql</a><br />
+              <a href="../li_jdbwc-db-mysqli.html">jdbwc-db-mysqli</a><br />
+              <a href="../li_jdbwc-db-postgresql.html">jdbwc-db-postgresql</a><br />
+            <br /><br />
+                        <b>Files:</b><br />
+      	  <div class="package">
+			<a href="../jdbwc-db/_includes---functions---database_core.php.html">		database_core.php
+		</a><br>
+	  </div><br />
+      
+      
+                </td>
+    <td>
+      <table cellpadding="10" cellspacing="0" width="100%" border="0"><tr><td valign="top">
+
+<h1>Procedural File: database_core.php</h1>
+Source Location: /includes/functions/database_core.php<br /><br />
+
+<br>
+<br>
+
+
+<h2>Page Details:</h2>
+Database core implementation.<br /><br /><p>Here we check for the type of database the user is asking to use  and load the appropriate functions file for the db-type.  Valid choices are mySql or postgreSql.  MySql is the recommended database type. If you have the mysqli extesion enabled, you will  have full acess to the JDBWC implementation.</p><p>Released under the GNU General Public License</p><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>author:</b>&nbsp;&nbsp;</td><td>Tim Gall</td>
+  </tr>
+  <tr>
+    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>(C) 2008 Oz-DevWorX (Tim Gall)</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+<h4>Includes:</h4>
+<div class="tags">
+require_once(WC_PRI_INC.'functions/db/database_mysql.php') [line 65]<br />
+require_once(WC_PRI_INC.'functions/db/database_postgresql.php') [line 59]<br />
+</div>
+<br /><br />
+<br /><br />
+<br />
+  <hr />
+	<a name="functionwcdb_exec_batch"></a>
+	<h3>wcdb_exec_batch <span class="smalllinenumber">[line 168]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>A wcdb_exec_batch(
+mixed $query, [ $getGeneratedKeys = false])</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_exec_batch()  Process a single batch of sql queries.<br /><br /><p>Can be INSERT, UPDATE, DELETE, EXECUTE.  $query should use complete inserts. Multiple rows per statement is ok:  EG: INSERT INTO xyz (cell_01, cell_02, cell_03) VALUES ('abc', 'def', 'ghi'), ('jk', 'lmn', 'opq'), etc;</p><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>return:</b>&nbsp;&nbsp;</td><td>complex resultset bundle containing the rows affected by each query  as a comma seperated list of integers on the first line.  The rest of the resturn string is a set of double-newline seperated  .csv tables produced by each select query in the batch.</td>
+  </tr>
+</table>
+</div>
+    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$query</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+		      <tr>
+        <td class="type">&nbsp;&nbsp;</td>
+        <td><b>$getGeneratedKeys</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_exec_procedure"></a>
+	<h3>wcdb_exec_procedure <span class="smalllinenumber">[line 241]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_exec_procedure(
+mixed $query)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_exec_procedure()  Process a single batch of sql stored procedures.<br /><br /><p>$query must contain N procedure calls followed by a single select statement.</p><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$query</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_exec_query"></a>
+	<h3>wcdb_exec_query <span class="smalllinenumber">[line 137]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>the wcdb_exec_query(
+mixed $sqlString)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_exec_query()  Execute a single query that does not produce a resultset.<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>return:</b>&nbsp;&nbsp;</td><td>nuber of rows affected.</td>
+  </tr>
+</table>
+</div>
+    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$sqlString</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_exec_results"></a>
+	<h3>wcdb_exec_results <span class="smalllinenumber">[line 149]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_exec_results(
+mixed $sqlString)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_exec_results()  Execute a single query with result &amp; return the  rows as a .csv string.<br /><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$sqlString</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_exec_transaction"></a>
+	<h3>wcdb_exec_transaction <span class="smalllinenumber">[line 228]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_exec_transaction(
+mixed $query)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_exec_transaction()  Process a single SQL Transaction (usually consists of a batch of sql queries)  Can be INSERT, UPDATE, DELETE, EXECUTE.<br /><br /><p>$query should use complete inserts. Multiple rows per statement is ok:  EG: INSERT INTO xyz (cell_01, cell_02, cell_03) VALUES ('abc', 'def', 'ghi'), ('jk', 'lmn', 'opq'), etc;</p><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$query</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_get_script_info"></a>
+	<h3>wcdb_get_script_info <span class="smalllinenumber">[line 86]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_get_script_info(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_get_script_info()<br /><br />    <br /><br />
+	
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_input"></a>
+	<h3>wcdb_input <span class="smalllinenumber">[line 106]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_input(
+mixed $string)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_input()<br /><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$string</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_output"></a>
+	<h3>wcdb_output <span class="smalllinenumber">[line 96]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_output(
+mixed $string)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_output()<br /><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$string</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_prepare_input"></a>
+	<h3>wcdb_prepare_input <span class="smalllinenumber">[line 116]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_prepare_input(
+mixed $string)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_prepare_input()<br /><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$string</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+  <hr />
+	<a name="functionwcdb_throw_error"></a>
+	<h3>wcdb_throw_error <span class="smalllinenumber">[line 77]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void wcdb_throw_error(
+mixed $query, mixed $errno, mixed $error)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+
+		wcdb_throw_error()<br /><br />    <br /><br />
+	
+    		<h4>Parameters</h4>
+    <table border="0" cellspacing="0" cellpadding="0">
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$query</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$errno</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+		      <tr>
+        <td class="type">mixed&nbsp;&nbsp;</td>
+        <td><b>$error</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+				</table>
+    	<div class="top">[ <a href="#top">Top</a> ]</div><br /><br />
+	</div>
+
+        <div class="credit">
+		    <hr />
+		    Documentation generated on Mon, 19 Jan 2009 12:30:46 +1100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.1</a>
+	      </div>
+      </td></tr></table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,87 @@
+**********************************************************************
+* Id: CHANGE_LOG.txt
+* Subject: JDBWC 1.0.0.2_2-beta
+* Author: Tim Gall (Oz-DevWorX)
+* Date: 2008-10-30 15:16 (+10 GMT)
+* Simple-Description: Java JDBC Driver - Change Log
+* Copyright (C) 2008 Tim Gall (Oz-DevWorX)
+* JDBWC is Released under the GNU General Public License
+* ********************************************************************
+* This file is part of JDBWC.
+*
+* You should have received a copy of the GNU General Public License
+* along with JDBWC.  If not, see <http://www.gnu.org/licenses/>.
+**********************************************************************
+
+==============================================
+CONTENTS:
+	1) Major Changes
+	2) Bug Fixes
+	3) Improvements
+
+==============================================
+1) Major Changes:
+
+a)	none this time round.
+    See also: 3-Improvements
+
+==============================================
+2) Bug Fixes:
+
+a)	Fixed time based ResultSet methods:
+      * getDate(...)
+      * getTime(...)
+      * getTimestamp(...)
+	
+    sql.NULL values now return java.null 
+    as do empty time based values.
+	
+
+b)	Updated ResultSet getBoolean(...) methods to accept:
+      * TRUE or FALSE, 
+      * YES or NO, 
+      * ON or OFF
+      * 1 or 0
+      
+    This allows for variances in the way booleans are commonly
+    stored across database platforms. This falls outside
+    of the rules for MySql and Postgres but in the big picture
+    should make shifting boolean data between unknown databases 
+    less likely to break.
+	
+	
+c)	Fixed minor type safety warnings in 
+    com.jdbwc.exceptions.SQLError.java
+    (This class performs some of the drivers exception handling tasks
+    in a simmillar fashion to MySql Connector-J by MySql/Sun).
+
+
+d)  Fixed Connection.isClosed() not working.
+
+e)  Creating a new Connection by passing the 
+    Driver a Properties file now works as expected.
+    
+    Connection Propetrty keys:
+    ==========================
+    * url               (website url EG: https://somedomain.com/admin/ 
+                         [In this case, the "admin" folder 
+                         at https://somedomain.com
+                         should contain the 'web' folder "jdbwc"])
+	* port              (server port number. https is usually 443 
+	                     and plain-text is usually 80)
+	* user              (apache username for 'web' folder "jdbwc")
+	* password          (apache password for 'web' folder "jdbwc")
+	* databaseName      (Database name)
+	* databaseUser      (Database username)
+	* databasePassword  (Database password)
+
+==============================================
+3) Improvements:
+
+a)  Binaries have been compiled with JDK 1.6.0_10-b33
+
+b)  Made the Driver parameter keys more consistent 
+    with conventional jdbc naming conventions.
+
+c)  Minor Code Clean up in the Connection implementation.
+==============================================
