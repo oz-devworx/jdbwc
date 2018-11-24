@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+<head>
+<meta charset="UTF-8"/>
+<title>JDBWC Database Driver</title>
+<link rel="stylesheet" href="styles/main-styles.css"/>
+<link rel="shortcut icon" href="favicon.ico"/>
+<link rel="copyright" href="https://creativecommons.org/licenses/by-sa/4.0/"/>
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Main_Page rootpage-Main_Page skin-vector action-view">
+<div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+<div class="mw-indicators"> </div>
+  <h1 id="firstHeading" class="firstHeading" lang="en">Main Page</h1>
+  <div id="bodyContent" class="mw-body-content">
+    <div id="siteSub">From JDBWC Database Driver</div>
+<div id="jump-to-nav" class="mw-jump"> Jump to: <a href="#mw-head">navigation</a></div>
+    <div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr">
+      <h2><span class="mw-headline" id="JDBWC_Description">JDBWC Description</span></h2>
+      <div class="thumb tright">
+        <div class="thumbinner" style="width:202px;"><a href="File_JDBWC_concepts.html" class="image"><img alt="" src="images/thumb/2/2d/JDBWC_concepts.jpg/200px-JDBWC_concepts.jpg" width="200" height="76" class="thumbimage" srcset="/images/thumb/2/2d/JDBWC_concepts.jpg/300px-JDBWC_concepts.jpg 1.5x, /images/thumb/2/2d/JDBWC_concepts.jpg/400px-JDBWC_concepts.jpg 2x" /></a>
+          <div class="thumbcaption">
+            <div class="magnify"><a href="File_JDBWC_concepts.html" class="internal" title="Enlarge"></a></div>
+            The Basic JDBWC Concept</div>
+        </div>
+      </div>
+      <p><em>NOTES: This projects source was last updated during mid 2012. I   haven't had the opportunity to do further work on the source since then,   but do have a sketchy roadmap for the next version that I will publish   at some point.<br>
+Regards,<br>
+TG (2018-11-15).</em></p>
+      <p>JDBWC is a Type-3 JDBC Driver, written in Java for connecting to a range of database types across computer networks. Supported databases are MySQL and PostgreSQL with plans for more. Suited to Java applications that require JDBC access across networks   like the internet or a local lan but do not wish to expose the remote database-server   through the remote hosts firewall. <strong>JDBWC</strong> is an acronym for <strong>Java-Data-Base-Web-Connector</strong>. JDBWC  has its own middleware server-written-in-PHP which is where the Web-Connector part of the name comes from.</p>
+      <p>JDBWC is open-source and currently released under the GNU General Public License.<br />
+        <br />
+      </p>
+      <h2><span class="mw-headline" id="Features">Features</span></h2>
+      <ul>
+        <li> JDBC Driver.</li>
+        <li> Works with multiple database types.</li>
+        <li> Designed to work around firewalls.</li>
+        <li> Network Driver with SSL Support.</li>
+        <li> Advanced multiple ResultSet handling.</li>
+      </ul>
+      <h2><span class="mw-headline" id="Brief_Specifications">Brief Specifications</span></h2>
+      <p> The JDBWC Driver connects a Java application to a hosts database using PHP. The web-server does not need to be running Java or application servers and its databases can be completely hidden by the hosts firewall.</p>
+      <p>JDBWC is a 2 part system consisting of a Java JDBC driver and a lightweight PHP based server. The driver can connect to a range of different database servers and communicate across computer networks (including the internet).</p>
+      <p> SSL connections are supported and recommended. The URL protocol is specified when creating a new JDBC connection (https, http, etc.).</p>
+      <p> The Driver is suitable for communicating with shared, virtual and  dedicated web-server platforms and in most cases doesn’t require any special  settings or software to be installed on the web-server except PHP and the lightweight JDBWC  server. The PHP portion has tight security as it’s designed to  be exposed to  public networks.</p>
+    </div>
+    <div id="catlinks" class="catlinks catlinks-allhidden" data-mw="interface"></div>
+    <div class="visualClear"></div>
+  </div>
+</div>
+<div id="mw-navigation">
+  <h2>Navigation menu</h2>
+  <div id="mw-panel">
+    <div id="p-logo" role="banner"><a class="mw-wiki-logo" href="Main_Page.html"  title="Visit the main page"></a></div>
+    <div class="portal" role="navigation" id='p-navigation' aria-labelledby='p-navigation-label'>
+      <h3 id='p-navigation-label'>Navigation</h3>
+      <div class="body">
+        <ul>
+          <li id="n-Website-Home"><a href="Main_Page.html">Website Home</a></li>
+          <li id="n-Installation"><a href="Project_Install.html">Installation</a></li>
+          <li id="n-Downloads"><a href="Downloads.html">Downloads</a></li>
+          <li id="n-Documentation"><a href="Project_Documentation.html">Documentation</a></li>
+          <li id="n-Change-Log"><a href="Change_Log.html">Change Log</a></li>
+          <li id="n-Bug-Tracker"><a href="Bugs.html">Bug Tracker</a></li>
+          <li id="n-Acknowledgements"><a href="Acknowledgements.html">Acknowledgements</a></li>
+          <li id="n-currentevents"><a href="Project_Current_events.html" title="Find background information on current events">Current events</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="portal" role="navigation" id='p-more' aria-labelledby='p-more-label'>
+      <h3 id='p-more-label'>Sourceforge Pages</h3>
+      <div class="body">
+        <ul>
+          <li id="n-News"><a href="http://sourceforge.net/news/?group_id=233279" rel="nofollow">News</a></li>
+          <li id="n-Forums"><a href="http://sourceforge.net/projects/jdbwc/forums" rel="nofollow">Forums</a></li>
+          <li id="n-Support"><a href="http://sourceforge.net/projects/jdbwc/support" rel="nofollow">Support</a></li>
+          <li id="n-Project-Summary"><a href="http://sourceforge.net/projects/jdbwc" rel="nofollow">Project Summary</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="footer" role="contentinfo">
+  <ul id="footer-info">
+    <li id="footer-info-lastmod"> This page was last modified on 25 November 2018, at 00:18.</li>
+    <li id="footer-info-copyright">Content is available under <a class="external" rel="nofollow" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike</a> unless otherwise noted.</li>
+  </ul>
+  <ul id="footer-icons" class="noprint">
+    <li id="footer-copyrightico"> <a href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="resources/assets/licenses/cc-by-sa.png" alt="Creative Commons Attribution-ShareAlike" width="88" height="31"/></a></li>
+  </ul>
+  <div style="clear:both"></div>
+</div>
+</body>
+</html>

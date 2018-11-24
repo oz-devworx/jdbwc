@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+<head>
+<meta charset="UTF-8"/>
+<title>Version 1.0.0-2beta - JDBWC Database Driver</title>
+<link rel="stylesheet" href="styles/main-styles.css"/>
+<link rel="shortcut icon" href="favicon.ico"/>
+<link rel="copyright" href="https://creativecommons.org/licenses/by-sa/4.0/"/>
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Version_1_0_0-2beta rootpage-Version_1_0_0-2beta skin-vector action-view">
+<div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+  <div class="mw-indicators"> </div>
+  <h1 id="firstHeading" class="firstHeading" lang="en">Version 1.0.0-2beta</h1>
+  <div id="bodyContent" class="mw-body-content">
+    <div id="siteSub">From JDBWC Database Driver</div>
+    <div id="jump-to-nav" class="mw-jump"> Jump to: <a href="#mw-head">navigation</a></div>
+    <div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr">
+      <div id="toc" class="toc">
+        <div id="toctitle">
+          <h2>Contents</h2>
+        </div>
+        <ul>
+          <li class="toclevel-1 tocsection-1"><a href="#Intro_to_this_document:"><span class="tocnumber">1</span> <span class="toctext">Intro to this document:</span></a></li>
+          <li class="toclevel-1 tocsection-2"><a href="#System_Requirements:"><span class="tocnumber">2</span> <span class="toctext">System Requirements:</span></a></li>
+          <li class="toclevel-1 tocsection-3"><a href="#Installation:"><span class="tocnumber">3</span> <span class="toctext">Installation:</span></a>
+            <ul>
+              <li class="toclevel-2 tocsection-4"><a href="#Client-side:"><span class="tocnumber">3.1</span> <span class="toctext">Client-side:</span></a>
+                <ul>
+                  <li class="toclevel-3 tocsection-5"><a href="#Notes:"><span class="tocnumber">3.1.1</span> <span class="toctext">Notes:</span></a></li>
+                </ul>
+              </li>
+              <li class="toclevel-2 tocsection-6"><a href="#Server-side:"><span class="tocnumber">3.2</span> <span class="toctext">Server-side:</span></a>
+                <ul>
+                  <li class="toclevel-3 tocsection-7"><a href="#.21IMPORTANT:"><span class="tocnumber">3.2.1</span> <span class="toctext">!IMPORTANT:</span></a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li class="toclevel-1 tocsection-8"><a href="#Basic_Use:"><span class="tocnumber">4</span> <span class="toctext">Basic Use:</span></a>
+            <ul>
+              <li class="toclevel-2 tocsection-9"><a href="#Connection_Property_keys:"><span class="tocnumber">4.1</span> <span class="toctext">Connection Property keys:</span></a></li>
+              <li class="toclevel-2 tocsection-10"><a href="#EXAMPLE"><span class="tocnumber">4.2</span> <span class="toctext">EXAMPLE</span></a></li>
+            </ul>
+          </li>
+          <li class="toclevel-1 tocsection-11"><a href="#Limitations:"><span class="tocnumber">5</span> <span class="toctext">Limitations:</span></a></li>
+          <li class="toclevel-1 tocsection-12"><a href="#TODO:"><span class="tocnumber">6</span> <span class="toctext">TODO:</span></a></li>
+          <li class="toclevel-1 tocsection-13"><a href="#BUGS:"><span class="tocnumber">7</span> <span class="toctext">BUGS:</span></a></li>
+          <li class="toclevel-1 tocsection-14"><a href="#TIPS:"><span class="tocnumber">8</span> <span class="toctext">TIPS:</span></a></li>
+        </ul>
+      </div>
+      <h2><span class="mw-headline" id="Intro_to_this_document:">Intro to this document:</span></h2>
+      <p>Throughout this document there are some descriptive terms that are used frequently. Thier meanings are clarified below. </p>
+      <p><b>Client Side:</b> the Java application that uses the JDBC part of the JDBWC Driver. <b>Server-Side:</b> the web-server hosting the database. <b>Upstream:</b> data going from the Client-side to the Server-side. <b>Downstream:</b> data going from the Server-side to the Client-side </p>
+      <p><br />
+      </p>
+      <h2><span class="mw-headline" id="System_Requirements:">System Requirements:</span></h2>
+      <p><b>Client-side:</b> Java JRE &gt;= 1.6.0_10 (Sun Microsystems Inc. or equivalent) </p>
+      <p><b>Server-side:</b> Apache-web-server &gt;= 2 
+        PHP &gt;= 5.x.x with MySQL &gt;= 5.x.x and/or PostgreSQL &gt;= 7.4.x </p>
+      <p>If your using MySQL you should enable the PHP mysqli extension for full metadata functionality.
+        The existence of the mysqli extension is determined by the JDBWC Driver. </p>
+      <p><br />
+      </p>
+      <h2><span class="mw-headline" id="Installation:">Installation:</span></h2>
+      <h3><span class="mw-headline" id="Client-side:">Client-side:</span></h3>
+      <ul>
+        <li> Unpack the compressed download.</li>
+        <li> Copy the lib folder "jdbwc" to a location relative to your Java application files.</li>
+        <li> add "jdbwc.jar" to your applications classpath.
+          <ul>
+            <li> If your app is an executable jar, you would usually include the file in your jar manifest's class-path using a relative path EG: Class-Path: jdbwc.jar</li>
+            <li> If your app is not a packaged jar, you will need to organise updating your classpath via some other standard mechanism.</li>
+          </ul>
+        </li>
+      </ul>
+      <h4><span class="mw-headline" id="Notes:">Notes:</span></h4>
+      <p>The required "jdbwc" support files will be added to your classpath by the jdbwc driver. You only need to Class-Path "jdbwc.jar" </p>
+      <p>If you want to use the DataHandler package, read the documents in its META-INF folder for details. </p>
+      <p><br />
+      </p>
+      <h3><span class="mw-headline" id="Server-side:">Server-side:</span></h3>
+      <p>Once the Server-side portion is installed you can forget about it.
+        It only interacts with the JDBWC's JDBC Driver portion. </p>
+      <p>The web compressed file named "web.zip" you recieved with the JDBWC download needs to end up on your web-server in a decompressed state. </p>
+      <p>Theres a number of ways you could do this. </p>
+      <ul>
+        <li> If you can decompress files on your server, do the following, otherwise swap step 'a' with step 'b':
+          <ul>
+            <li> Upload the (compressed) file/s to a public location on your web-server.</li>
+            <li> Decompress the file.</li>
+            <li> Set apache folder permissions on the folder named "jdbwc" that you just unpacked. Record the username and password you use for use in your Java application.</li>
+            <li> Edit the following files:</li>
+          </ul>
+        </li>
+      </ul>
+      <p>"jdbwc/includes/config/configure.php"
+        Change the following entries in the configure.php file to match your desired settings. </p>
+      <pre>
+	define('WC_DEBUG_MODE', 'false');
+	define('WC_DB_SERVER', 'localhost'); // usually localhost
+	define('WC_PCONNECT', 'false'); // persistent connections? not supported by mysqli; leave as false for now.
+	
+	define('WC_SESSION', 'jdbwcSession'); // session key
+	define('WC_STORE_SESSIONS', 'database'); // leave empty '' for file handler or set to 'database'
+	define('WC_TABLE_SESSIONS', 'sessions'); // sessions table name (if using 'database')
+	define('WC_FILE_SESSIONS', '/tmp'); // absolute path without trailing /
+	
+	$WC_SESS_LIMIT = 5; // limit active sessions. Set to 0 to remove limits.
+	
+	define('WC_WSITE_DIR', '/admin/'); // absolute path with trailing /
+</pre>
+      <p><br />
+        "jdbwc/includes/config/databases.php"
+        Read the comments in the databases.php file and change the array values to 
+        match your database credentials. Examples are included.
+        You will also need the credential details for the Java application side 
+        so you should keep a record of them. </p>
+      <p><br />
+        The "jdbwc/includes/config/" folder contains a sub folder named local.
+        The local folder contains a near identical set of configure.php and databases.php files
+        for developers using this driver, to assist them when testing with 
+        a local or mirror or thier live webserver. </p>
+      <h4><span class="mw-headline" id=".21IMPORTANT:">!IMPORTANT:</span></h4>
+      <p>You should delete the "jdbwc/includes/config/local" folder on production servers. </p>
+      <p><br />
+      </p>
+      <h2><span class="mw-headline" id="Basic_Use:">Basic Use:</span></h2>
+      <p>JDBWC is a JDBC Driver, so the standard JDBC syntax applies for general use. </p>
+      <p>To start a JDBC connection using JDBWC 
+        you need to register the driver with the JRE's DriverManager
+        and then start a new JDBC connection using a JDBWC specific URL.
+        The required URL syntax and parameters are demonstrated in the example below.
+        You can also pass in a Properties file containing the parameters. </p>
+      <p>Parameters (everything after the&#160;?) can be in any order.
+        Registering the driver requires a ClassNotFoundException catch,
+        starting a new Connection requires an SQLException catch.
+        See the example below. </p>
+      <h3><span class="mw-headline" id="Connection_Property_keys:">Connection Property keys:</span></h3>
+      <ul>
+        <li> url               (website url EG: <a rel="nofollow" class="external free" href="https://somedomain.com/admin/">https://somedomain.com/admin/</a> [In this case, the "admin" folder at <a rel="nofollow" class="external free" href="https://somedomain.com/">https://somedomain.com</a> should contain the 'web' folder "jdbwc"])</li>
+        <li> port              (server port number. https is usually 443 and plain-text is usually 80)</li>
+        <li> user              (apache username for 'web' folder "jdbwc")</li>
+        <li> password          (apache password for 'web' folder "jdbwc")</li>
+        <li> databaseName      (Database name)</li>
+        <li> databaseUser      (Database username)</li>
+        <li> databasePassword  (Database password)</li>
+      </ul>
+      <p><br />
+      </p>
+      <h3><span class="mw-headline" id="EXAMPLE">EXAMPLE</span></h3>
+      <pre>
+Connection connection;
+try {
+
+	/* REGISTER the JDBWC Driver with the Java Runtime Engine */
+	Class.forName("com.jdbwc.core.Driver");
+	
+	final String wcDataBase = "somedb_name";
+	final String wcUser = "someDbUserName";
+	final String wcPass = "someDbPassword";
+				
+	final int port = 443;
+	final String httUrlStr = "https://somedomain.com/subfolder";//subfolder contains web 'jdbwc' folder
+	final String user = "Apache 'jdbwc/' User";
+	final String pass = "Apache 'jdbwc/' Password";
+	
+	/* Valid Vendor IDs:
+	 * -----------------
+	 * USE DEFAULT DB&#160;: jdbc:jdbwc://
+	 * USE MYSQL DB  &#160;: jdbc:jdbwc:mysql//
+	 * USE POSTGRESQL&#160;: jdbc:jdbwc:postgresql//
+	 * -----------------
+	 * MySql is the default type.
+	 *
+	 * If you want debugging ON (its OFF by default), 
+	 * include the string debug=true as a parameter.
+	 * EG: "&amp;db_password=" + wcPass + "&amp;debug=true"
+	 */
+	final String jdbwcUrlStr = "jdbc:jdbwc:mysql//" 
+		+ httUrlStr 
+		+ "?port=" + port 
+		+ "&amp;databaseName=" + wcDataBase
+		+ "&amp;databaseUser=" + wcUser
+		+ "&amp;databasePassword=" + wcPass;
+	
+	/* INITIALISE a new JDBC Connection using the JDBWC Driver package */
+	connection = DriverManager.getConnection(jdbwcUrlStr, user, pass);
+	
+	
+//    /* OR using a Propeties object. Both ways work. */
+//    Properties props = new Properties();
+//    props.put("url", httUrlStr);
+//    props.put("port", String.valueOf(port));
+//    props.put("user", user);
+//    props.put("pass", pass);
+//    props.put("databaseName", wcDataBase);
+//    props.put("databaseUser", wcUser);
+//    props.put("databasePassword", wcPass);
+//    	
+//    connection = DriverManager.getConnection(myDriverUrl, props);
+	
+	
+} catch (ClassNotFoundException e) {
+	e.printStackTrace();
+} catch (SQLException e) {
+	e.printStackTrace();
+} catch (Exception e) {
+	e.printStackTrace();
+}
+</pre>
+      <h2><span class="mw-headline" id="Limitations:">Limitations:</span></h2>
+      <ul>
+        <li> No support for newer JDBC 4 data-types yet.</li>
+        <li> Has small data transfer size limits compared to MySQL-Connector/J and the PostgreSQL-JDBC drivers EG: MB compared to GB and TB</li>
+      </ul>
+      <p><br />
+      </p>
+      <h2><span class="mw-headline" id="TODO:">TODO:</span></h2>
+      <ul>
+        <li> Production testing (in progress until January 2009).</li>
+        <li> Finish PreparedStatement, CallableStatement and ParameterMetaData.</li>
+        <li> Implement support for the streamable data types.</li>
+        <li> Implement support for some of the newer JDBC 4 data types.</li>
+        <li> Recheck ResultSet date, time and timestamp handling with both db types.</li>
+      </ul>
+      <p><br />
+      </p>
+      <h2><span class="mw-headline" id="BUGS:">BUGS:</span></h2>
+      <p>I would guess theres a few logical errors. </p>
+      <p>If you notice any, please report them in the sourceforge bug-tracking area for the JDBWC project at: <a rel="nofollow" class="external free" href="http://sourceforge.net/projects/jdbwc">http://sourceforge.net/projects/jdbwc</a> </p>
+      <p><br />
+      </p>
+      <h2><span class="mw-headline" id="TIPS:">TIPS:</span></h2>
+      <p>JDBWC is easy to implement and has been found to
+        perform at respectable speeds under load. </p>
+      <ul>
+        <li> To fully leverage JDBWC you should batch your queries whenever possible. </li>
+      </ul>
+      <p>The statements batch methods can be used or you can
+        use strings with&#160;; deliming the queries in an execute or executeQuery method.
+        Batched select statements will return multiple ResultSets which are 
+        fetched from the driver in the usual manner with getResultSet and getMoreResults.
+        The Sun javadocs on JDBC explain these methods in detail. </p>
+      <ul>
+        <li> I use pagination tequniques with all potentially large or unknown </li>
+      </ul>
+      <p>ResultSet yeilding queries to keep memory footprints low 
+        and application responsiveness high.
+        EG: fetching records in batches. 0 to 100; 100 to 200 ... 999900 to 1000000, etc.
+        Pagination provides you with built in scalabilty. </p>
+      <ul>
+        <li> Pagination also allows the webserver to serve more clients simultaneously</li>
+      </ul>
+      <p>without the risk of resource hogging. </p>
+    </div>
+    <div class="visualClear"></div>
+  </div>
+</div>
+<div id="mw-navigation">
+  <h2>Navigation menu</h2>
+  <div id="mw-panel">
+    <div id="p-logo" role="banner"><a class="mw-wiki-logo" href="Main_Page.html"  title="Visit the main page"></a></div>
+    <div class="portal" role="navigation" id='p-navigation' aria-labelledby='p-navigation-label'>
+      <h3 id='p-navigation-label'>Navigation</h3>
+      <div class="body">
+        <ul>
+          <li id="n-Website-Home"><a href="Main_Page.html">Website Home</a></li>
+          <li id="n-Installation"><a href="Project_Install.html">Installation</a></li>
+          <li id="n-Downloads"><a href="Downloads.html">Downloads</a></li>
+          <li id="n-Documentation"><a href="Project_Documentation.html">Documentation</a></li>
+          <li id="n-Change-Log"><a href="Change_Log.html">Change Log</a></li>
+          <li id="n-Bug-Tracker"><a href="Bugs.html">Bug Tracker</a></li>
+          <li id="n-Acknowledgements"><a href="Acknowledgements.html">Acknowledgements</a></li>
+          <li id="n-currentevents"><a href="Project_Current_events.html" title="Find background information on current events">Current events</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="portal" role="navigation" id='p-more' aria-labelledby='p-more-label'>
+      <h3 id='p-more-label'>Sourceforge Pages</h3>
+      <div class="body">
+        <ul>
+          <li id="n-News"><a href="http://sourceforge.net/news/?group_id=233279" rel="nofollow">News</a></li>
+          <li id="n-Forums"><a href="http://sourceforge.net/projects/jdbwc/forums" rel="nofollow">Forums</a></li>
+          <li id="n-Support"><a href="http://sourceforge.net/projects/jdbwc/support" rel="nofollow">Support</a></li>
+          <li id="n-Project-Summary"><a href="http://sourceforge.net/projects/jdbwc" rel="nofollow">Project Summary</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="footer" role="contentinfo">
+  <ul id="footer-info">
+    <li id="footer-info-lastmod"> This page was last modified on 10 June 2010, at 03:16.</li>
+    <li id="footer-info-copyright">Content is available under <a class="external" rel="nofollow" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike</a> unless otherwise noted.</li>
+  </ul>
+  <ul id="footer-icons" class="noprint">
+    <li id="footer-copyrightico"> <a href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="resources/assets/licenses/cc-by-sa.png" alt="Creative Commons Attribution-ShareAlike" width="88" height="31"/></a> </li>
+  </ul>
+  <div style="clear:both"></div>
+</div>
+</body>
+</html>

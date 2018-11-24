@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+<head>
+<meta charset="UTF-8"/>
+<title>Change Log - JDBWC Database Driver</title>
+<link rel="stylesheet" href="styles/main-styles.css"/>
+<link rel="shortcut icon" href="favicon.ico"/>
+<link rel="copyright" href="https://creativecommons.org/licenses/by-sa/4.0/"/>
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Change_Log rootpage-Change_Log skin-vector action-view">
+<div id="mw-page-base" class="noprint"></div>
+<div id="mw-head-base" class="noprint"></div>
+<div id="content" class="mw-body" role="main">
+  <div class="mw-indicators"> </div>
+  <h1 id="firstHeading" class="firstHeading" lang="en">Change Log</h1>
+  <div id="bodyContent" class="mw-body-content">
+    <div id="siteSub">From JDBWC Database Driver</div>
+    <div id="jump-to-nav" class="mw-jump"> Jump to: <a href="#mw-head">navigation</a></div>
+    <div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr">
+      <div id="toc" class="toc">
+        <div id="toctitle">
+          <h2>Contents</h2>
+        </div>
+        <ul>
+          <li class="toclevel-1"><a href="#JDBWC_Changelog"><span class="tocnumber">1</span> <span class="toctext">JDBWC Changelog</span></a>
+            <ul>
+              <li class="toclevel-2"><a href="#v1.0.0-4_beta"><span class="tocnumber">1.1</span> <span class="toctext"><b>v1.0.0-4 beta</b></span></a>
+                <ul>
+                  <li class="toclevel-3"><a href="#Since_v1.0.0.3beta"><span class="tocnumber">1.1.1</span> <span class="toctext"><b>Since v1.0.0.3beta</b></span></a></li>
+                </ul>
+              </li>
+              <li class="toclevel-2"><a href="#v1.0.0-3_beta"><span class="tocnumber">1.2</span> <span class="toctext"><b>v1.0.0-3 beta</b></span></a>
+                <ul>
+                  <li class="toclevel-3"><a href="#Since_v1.0.0.2_2beta"><span class="tocnumber">1.2.1</span> <span class="toctext"><b>Since v1.0.0.2_2beta</b></span></a></li>
+                </ul>
+              </li>
+              <li class="toclevel-2"><a href="#v1.0.0-2_2_beta"><span class="tocnumber">1.3</span> <span class="toctext"><b>v1.0.0-2_2 beta</b></span></a></li>
+              <li class="toclevel-2"><a href="#v1.0.0-2_1_beta"><span class="tocnumber">1.4</span> <span class="toctext"><b>v1.0.0-2_1 beta</b></span></a></li>
+              <li class="toclevel-2"><a href="#v1.0.0-2_beta"><span class="tocnumber">1.5</span> <span class="toctext"><b>v1.0.0-2 beta</b></span></a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <h2><span class="mw-headline" id="JDBWC_Changelog">JDBWC Changelog</span></h2>
+      <h3><span class="mw-headline" id="v1.0.0-4_beta"><b>v1.0.0-4 beta</b></span></h3>
+      <h4><span class="mw-headline" id="Since_v1.0.0.3beta"><b>Since v1.0.0.3beta</b></span></h4>
+      <ul>
+        <li>Communication layer changed from being powered by Apache-HttpClient 3.1 (legacy) to Apache-HttpClient 4.0.1.</li>
+        <li>Host connection can use <u>any valid port</u> in the range [1-0xfffe]. Non standard port use may incur up to 7ms delay per query (100 queries = +0.7 of a second).</li>
+        <li>Added <u>support for 1 proxy</u> server.</li>
+        <li>Added optional connection parameters:
+          <ul>
+            <li>timeout</li>
+            <li> nonVerifiedSSL</li>
+            <li>proxyUrl</li>
+          </ul>
+        </li>
+        <li>Added 2 more debug levels.</li>
+        <li>Trimmed down the exception classes to only those currently required by the driver.</li>
+        <li>Added support for un-validated server-side SSL.</li>
+        <li>Added transparent gzip support for incoming data (from server-side going to JDBC side).</li>
+        <li>Added JDBC Fatal Server-Side Error handling.</li>
+        <li>Lots of work on MySql DatabaseMetaData and ResultSetMetaData.</li>
+        <li>New ResultSetMetaData backend v3. Uses a connection resource-economic approach, is faster and suitably accurate. Works with any SQL that produces a MySQL resultset including SHOW and EXPLAIN.</li>
+        <li>Rewrote and fine tuned   the MySQL Types class (handles most of the type juggling between MySQL and Java.sql).</li>
+        <li>Added a static metadata feed class for the java.sql metadata classes.</li>
+        <li>Better handling of null and empty values by the drivers underlying data type. This versions uses a new implementation better suited to SQL data.</li>
+        <li>Completed numerous (previously un-implemented methods) in the core implementation classes.</li>
+        <li>Simplified connection parameters (reduced amount of params by including more information in the remote url's.
+          <ul>
+            <li>Combined required port param with server url. (EG: <code><a rel="nofollow" class="external free" href="https://myserver.ext:445/mysubfolder/">https://myserver.ext:445/mysubfolder/</a></code>)</li>
+            <li>Combined use proxy, proxy protocol, domain and port into 1 url. (EG: <code><a rel="nofollow" class="external free" href="http://myproxyserver.ext:8085/">http://myproxyserver.ext:8085</a></code>)</li>
+          </ul>
+        </li>
+        <li>The Driver is now compatible and very functional in the following SQL clients.
+          <ul>
+            <li>SQL Workbench - build 108</li>
+            <li>DB Visualizer - Free 7.0.6</li>
+            <li>SQuirreL SQL Client 3.1</li>
+          </ul>
+        </li>
+        <li>Changed main server file to look for the <code>config/local</code> folder rather than a host named <code>localhost</code> (this is usually for testing setups).</li>
+        <li>Updated valid parameter key strings for com.jdbwc.Driver</li>
+        <li>Migrated connection param verification and setup to the Driver class (from the connection class).</li>
+        <li>Updated javadocs.</li>
+        <li>Improved JDBWC test class.
+          <ul>
+            <li>Implemented the new optional parameters in connect() method.</li>
+            <li>Implemented a test code block for demonstrating the use of Driver.getPropertyInfo() (un comment to use it).</li>
+            <li>Improved the main() method with time taken display and the ability to run the test in loops for reliability and stress testing.</li>
+            <li>Test main() can accept one external parameter (int) to trigger multiple passes.</li>
+          </ul>
+        </li>
+        <li>Added NotImplemented exceptions to all methods that are not yet full implemented. Added an additional message for clarity and to make finding the cause of these exceptions easier.</li>
+        <li>Minor improvements to the Ant build file.</li>
+        <li>The following improvements were back ported from v1.0.0-5:
+          <ul>
+            <li>Fixed java.sql.Driver.getPropertyInfo() so it works properly with SQL Client software and exposes all parameters accepted by the driver.</li>
+            <li>Dropped the version number from the compiled data-handler.jar's name to eliminate the need to update classpaths if the package changes.</li>
+            <li>Added better ResultSetMetadata support for the mysql extension. The mysqli extension has always had good support.</li>
+            <li>Added a variable to expose improved sql extensions to the driver so the appropriate processing can take place. MySQLi is currently the only improved extension Im aware of.</li>
+          </ul>
+        </li>
+      </ul>
+      <p>&#160;</p>
+      <hr />
+      <h3><span class="mw-headline" id="v1.0.0-3_beta"><b>v1.0.0-3 beta</b></span></h3>
+      <h4><span class="mw-headline" id="Since_v1.0.0.2_2beta"><b>Since v1.0.0.2_2beta</b></span></h4>
+      <ul>
+        <li>Replaced the server-side with a new OOP based PHP5 system.</li>
+        <li>Removed reliance on Apache authentication and replaced it with a driver based authentication system. Makes installation and management easier. Authentication encryption is based on a randomised SHA256 hash (+ 16 MD5 chars). 1 for the username, 1 for the password and one for the db-credentials.</li>
+        <li>Improved session handling. Server-side session can be stored as files or sqlite.</li>
+        <li>Added server-side logging.</li>
+        <li>Improved server-side error handling.</li>
+        <li>Added optional connection parameters:
+          <ul>
+            <li>debugLogger</li>
+            <li> debugLevel</li>
+            <li> useDummyAgent</li>
+          </ul>
+        </li>
+        <li>Implemented debugging in JDBC side.</li>
+        <li>Added 4 debug levels.</li>
+        <li>Replaced the old cumbersome exception handler with a lightweight system tailored to suit this driver.</li>
+        <li>Updated drivers javadocs.</li>
+        <li>Fixed the Postgres <code>ParameterMetaData</code> functionality for <code>PreparedStatement</code>.</li>
+        <li>Fixed a bug in <code>Driver.getPropertyInfo()</code></li>
+        <li>Minor fixes to DatabaseMetadata (query) classes for MySql and PostgreSql 8.x.x.</li>
+        <li>Improved JDBWC test class.
+          <ul>
+            <li>Replaced hardcoded database names with a class variable. </li>
+            <li>Increased use of <code>ResultsetMetaData</code>. </li>
+            <li>Implemented <code>ParameterMetaData</code> testing.</li>
+            <li>Implemented the new optional parameters in <code>connect()</code> method.</li>
+          </ul>
+        </li>
+        <li>Added deprecated annotations to deprecated methods in the implementation (<em>for methods  deprecated from the JDBC specs</em>).</li>
+      </ul>
+      <p>&#160;</p>
+      <hr />
+      <h3><span class="mw-headline" id="v1.0.0-2_2_beta"><b>v1.0.0-2_2 beta</b></span></h3>
+      <ul>
+        <li>Major Changes:
+          <ul>
+            <li> none this time round.     See also: 3-Improvements</li>
+          </ul>
+        </li>
+        <li> Bug Fixes:
+          <ul>
+            <li> Fixed time based ResultSet methods:
+              <ul>
+                <li> getDate(...) </li>
+                <li> getTime(...) </li>
+                <li> getTimestamp(...) </li>
+                <li>sql.NULL values now return java.null      as do empty time based values. </li>
+              </ul>
+            </li>
+            <li> Updated ResultSet getBoolean(...) methods to accept:
+              <ul>
+                <li> TRUE or FALSE, </li>
+                <li> YES or NO, </li>
+                <li> ON or OFF </li>
+                <li> 1 or 0 </li>
+              </ul>
+            </li>
+            <li>This allows for variances in the way booleans are commonly     stored across database platforms. This falls outside     of the rules for MySql and Postgres but in the big picture     should make shifting boolean data between unknown databases      less likely to break. </li>
+            <li> Fixed minor type safety warnings in      com.jdbwc.exceptions.SQLError.java     (This class performs some of the drivers exception handling tasks     in a simmillar fashion to MySql Connector-J by MySql/Sun). </li>
+            <li> Fixed Connection.isClosed() not working.</li>
+            <li> Creating a new Connection by passing the      Driver a Properties file now works as expected.
+              <ul>
+                <li>Connection Propetrty keys:
+                  <ul>
+                    <li> url               (website url EG: <a rel="nofollow" class="external free" href="https://somedomain.com/admin/">https://somedomain.com/admin/</a> [In this case, the &quot;admin&quot; folder                           at <a rel="nofollow" class="external free" href="https://somedomain.com/">https://somedomain.com</a> should contain the 'web' folder &quot;jdbwc&quot;]) </li>
+                    <li> port              (server port number. https is usually 443  	                     and plain-text is usually 80) </li>
+                    <li> user              (apache username for 'web' folder &quot;jdbwc&quot;) </li>
+                    <li> password          (apache password for 'web' folder &quot;jdbwc&quot;) </li>
+                    <li> databaseName      (Database name) </li>
+                    <li> databaseUser      (Database username) </li>
+                    <li> databasePassword  (Database password)</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li> Improvements:
+          <ul>
+            <li> Binaries have been compiled with JDK 1.6.0_10-b33</li>
+            <li> Made the Driver parameter keys more consistent      with conventional jdbc naming conventions.</li>
+            <li> Minor Code Clean up in the Connection implementation.</li>
+          </ul>
+        </li>
+      </ul>
+      <p>&#160;</p>
+      <hr />
+      <h3><span class="mw-headline" id="v1.0.0-2_1_beta"><b>v1.0.0-2_1 beta</b></span></h3>
+      <ul>
+        <li> Major Changes:
+          <ul>
+            <li>a)	The drivers core data-type (abstract DataHandler) has been migrated  	to an external .jar file allowing developers to directly access and use it  	in thier projects. The DataHandler implementations are self contained. 	Two DataHandler implementations have been provided: 		* ListArray (Uses ArrayList's based on java.util.List) 		* HashArray (Uses HashMap's based on java.util.Map)</li>
+          </ul>
+        </li>
+        <li> Bug Fixes:
+          <ul>
+            <li> Fixed ResultSets dropping trailing void values from rows in results 	causing thoses rows to be skipped during processing due to the  	field count mismatch. 	This bug was also causing some unusual behavior with the 	metaData methods, which often rely on ResultSet's to operate correctly. </li>
+            <li> Void and NULL values are both handled better. Special characters 	in ResultSets are also handled better during transit. This is 	particularly important for data like html formatting characters 	and punctuation symbols in text. Further improvements will be made to 	this aspect before a full release. 	 c)	Turned debugging output off by defaut and added an [optional] 	parameter to the JDBC URL to activate debugging mode if required. </li>
+          </ul>
+        </li>
+        <li> Improvements:
+          <ul>
+            <li> Performance tweaks in the core data-type, Statement methods  	and some of the driver utility methods. 	Improved synchronized block locking in the abstract DataHandler 	implementations and some of the core driver areas  	(mainly statement and resultMetaData). 	Fixes and performance tweaks were also made to the serverside scripts 	in some areas mentioned above and the batch query handling areas.</li>
+          </ul>
+        </li>
+      </ul>
+      <p>&#160;</p>
+      <hr />
+      <h3><span class="mw-headline" id="v1.0.0-2_beta"><b>v1.0.0-2 beta</b></span></h3>
+      <p>Initial public release</p>
+    </div>
+    <div class="printfooter"> Retrieved from "<a dir="ltr" href="../index7778.html?title=Change_Log&amp;oldid=90">http://jdbwc.oz-devworx.com.au/index.php?title=Change_Log&amp;oldid=90</a>" </div>
+    <div id="catlinks" class="catlinks catlinks-allhidden" data-mw="interface"></div>
+    <div class="visualClear"></div>
+  </div>
+</div>
+<div id="mw-navigation">
+  <h2>Navigation menu</h2>
+  <div id="mw-panel">
+    <div id="p-logo" role="banner"><a class="mw-wiki-logo" href="Main_Page.html"  title="Visit the main page"></a></div>
+    <div class="portal" role="navigation" id='p-navigation' aria-labelledby='p-navigation-label'>
+      <h3 id='p-navigation-label'>Navigation</h3>
+      <div class="body">
+        <ul>
+          <li id="n-Website-Home"><a href="Main_Page.html">Website Home</a></li>
+          <li id="n-Installation"><a href="Project_Install.html">Installation</a></li>
+          <li id="n-Downloads"><a href="Downloads.html">Downloads</a></li>
+          <li id="n-Documentation"><a href="Project_Documentation.html">Documentation</a></li>
+          <li id="n-Change-Log"><a href="Change_Log.html">Change Log</a></li>
+          <li id="n-Bug-Tracker"><a href="Bugs.html">Bug Tracker</a></li>
+          <li id="n-Acknowledgements"><a href="Acknowledgements.html">Acknowledgements</a></li>
+          <li id="n-currentevents"><a href="Project_Current_events.html" title="Find background information on current events">Current events</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="portal" role="navigation" id='p-more' aria-labelledby='p-more-label'>
+      <h3 id='p-more-label'>Sourceforge Pages</h3>
+      <div class="body">
+        <ul>
+          <li id="n-News"><a href="http://sourceforge.net/news/?group_id=233279" rel="nofollow">News</a></li>
+          <li id="n-Forums"><a href="http://sourceforge.net/projects/jdbwc/forums" rel="nofollow">Forums</a></li>
+          <li id="n-Support"><a href="http://sourceforge.net/projects/jdbwc/support" rel="nofollow">Support</a></li>
+          <li id="n-Project-Summary"><a href="http://sourceforge.net/projects/jdbwc" rel="nofollow">Project Summary</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="footer" role="contentinfo">
+  <ul id="footer-info">
+    <li id="footer-info-lastmod"> This page was last modified on 17 July 2010, at 04:13.</li>
+    <li id="footer-info-copyright">Content is available under <a class="external" rel="nofollow" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike</a> unless otherwise noted.</li>
+  </ul>
+  <ul id="footer-icons" class="noprint">
+    <li id="footer-copyrightico"> <a href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="resources/assets/licenses/cc-by-sa.png" alt="Creative Commons Attribution-ShareAlike" width="88" height="31"/></a> </li>
+  </ul>
+  <div style="clear:both"></div>
+</div>
+</body>
+</html>
