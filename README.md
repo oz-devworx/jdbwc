@@ -1,4 +1,4 @@
-<a href="https://github.com/oz-devworx/jdbwc/wiki"><img src="https://jdbwc.oz-devworx.com.au/images/7/70/MediaWikiSidebarLogo.png" align="right" hspace="10" vspace="10" /></a>
+<a href="https://github.com/oz-devworx/jdbwc/wiki"><img src="https://oz-devworx.github.io/jdbwc/images/7/70/MediaWikiSidebarLogodb01.png" align="right" hspace="10" vspace="10" /></a>
 # jdbwc
 Type-3 JDBC Driver - with middleware server written in PHP.<br>
 [More info is available in the documentation site](https://oz-devworx.github.io/jdbwc/)
